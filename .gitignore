@@ -9,6 +9,11 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Local development tooling
+/.claude/
+/.codegraph/
+/.cursor/
+
 # Native
 .kotlin/
 *.orig.*
@@ -31,6 +36,7 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
@@ -41,3 +47,6 @@ example
 # generated native folders
 /ios
 /android
+
+bun.lock
+bun.lockb

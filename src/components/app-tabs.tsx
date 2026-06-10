@@ -1,32 +1,44 @@
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
+import { Tabs } from 'expo-router';
+import type { ReactElement } from 'react';
+import { Platform } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import { AnimatedTabBar } from 'components/animated-tab-bar';
+import { TabIcon, type TabIconName } from 'components/tab-icon';
+
+const tabs: { icon: TabIconName; label: string; name: string }[] = [
+  { icon: 'home', label: 'Home', name: 'home' },
+  { icon: 'history', label: 'History', name: 'history' },
+  { icon: 'location', label: 'Location', name: 'location' },
+  { icon: 'users', label: 'Users', name: 'users' },
+];
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-
   return (
-    <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
+    <Tabs
+      detachInactiveScreens={Platform.OS !== 'ios'}
+      initialRouteName='home'
+      screenOptions={{
+        animation: 'shift',
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          height: 0,
+          position: 'absolute',
+        },
+      }}
+      tabBar={(props): ReactElement => <AnimatedTabBar {...props} popupDisabledRouteNames={['home', 'history']} />}>
+      {tabs.map(tab => (
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={{
+            tabBarIcon: ({ color, size }) => <TabIcon color={String(color)} name={tab.icon} size={size} />,
+            tabBarLabel: tab.label,
+          }}
         />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+      ))}
+    </Tabs>
   );
 }

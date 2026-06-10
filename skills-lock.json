@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "apple-ui-skills": {
+      "source": "ihlamury/design-skills",
+      "sourceType": "github",
+      "skillPath": "skills/apple/SKILL.md",
+      "computedHash": "cd8ebe89688d7fb36c838618d1a1847d645a721b231d2a82c746d4d22003b77c"
+    },
+    "design-taste-frontend": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill/SKILL.md",
+      "computedHash": "6d838b246d0e35d0b53f4f23f98ba7a1dd561937e64f7d0c7553b0928e376c3e"
+    }
+  }
+}
