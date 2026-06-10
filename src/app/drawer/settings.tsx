@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { loginAdmin } from 'features/auth/auth-service';
 import { biometricCredentialStore } from 'features/auth/biometric-credentials';
 import { getBiometricButtonLabel, getBiometricSymbolName } from 'features/auth/biometric-auth';
@@ -28,10 +28,11 @@ export default function DrawerSettingsScreen() {
     let isMounted = true;
 
     async function loadBiometricSettings() {
-      const [hasHardware, isEnrolled, authenticationTypes, hasSavedCredentials, savedUsername] = await Promise.all([
+      const [hasHardware, isEnrolled, authenticationTypes, canSaveProtectedCredentials, hasSavedCredentials, savedUsername] = await Promise.all([
         LocalAuthentication.hasHardwareAsync(),
         LocalAuthentication.isEnrolledAsync(),
         LocalAuthentication.supportedAuthenticationTypesAsync(),
+        biometricCredentialStore.canUseBiometricAuthentication(),
         biometricCredentialStore.hasCredentials(),
         biometricCredentialStore.getLastUsername(),
       ]);
@@ -43,7 +44,7 @@ export default function DrawerSettingsScreen() {
       setBiometricIcon(getBiometricSymbolName(authenticationTypes));
       setBiometricLabel(getBiometricButtonLabel(authenticationTypes, Platform.OS));
       setBiometricEnabled(hasSavedCredentials);
-      setCanUseBiometric(hasHardware && isEnrolled);
+      setCanUseBiometric(hasHardware && isEnrolled && canSaveProtectedCredentials);
       setLastUsername(savedUsername ?? '');
       setUsernameInput(savedUsername ?? '');
     }
@@ -73,10 +74,12 @@ export default function DrawerSettingsScreen() {
         throw new Error(response.message || 'Your password could not be verified.');
       }
 
-      await biometricCredentialStore.setLastUsername(username);
-      await biometricCredentialStore.saveCredentials({ password, username });
-      await sessionStore.setToken(response.token);
-      await queryClient.invalidateQueries({ queryKey: sessionKeys.token });
+      await Promise.all([
+        biometricCredentialStore.setLastUsername(username),
+        biometricCredentialStore.saveCredentials({ password, username }),
+        sessionStore.setToken(response.token),
+      ]);
+      queryClient.setQueryData(sessionKeys.token, response.token);
       await queryClient.invalidateQueries({ queryKey: ['locations'] });
       return username;
     },

@@ -4,7 +4,7 @@ import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'r
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { FontFamily, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Radius, Spacing } from 'themes';
 
 import { clampZoomOffset } from './zoom-bounds';
 

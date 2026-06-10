@@ -2,7 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, type TextInputProps, type TextInput as TextInputRef, View, type ViewStyle } from 'react-native';
 import Animated, { interpolate, interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
+import { fs, mhs, rv } from 'themes/scaling';
+
+const inputHeight = rv({ compact: 45, medium: 45, expanded: 45 });
+const inputHorizontalPadding = mhs(16);
+const inputFontSize = fs(14);
+const inputLineHeight = fs(20);
+const labelFontSize = fs(16);
+const floatingLabelFontSize = fs(12);
+const labelRestingTop = (inputHeight - inputLineHeight) / 2;
 
 type FloatingTextInputProps = Omit<TextInputProps, 'style'> & {
   error?: string;
@@ -17,16 +26,18 @@ export default function FloatingTextInput({ error, label, onBlur, onFocus, style
   const isFloating = isFocused || Boolean(value);
 
   useEffect(() => {
-    animation.value = withTiming(isFloating ? 1 : 0, {
-      duration: 160,
-    });
+    animation.set(
+      withTiming(isFloating ? 1 : 0, {
+        duration: 160,
+      }),
+    );
   }, [animation, isFloating]);
 
   const labelAnimatedStyle = useAnimatedStyle(() => {
     return {
       color: error ? '#B42318' : interpolateColor(animation.value, [0, 1], [Palette.textTertiary, Palette.accent]),
-      fontSize: interpolate(animation.value, [0, 1], [16, 12]),
-      top: interpolate(animation.value, [0, 1], [20, -8]),
+      fontSize: interpolate(animation.value, [0, 1], [labelFontSize, floatingLabelFontSize]),
+      top: interpolate(animation.value, [0, 1], [labelRestingTop, -8]),
     };
   });
 
@@ -68,8 +79,8 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#B42318',
     fontFamily: FontFamily.semibold,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: fs(13),
+    lineHeight: fs(18),
   },
   focusedFrame: {
     borderColor: Palette.accent,
@@ -82,29 +93,29 @@ const styles = StyleSheet.create({
     color: Palette.textPrimary,
     flex: 1,
     fontFamily: FontFamily.medium,
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: inputFontSize,
+    lineHeight: inputLineHeight,
     paddingBottom: 0,
-    paddingHorizontal: 16,
+    paddingHorizontal: inputHorizontalPadding,
     paddingTop: 0,
     textAlignVertical: 'center',
   },
   inputFrame: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.border,
-    borderRadius: Radius.large,
+    borderRadius: Radius.medium,
     borderWidth: 1,
-    height: 62,
+    height: inputHeight,
     justifyContent: 'center',
   },
   floatingInput: {
-    paddingTop: 10,
+    paddingTop: rv({ compact: 8, medium: 8, expanded: 8 }),
   },
   label: {
     backgroundColor: Palette.surfaceRaised,
     fontFamily: FontFamily.semibold,
-    left: 16,
-    paddingHorizontal: 4,
+    left: inputHorizontalPadding,
+    paddingHorizontal: mhs(4),
     position: 'absolute',
     zIndex: 1,
   },

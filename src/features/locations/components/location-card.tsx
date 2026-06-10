@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { ImagePreviewModal } from 'shared/media/image-preview-modal';
 import { getDisplayImageUrl } from 'shared/media/image-url';
 

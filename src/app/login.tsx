@@ -1,18 +1,14 @@
-import { Canvas, RadialGradient, Rect, vec } from '@shopify/react-native-skia';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Canvas, LinearGradient, RadialGradient, Rect, vec } from '@shopify/react-native-skia';
+import { useMutation } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import * as LocalAuthentication from 'expo-local-authentication';
-import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Keyboard,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TouchableWithoutFeedback,
   useWindowDimensions,
@@ -23,36 +19,35 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
 import { loginAdmin } from 'features/auth/auth-service';
-import { biometricCredentialStore, type BiometricCredentials } from 'features/auth/biometric-credentials';
-import { getBiometricButtonLabel, getBiometricSymbolName } from 'features/auth/biometric-auth';
+import { biometricCredentialStore } from 'features/auth/biometric-credentials';
 import { calculateKeyboardAwareScrollY } from 'features/auth/keyboard-avoidance';
 import { parseLoginForm, type LoginFieldErrors } from 'features/auth/login-validation';
-import { sessionStore } from 'shared/session/session-store';
-import { sessionKeys } from 'shared/session/use-session-token';
+import { useBiometricLogin } from 'hooks/use-biometric-login';
 import FloatingTextInput from 'shared/ui/FloatingTextInput';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
+import { fs, mhs, mvs } from 'themes/scaling';
 
-const KEYBOARD_CARD_GAP = 20;
+const KEYBOARD_CARD_GAP = mvs(20);
+const actionControlHeight = 45;
+const biometricSymbolSize = mhs(24);
+const cardLogoWidth = mhs(128);
+const formGap = mvs(Spacing.four);
+const radiusLarge = mhs(Radius.large);
+const radiusMedium = mhs(Radius.medium);
+const radiusPill = Radius.pill;
+const appVersionLabel = 'v1.0.0';
 
 export default function LoginScreen() {
-  const queryClient = useQueryClient();
-  const router = useRouter();
   const formCardRef = useRef<View>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const scrollYRef = useRef(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
-  const [biometricIcon, setBiometricIcon] = useState('lock.shield');
-  const [biometricLabel, setBiometricLabel] = useState('Biometric');
-  const [canUseBiometric, setCanUseBiometric] = useState(false);
-  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
-  const [isBiometricPromptSaving, setIsBiometricPromptSaving] = useState(false);
   const [password, setPassword] = useState('');
-  const [pendingBiometricCredentials, setPendingBiometricCredentials] = useState<BiometricCredentials | null>(null);
-  const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
-  const [supportsBiometric, setSupportsBiometric] = useState(false);
   const [username, setUsername] = useState('');
+  const { biometricIcon, biometricLabel, canUseBiometric, completeAuthenticatedSession, handleBiometricLogin, isBiometricLoading, queueBiometricOptIn } =
+    useBiometricLogin({ setErrorMessage });
   const loginMutation = useMutation({
     mutationFn: loginAdmin,
     onSuccess: async (response, credentials) => {
@@ -60,56 +55,14 @@ export default function LoginScreen() {
         setErrorMessage(response.message || 'The CMS did not return an admin token.');
         return;
       }
-      await biometricCredentialStore.setLastUsername(credentials.username);
-      await sessionStore.setToken(response.token);
-      await queryClient.invalidateQueries({ queryKey: sessionKeys.token });
-      await queryClient.invalidateQueries({ queryKey: ['locations'] });
 
-      const hasSavedBiometricCredentials = await biometricCredentialStore.hasCredentials();
-      if (supportsBiometric && !hasSavedBiometricCredentials) {
-        setPendingBiometricCredentials(credentials);
-        setShowBiometricPrompt(true);
-        return;
-      }
-
-      router.replace('/home');
+      await Promise.all([biometricCredentialStore.setLastUsername(credentials.username), queueBiometricOptIn(credentials)]);
+      await completeAuthenticatedSession(response.token);
     },
     onError: error => {
       setErrorMessage(error instanceof Error ? error.message : 'Please check your credentials and try again.');
     },
   });
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadBiometricState() {
-      const [hasHardware, isEnrolled, authenticationTypes, hasSavedBiometricCredentials] = await Promise.all([
-        LocalAuthentication.hasHardwareAsync(),
-        LocalAuthentication.isEnrolledAsync(),
-        LocalAuthentication.supportedAuthenticationTypesAsync(),
-        biometricCredentialStore.hasCredentials(),
-      ]);
-
-      if (!isMounted) {
-        return;
-      }
-
-      setBiometricLabel(getBiometricButtonLabel(authenticationTypes, Platform.OS));
-      setBiometricIcon(getBiometricSymbolName(authenticationTypes));
-      setSupportsBiometric(hasHardware && isEnrolled);
-      setCanUseBiometric(hasHardware && isEnrolled && hasSavedBiometricCredentials);
-    }
-
-    loadBiometricState().catch(() => {
-      if (isMounted) {
-        setCanUseBiometric(false);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const updateUsername = (value: string) => {
     setUsername(value);
@@ -133,59 +86,7 @@ export default function LoginScreen() {
     setFieldErrors({});
     loginMutation.mutate(parsedForm.data);
   };
-  const handleBiometricLogin = async () => {
-    setErrorMessage('');
-    setIsBiometricLoading(true);
 
-    try {
-      const savedCredentials = await biometricCredentialStore.getCredentials();
-
-      if (!savedCredentials) {
-        setCanUseBiometric(false);
-        setErrorMessage('Please sign in with your CMS account once before using biometric login.');
-        return;
-      }
-
-      const response = await loginAdmin(savedCredentials);
-      if (!response.token) {
-        setErrorMessage(response.message || 'The CMS did not return an admin token.');
-        return;
-      }
-
-      await sessionStore.setToken(response.token);
-      await queryClient.invalidateQueries({ queryKey: sessionKeys.token });
-      await queryClient.invalidateQueries({ queryKey: ['locations'] });
-      router.replace('/home');
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Biometric sign in was cancelled or failed. Please try again.');
-    } finally {
-      setIsBiometricLoading(false);
-    }
-  };
-
-  const continueToHome = () => {
-    setPendingBiometricCredentials(null);
-    setShowBiometricPrompt(false);
-    router.replace('/home');
-  };
-
-  const handleEnableBiometricPrompt = async () => {
-    if (!pendingBiometricCredentials) {
-      continueToHome();
-      return;
-    }
-
-    setIsBiometricPromptSaving(true);
-
-    try {
-      await biometricCredentialStore.saveCredentials(pendingBiometricCredentials);
-      setCanUseBiometric(true);
-      continueToHome();
-    } catch {
-      setIsBiometricPromptSaving(false);
-      continueToHome();
-    }
-  };
   const isLoading = loginMutation.isPending;
   const canSubmit = !isLoading && !isBiometricLoading;
   const canSubmitBiometric = canUseBiometric && !isLoading && !isBiometricLoading;
@@ -226,41 +127,6 @@ export default function LoginScreen() {
   return (
     <BackgroundGradient colors={['#FFFFFF', '#FFFFFF', '#F7FBF9', '#EFF8F4', '#E8F4EF', '#FFFFFF', '#FFFFFF']}>
       <SafeAreaView style={styles.container}>
-        <Modal animationType='fade' onRequestClose={continueToHome} transparent visible={showBiometricPrompt}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.biometricPromptCard}>
-              <View style={styles.biometricPromptIcon}>
-                <SymbolView name={biometricIcon as never} resizeMode='scaleAspectFit' size={28} tintColor={Palette.accent} />
-              </View>
-              <Text style={styles.biometricPromptTitle}>Enable {biometricLabel} sign in?</Text>
-              <Text style={styles.biometricPromptText}>Use your saved CMS account to sign in faster next time after biometric verification.</Text>
-              <View style={styles.biometricPromptSwitchRow}>
-                <View style={styles.biometricPromptSwitchCopy}>
-                  <Text style={styles.biometricPromptSwitchTitle}>Fast sign in</Text>
-                  <Text style={styles.biometricPromptSwitchText}>You can turn this off later in Settings.</Text>
-                </View>
-                <Switch
-                  disabled={isBiometricPromptSaving}
-                  onValueChange={value => {
-                    if (value) {
-                      void handleEnableBiometricPrompt();
-                    }
-                  }}
-                  trackColor={{ false: Palette.border, true: '#9EE6BD' }}
-                  thumbColor={Palette.surfaceRaised}
-                  value={isBiometricPromptSaving}
-                />
-              </View>
-              <Pressable
-                accessibilityRole='button'
-                disabled={isBiometricPromptSaving}
-                onPress={continueToHome}
-                style={({ pressed }) => [styles.biometricPromptSkipButton, pressed && styles.pressed, isBiometricPromptSaving && styles.disabled]}>
-                <Text style={styles.biometricPromptSkipText}>{isBiometricPromptSaving ? 'Saving...' : 'Not now'}</Text>
-              </Pressable>
-            </View>
-          </View>
-        </Modal>
         <TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
           <ScrollView
             ref={scrollViewRef}
@@ -276,8 +142,8 @@ export default function LoginScreen() {
               <View style={styles.headingTag}>
                 <Text style={styles.headingTagText}>CMS Admin Portal</Text>
               </View>
-              <Text style={styles.headingCoreText}>Welcome back</Text>
-              <Text style={styles.headingSubtitle}>Sign in to manage locations, chargers, users, and service requests.</Text>
+              <Text style={styles.headingCoreText}>Welcome back! 👋</Text>
+              <Text style={styles.headingSubtitle}>Sign in to manage and publish digital content efficiently</Text>
             </View>
 
             <View ref={formCardRef} style={styles.formCard}>
@@ -292,7 +158,7 @@ export default function LoginScreen() {
                 </View>
                 <View style={styles.formHeaderText}>
                   <Text style={styles.formTitle}>Admin access</Text>
-                  <Text style={styles.formSubtitle}>Use your CMS account to continue.</Text>
+                  <Text style={styles.formSubtitle}>Use your CMS account to continue</Text>
                 </View>
               </View>
 
@@ -350,14 +216,17 @@ export default function LoginScreen() {
                   <SymbolView
                     name={biometricIcon as never}
                     resizeMode='scaleAspectFit'
-                    size={24}
+                    size={biometricSymbolSize}
                     tintColor={canSubmitBiometric ? Palette.accent : Palette.textTertiary}
                   />
                 </Pressable>
               </View>
             </View>
 
-            <Text style={styles.footerText}>EBOOST CMS · Admin workspace</Text>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>EBOOST · Digital Development Team</Text>
+              <Text style={styles.footerMeta}>{appVersionLabel} · Secure CMS access</Text>
+            </View>
           </ScrollView>
         </TouchableWithoutFeedback>
       </SafeAreaView>
@@ -374,6 +243,9 @@ function BackgroundGradient({ children, colors }: { children: ReactNode; colors:
         <Rect x={0} y={0} width={width} height={height}>
           <RadialGradient c={vec(width / 2, -height * 0.19)} r={height * 0.55} colors={colors} positions={[0.1, 0.2, 0.5, 0.6, 0.7, 0.959, 1]} />
         </Rect>
+        <Rect x={0} y={height * 0.72} width={width} height={height * 0.28}>
+          <LinearGradient start={vec(width / 2, height * 0.72)} end={vec(width / 2, height)} colors={['rgba(255,255,255,0)', 'rgba(1,167,78,0.08)']} />
+        </Rect>
       </Canvas>
       <View style={styles.gradientContent}>{children}</View>
     </>
@@ -383,115 +255,47 @@ function BackgroundGradient({ children, colors }: { children: ReactNode; colors:
 const formBaseStyle = {
   backgroundColor: Palette.surfaceRaised,
   borderColor: 'rgba(1,167,78,0.12)',
-  borderRadius: Radius.large,
+  borderRadius: radiusLarge,
   borderWidth: 1,
-  boxShadow: '0 16px 40px rgba(22, 72, 52, 0.10)',
-  gap: Spacing.four,
-  paddingHorizontal: 22,
-  paddingVertical: 24,
+  boxShadow: '0 18px 44px rgba(1, 167, 78, 0.16)',
+  gap: formGap,
+  paddingHorizontal: mhs(15),
+  paddingVertical: mvs(24),
 } as const;
 
 const styles = StyleSheet.create({
   actionRow: {
     alignItems: 'stretch',
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: mhs(Spacing.two),
   },
   biometricButton: {
     alignItems: 'center',
     backgroundColor: '#F3FAF6',
     borderColor: 'rgba(1,167,78,0.22)',
-    borderRadius: Radius.pill,
+    borderRadius: radiusPill,
     borderWidth: 1,
     justifyContent: 'center',
-    minHeight: 56,
-    width: 56,
+    height: actionControlHeight,
+    width: actionControlHeight,
   },
   biometricButtonDisabled: {
     backgroundColor: Palette.surfaceMuted,
     borderColor: Palette.borderSubtle,
   },
-  biometricPromptCard: {
-    backgroundColor: Palette.surfaceRaised,
-    borderRadius: Radius.large,
-    gap: Spacing.four,
-    maxWidth: 420,
-    padding: Spacing.five,
-    width: '88%',
-  },
-  biometricPromptIcon: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#E8F4EF',
-    borderRadius: Radius.pill,
-    height: 52,
-    justifyContent: 'center',
-    width: 52,
-  },
-  biometricPromptSkipButton: {
-    alignItems: 'center',
-    borderRadius: Radius.pill,
-    justifyContent: 'center',
-    minHeight: 44,
-  },
-  biometricPromptSkipText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  biometricPromptSwitchCopy: {
-    flex: 1,
-    gap: Spacing.half,
-  },
-  biometricPromptSwitchRow: {
-    alignItems: 'center',
-    backgroundColor: Palette.surfaceMuted,
-    borderColor: Palette.borderSubtle,
-    borderRadius: Radius.medium,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: Spacing.three,
-    justifyContent: 'space-between',
-    padding: Spacing.three,
-  },
-  biometricPromptSwitchText: {
-    color: Palette.textTertiary,
-    fontFamily: FontFamily.regular,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  biometricPromptSwitchTitle: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  biometricPromptText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  biometricPromptTitle: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 20,
-    lineHeight: 26,
-  },
   cardLogoImage: {
-    height: 34,
-    width: 128,
+    height: mvs(34),
+    width: cardLogoWidth,
     objectFit: 'fill',
   },
   cardLogoWrap: {
     alignItems: 'center',
     flexShrink: 0,
-    height: 36,
+    height: mvs(36),
     justifyContent: 'center',
-    marginLeft: -12,
-    marginRight: -4,
-    width: 128,
+    marginLeft: -mhs(12),
+    marginRight: -mhs(8),
+    width: cardLogoWidth,
   },
   container: {
     flex: 1,
@@ -502,22 +306,33 @@ const styles = StyleSheet.create({
   errorBox: {
     backgroundColor: Palette.dangerSurface,
     borderColor: '#FDA29B',
-    borderRadius: Radius.medium,
+    borderRadius: radiusMedium,
     borderWidth: 1,
-    padding: Spacing.three,
+    padding: mhs(Spacing.three),
   },
   errorText: {
     color: '#B42318',
     fontFamily: FontFamily.semibold,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: fs(14),
+    lineHeight: fs(20),
+  },
+  footer: {
+    alignItems: 'center',
+    gap: mvs(Spacing.half),
+    marginTop: mvs(Spacing.six),
+  },
+  footerMeta: {
+    color: 'rgba(102, 112, 133, 0.74)',
+    fontFamily: FontFamily.regular,
+    fontSize: fs(10),
+    lineHeight: fs(14),
+    textAlign: 'center',
   },
   footerText: {
     color: Palette.textTertiary,
     fontFamily: FontFamily.regular,
-    fontSize: 11,
-    lineHeight: 18,
-    marginTop: Spacing.five,
+    fontSize: fs(11),
+    lineHeight: fs(18),
     textAlign: 'center',
   },
   formCard: formBaseStyle,
@@ -525,26 +340,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    marginBottom: -2,
+    marginBottom: mvs(12),
   },
   formHeaderText: {
     borderLeftColor: Palette.borderSubtle,
     borderLeftWidth: 1,
     flex: 1,
-    gap: Spacing.half,
-    paddingLeft: Spacing.two,
+    gap: mvs(Spacing.half),
+    paddingLeft: mhs(Spacing.two),
   },
   formSubtitle: {
     color: Palette.textSecondary,
     fontFamily: FontFamily.regular,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: fs(12),
+    lineHeight: fs(16),
   },
   formTitle: {
     color: Palette.textPrimary,
     fontFamily: FontFamily.bold,
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: fs(15),
+    lineHeight: fs(20),
   },
   gradientCanvas: {
     flex: 1,
@@ -558,67 +373,59 @@ const styles = StyleSheet.create({
   },
   headingContainer: {
     alignItems: 'center',
-    marginBottom: Spacing.six,
+    marginBottom: mvs(Spacing.six),
   },
   headingCoreText: {
     color: Palette.textPrimary,
     fontFamily: FontFamily.bold,
-    fontSize: 36,
-    letterSpacing: -0.8,
-    lineHeight: 42,
-    marginBottom: Spacing.two,
+    fontSize: fs(36),
+    lineHeight: fs(42),
+    marginBottom: mvs(Spacing.two),
     textAlign: 'center',
   },
   headingSubtitle: {
     color: Palette.textSecondary,
     fontFamily: FontFamily.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    maxWidth: 300,
+    fontSize: fs(15),
+    lineHeight: fs(22),
+    maxWidth: mhs(300),
     textAlign: 'center',
   },
   headingTag: {
     backgroundColor: '#E8F4EF',
-    borderRadius: Radius.pill,
-    marginBottom: Spacing.four,
-    paddingHorizontal: Spacing.four,
-    paddingVertical: 7,
+    borderRadius: radiusPill,
+    marginBottom: mvs(Spacing.four),
+    paddingHorizontal: mhs(Spacing.four),
+    paddingVertical: mvs(7),
   },
   headingTagText: {
     color: Palette.accent,
     fontFamily: FontFamily.bold,
-    fontSize: 11,
-    letterSpacing: 0.8,
-  },
-  modalOverlay: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.38)',
-    flex: 1,
-    justifyContent: 'center',
-    padding: Spacing.five,
+    fontSize: fs(11),
+    letterSpacing: 0,
   },
   pressed: {
     opacity: 0.78,
     transform: [{ scale: 0.99 }],
   },
   scrollContainer: {
-    paddingBottom: 112,
-    paddingHorizontal: Spacing.five,
-    paddingTop: 72,
+    paddingBottom: mvs(84),
+    paddingHorizontal: mhs(Spacing.five),
+    paddingTop: mvs(94),
   },
   signInButton: {
     alignItems: 'center',
     backgroundColor: Palette.accent,
-    borderRadius: Radius.pill,
+    borderRadius: radiusPill,
     boxShadow: '0 8px 18px rgba(1, 167, 78, 0.18)',
     flex: 1,
     justifyContent: 'center',
-    minHeight: 56,
+    height: actionControlHeight,
   },
   signInButtonText: {
     color: '#FFFFFF',
     fontFamily: FontFamily.bold,
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: fs(16),
+    lineHeight: fs(22),
   },
 });

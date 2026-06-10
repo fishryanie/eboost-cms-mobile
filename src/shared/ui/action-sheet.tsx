@@ -2,7 +2,7 @@ import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@g
 import { ReactNode, useEffect, useMemo, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
 export type ActionSheetItem = {
   danger?: boolean;

@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { useUserProfile } from 'features/users/hooks';
 import type { BalanceHistoryItem } from 'features/users/types';
 import { AppButton, AppScreen, EmptyState, StatusChip } from 'shared/ui';

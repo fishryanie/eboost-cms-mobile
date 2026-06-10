@@ -1,0 +1,115 @@
+import { useQueryClient } from '@tanstack/react-query';
+import * as LocalAuthentication from 'expo-local-authentication';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
+
+import { loginAdmin } from 'features/auth/auth-service';
+import { getBiometricButtonLabel, getBiometricSymbolName } from 'features/auth/biometric-auth';
+import { biometricCredentialStore, type BiometricCredentials } from 'features/auth/biometric-credentials';
+import { setPendingBiometricCredentials } from 'features/auth/biometric-prompt';
+import { sessionStore } from 'shared/session/session-store';
+import { sessionKeys } from 'shared/session/use-session-token';
+
+type UseBiometricLoginOptions = {
+  setErrorMessage: (message: string) => void;
+};
+
+export function useBiometricLogin({ setErrorMessage }: UseBiometricLoginOptions) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const [biometricIcon, setBiometricIcon] = useState('lock.shield');
+  const [biometricLabel, setBiometricLabel] = useState('Biometric');
+  const [canUseBiometric, setCanUseBiometric] = useState(false);
+  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
+
+  const completeAuthenticatedSession = useCallback(
+    async (token: string) => {
+      await sessionStore.setToken(token);
+      queryClient.setQueryData(sessionKeys.token, token);
+      await queryClient.invalidateQueries({ queryKey: ['locations'] });
+      router.replace('/home');
+    },
+    [queryClient, router],
+  );
+
+  const queueBiometricOptIn = useCallback(async (credentials: BiometricCredentials) => {
+    const [canSaveProtectedCredentials, hasSavedBiometricCredentials] = await Promise.all([
+      biometricCredentialStore.canUseBiometricAuthentication(),
+      biometricCredentialStore.hasCredentials(),
+    ]);
+
+    if (canSaveProtectedCredentials && !hasSavedBiometricCredentials) {
+      setPendingBiometricCredentials(credentials);
+    }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadBiometricState() {
+      const [hasHardware, isEnrolled, authenticationTypes, canSaveProtectedCredentials, hasSavedBiometricCredentials] = await Promise.all([
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+        LocalAuthentication.supportedAuthenticationTypesAsync(),
+        biometricCredentialStore.canUseBiometricAuthentication(),
+        biometricCredentialStore.hasCredentials(),
+      ]);
+
+      if (!isMounted) {
+        return;
+      }
+
+      setBiometricLabel(getBiometricButtonLabel(authenticationTypes, Platform.OS));
+      setBiometricIcon(getBiometricSymbolName(authenticationTypes));
+      setCanUseBiometric(hasHardware && isEnrolled && canSaveProtectedCredentials && hasSavedBiometricCredentials);
+    }
+
+    loadBiometricState().catch(() => {
+      if (isMounted) {
+        setCanUseBiometric(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleBiometricLogin = useCallback(async () => {
+    setErrorMessage('');
+    setIsBiometricLoading(true);
+
+    try {
+      const savedCredentials = await biometricCredentialStore.getCredentials();
+
+      if (!savedCredentials) {
+        setCanUseBiometric(false);
+        setErrorMessage('Please sign in with your CMS account once before using biometric login.');
+        return;
+      }
+
+      const response = await loginAdmin(savedCredentials);
+      if (!response.token) {
+        setErrorMessage(response.message || 'The CMS did not return an admin token.');
+        return;
+      }
+
+      await completeAuthenticatedSession(response.token);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Biometric sign in was cancelled or failed. Please try again.');
+    } finally {
+      setIsBiometricLoading(false);
+    }
+  }, [completeAuthenticatedSession, setErrorMessage]);
+
+  return {
+    biometricIcon,
+    biometricLabel,
+    canUseBiometric,
+    completeAuthenticatedSession,
+    handleBiometricLogin,
+    isBiometricLoading,
+    queueBiometricOptIn,
+  };
+}

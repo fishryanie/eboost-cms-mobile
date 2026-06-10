@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { FontFamily, Palette, Radius } from 'constants/theme';
+import { FontFamily, Palette, Radius } from 'themes';
 
 type StatusTone = 'danger' | 'muted' | 'success' | 'warning';
 

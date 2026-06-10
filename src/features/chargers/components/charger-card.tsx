@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { StatusChip } from 'shared/ui';
 
 import { getWorkflowChargerIdentifier, getWorkflowChargerType } from '../charger-workflows';

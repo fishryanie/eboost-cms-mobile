@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { getCmsServiceRoute, type CmsServiceGroup, type CmsServiceItem } from 'features/services/service-catalog';
 
 export function ServiceChildrenSheet({ onClose, service }: { onClose: () => void; service: CmsServiceGroup | null }) {

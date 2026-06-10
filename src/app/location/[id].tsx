@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { ChargerCard } from 'features/chargers/components/charger-card';
 import { LocationActionsSheet } from 'features/locations/components/location-actions-sheet';
 import { useLocationDetail, useLocationStations } from 'features/locations/hooks';

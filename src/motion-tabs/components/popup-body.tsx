@@ -231,7 +231,7 @@ function ActionRow({
       onPress={onPress}
       style={({ pressed }) => [styles.actionRow, small && styles.smallActionRow, { backgroundColor: pressed ? colors.hover : 'transparent' }]}>
       <View style={[styles.actionIconWrap, small && styles.smallActionIconWrap, { backgroundColor: small ? colors.input : 'transparent' }]}>
-        <TabIcon color={colors.foreground} name={action.icon} size={small ? 15 : 20} />
+        <TabIcon color={colors.foreground} name={action.icon} size={small ? 15 : 18} />
       </View>
       <Text numberOfLines={1} style={[styles.actionLabel, small && styles.smallActionLabel, { color: colors.foreground }]}>
         {action.label}
@@ -259,25 +259,25 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     flex: 1,
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '500',
   },
   actionRow: {
     alignItems: 'center',
     borderRadius: 12,
     flexDirection: 'row',
-    gap: 14,
-    minHeight: 50,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    gap: 12,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   actions: {
     gap: 3,
   },
   actionTrailing: {
     flexShrink: 0,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
     maxWidth: 90,
   },
   artwork: {
@@ -311,8 +311,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   chevron: {
-    fontSize: 22,
-    lineHeight: 22,
+    fontSize: 20,
+    lineHeight: 20,
   },
   chipRow: {
     flexDirection: 'row',
@@ -380,10 +380,10 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   profileContainer: {
-    gap: 6,
-    maxWidth: 300,
-    minWidth: 278,
-    padding: 8,
+    gap: 4,
+    maxWidth: 278,
+    minWidth: 256,
+    padding: 7,
   },
   profileHeader: {
     alignItems: 'center',
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.4,
     marginLeft: 4,
     marginTop: 2,
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
   },
   smallActionLabel: {
     fontSize: 13.5,
-    fontWeight: '800',
+    fontWeight: '600',
   },
   smallActionRow: {
     gap: 10,

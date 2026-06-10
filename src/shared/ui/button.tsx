@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { PropsWithChildren } from 'react';
 import { Pressable, PressableProps, StyleSheet, Text, ViewStyle } from 'react-native';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
 type AppButtonVariant = 'danger' | 'ghost' | 'primary' | 'secondary';
 

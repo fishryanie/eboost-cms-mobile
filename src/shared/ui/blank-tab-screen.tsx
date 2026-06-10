@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { FontFamily, Palette } from 'constants/theme';
+import { FontFamily, Palette } from 'themes';
 
 export function BlankTabScreen({ name }: { name: string }) {
   return (

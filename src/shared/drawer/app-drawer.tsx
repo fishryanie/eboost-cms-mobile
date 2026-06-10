@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { adminProfile } from 'features/auth/admin-profile';
 import { sessionKeys } from 'shared/session/use-session-token';
 import { sessionStore } from 'shared/session/session-store';
@@ -106,7 +106,7 @@ export function AppDrawer({ children }: PropsWithChildren) {
 
     if (item.name === 'Logout') {
       await sessionStore.clearToken();
-      await queryClient.invalidateQueries({ queryKey: sessionKeys.token });
+      queryClient.setQueryData(sessionKeys.token, null);
       await queryClient.invalidateQueries({ queryKey: ['locations'] });
       router.replace('/login');
       return;

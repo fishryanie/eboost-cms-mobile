@@ -3,7 +3,7 @@ import { SymbolView } from 'expo-symbols';
 import { memo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { ImagePreviewModal } from 'shared/media/image-preview-modal';
 import { getDisplayImageUrl } from 'shared/media/image-url';
 
@@ -135,9 +135,9 @@ const styles = StyleSheet.create({
   },
   balance: {
     color: '#00AF55',
-    fontFamily: FontFamily.bold,
-    fontSize: 15,
-    lineHeight: 20,
+    fontFamily: FontFamily.semibold,
+    fontSize: 14,
+    lineHeight: 18,
     marginTop: 1,
     textAlign: 'right',
   },
@@ -190,8 +190,8 @@ const styles = StyleSheet.create({
   levelBadge: {
     alignSelf: 'flex-end',
     borderRadius: Radius.small,
-    maxWidth: 84,
-    paddingHorizontal: 7,
+    maxWidth: 74,
+    paddingHorizontal: 6,
     paddingVertical: 3,
   },
   levelText: {
@@ -201,9 +201,9 @@ const styles = StyleSheet.create({
   },
   name: {
     color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 15,
-    lineHeight: 20,
+    fontFamily: FontFamily.semibold,
+    fontSize: 14,
+    lineHeight: 19,
   },
   phoneText: {
     fontVariant: ['tabular-nums'],
@@ -217,16 +217,17 @@ const styles = StyleSheet.create({
     borderBottomColor: Palette.borderSubtle,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: Spacing.three,
+    gap: Spacing.two,
     minHeight: 82,
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.three,
   },
   summary: {
     alignItems: 'flex-end',
     alignSelf: 'stretch',
     justifyContent: 'center',
-    minWidth: 78,
+    flexShrink: 0,
+    width: 74,
   },
   verifyCircle: {
     alignItems: 'center',

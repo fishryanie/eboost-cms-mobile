@@ -3,17 +3,19 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { HomeHeader } from 'components/home-header';
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
+import { BiometricOptInPrompt } from 'features/auth/components/biometric-opt-in-prompt';
 import { ServiceChildrenSheet } from 'features/services/components/service-children-sheet';
 import { cmsServiceGroups, type CmsServiceGroup } from 'features/services/service-catalog';
+import { fs } from 'themes/scaling';
 
 const horizontalPadding = 16;
-const columnCount = 4;
-const serviceGridGap = 16;
+const serviceGridGap = 14;
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const [selectedService, setSelectedService] = useState<CmsServiceGroup | null>(null);
+  const columnCount = width < 410 ? 3 : 4;
   const serviceItemWidth = (width - horizontalPadding * 2 - serviceGridGap * (columnCount - 1)) / columnCount;
 
   return (
@@ -28,6 +30,7 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
       <ServiceChildrenSheet onClose={() => setSelectedService(null)} service={selectedService} />
+      <BiometricOptInPrompt />
     </View>
   );
 }
@@ -73,15 +76,15 @@ const styles = StyleSheet.create({
     rowGap: Spacing.five,
   },
   serviceIcon: {
-    height: 30,
-    width: 30,
+    height: 28,
+    width: 28,
   },
   serviceLabel: {
     color: Palette.textPrimary,
-    fontFamily: FontFamily.medium,
-    fontSize: 13,
+    fontFamily: FontFamily.regular,
+    fontSize: fs(13),
     includeFontPadding: false,
-    lineHeight: 16,
+    lineHeight: 15,
     textAlign: 'center',
     width: '100%',
   },
@@ -90,10 +93,11 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.surfaceMuted,
     borderCurve: 'continuous',
     borderRadius: Radius.large,
-    justifyContent: 'space-between',
-    paddingBottom: Spacing.four,
+    justifyContent: 'center',
+    paddingBottom: Spacing.three,
     paddingHorizontal: Spacing.two,
-    paddingTop: Spacing.five,
+    paddingTop: Spacing.four,
+    gap: Spacing.three,
   },
   serviceShortcutPressed: {
     opacity: 0.72,

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
-import { Palette, Radius, Spacing } from 'constants/theme';
+import { Palette, Radius, Spacing } from 'themes';
 
 const rows = Array.from({ length: 7 }, (_, index) => index);
 

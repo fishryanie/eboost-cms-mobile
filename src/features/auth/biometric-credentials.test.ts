@@ -21,6 +21,16 @@ function createMemoryStorage(initialValues?: Record<string, string>) {
 }
 
 describe('createBiometricCredentialStore', () => {
+  it('checks whether credentials can be saved behind biometric authentication', async () => {
+    const { storage } = createMemoryStorage();
+    const store = createBiometricCredentialStore({
+      ...storage,
+      canUseBiometricAuthentication: () => false,
+    });
+
+    assert.equal(await store.canUseBiometricAuthentication(), false);
+  });
+
   it('stores credentials behind biometric authentication and marks the feature enabled', async () => {
     const { storage, writes } = createMemoryStorage();
     const store = createBiometricCredentialStore(storage);

@@ -29,6 +29,7 @@
     "expo-symbols": "~56.0.6",
     "expo-system-ui": "~56.0.5",
     "expo-web-browser": "~56.0.5",
+    "lodash": "^4.18.1",
     "react": "19.2.3",
     "react-native": "0.85.3",
     "react-native-gesture-handler": "~2.31.1",
@@ -41,6 +42,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.24",
     "@types/node": "^25.9.1",
     "@types/react": "~19.2.2",
     "dotenv": "^17.4.2",
@@ -60,8 +62,8 @@
     "lint": "expo lint",
     "test:services": "tsx --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
-    "build": "eas build --platform ios --local",
-    "submit": "eas submit --platform ios"
+    "build": "sh ./scripts/build-ios-release.sh",
+    "submit": "sh ./scripts/submit-ios-release.sh"
   },
   "trustedDependencies": [
     "@shopify/react-native-skia"

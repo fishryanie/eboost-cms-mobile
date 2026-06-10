@@ -2,7 +2,7 @@ import { PropsWithChildren } from 'react';
 import { ScrollView, ScrollViewProps, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Palette, Spacing } from 'constants/theme';
+import { Palette, Spacing } from 'themes';
 
 export function AppScreen({ children, scroll = true, ...props }: PropsWithChildren<ScrollViewProps & { scroll?: boolean }>) {
   if (!scroll) {

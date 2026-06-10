@@ -1,6 +1,6 @@
 import { GlassView } from 'expo-glass-effect';
 import { memo, useMemo, type ComponentProps, type FC, type FunctionComponent, type JSX, type ReactElement, type ReactNode } from 'react';
-import { Platform, Pressable, StyleSheet, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MeasurementLayer } from './components/measurement-layer';
@@ -20,7 +20,7 @@ const AnimatedTabBar: FC<IAnimatedTabBarProps> & FunctionComponent<IAnimatedTabB
   (props: IAnimatedTabBarProps & ComponentProps<typeof AnimatedTabBar>): (ReactNode & ReactElement & JSX.Element) | null => {
     const { descriptors, navigation, popupDisabledRouteNames = [], popupEnabled = true, renderPopupBody, state } = props;
     const insets = useSafeAreaInsets();
-    const scheme = (useColorScheme() ?? 'light') as 'light' | 'dark';
+    const scheme = 'light';
     const colors = useMemo<IPalette>(() => palette(scheme), [scheme]);
     const popupRenderer = usePopupRenderer(renderPopupBody);
     const items = useNavItems({ descriptors, state });
@@ -58,7 +58,7 @@ const AnimatedTabBar: FC<IAnimatedTabBarProps> & FunctionComponent<IAnimatedTabB
             <GlassView
               // intensity={60}
               glassEffectStyle={'regular'}
-              style={[styles.card, { borderColor: colors.border, ...Platform.select({ android: { backgroundColor: colors.surface } }) }]}>
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {popupEnabled && (
                 <PanelStack
                   items={items}

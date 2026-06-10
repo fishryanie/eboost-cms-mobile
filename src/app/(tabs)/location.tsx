@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FontFamily, Palette, Radius, Spacing } from 'constants/theme';
+import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { LocationActionsSheet } from 'features/locations/components/location-actions-sheet';
 import { LocationCard } from 'features/locations/components/location-card';
 import { LocationListSkeleton } from 'features/locations/components/location-list-skeleton';

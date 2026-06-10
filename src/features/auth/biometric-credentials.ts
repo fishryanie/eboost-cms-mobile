@@ -10,6 +10,7 @@ export type BiometricCredentialStorageOptions = {
 };
 
 export type BiometricCredentialStorageAdapter = {
+  canUseBiometricAuthentication?: () => boolean;
   deleteItemAsync: (key: string, options?: BiometricCredentialStorageOptions) => Promise<void>;
   getItemAsync: (key: string, options?: BiometricCredentialStorageOptions) => Promise<null | string>;
   setItemAsync: (key: string, value: string, options?: BiometricCredentialStorageOptions) => Promise<void>;
@@ -70,6 +71,10 @@ export function createBiometricCredentialStore(storage?: BiometricCredentialStor
   };
 
   return {
+    async canUseBiometricAuthentication() {
+      const nextStorage = await getStorage();
+      return nextStorage.canUseBiometricAuthentication?.() ?? false;
+    },
     async clearCredentials() {
       const nextStorage = await getStorage();
       await Promise.all([nextStorage.deleteItemAsync(biometricCredentialsKey, credentialLookupOptions), nextStorage.deleteItemAsync(biometricEnabledKey)]);

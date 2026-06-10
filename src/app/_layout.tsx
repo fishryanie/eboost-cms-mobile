@@ -1,8 +1,7 @@
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from 'components/animated-icon';
@@ -13,14 +12,13 @@ import { bootstrapSession } from 'shared/session/bootstrap';
 bootstrapSession();
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
   });
-  const theme = (colorScheme === 'dark' ? DarkTheme : DefaultTheme) as ReactNavigation.Theme;
+  const theme = DefaultTheme as ReactNavigation.Theme;
 
   return (
     <ThemeProvider value={theme}>
