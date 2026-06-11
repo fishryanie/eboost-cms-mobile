@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
-import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Radius, Spacing } from 'themes';
 
@@ -83,14 +84,25 @@ export function ImagePreviewModal({ imageUrl, onClose, title, visible }: { image
   return (
     <Modal animationType='fade' onRequestClose={close} statusBarTranslucent transparent visible={visible}>
       <GestureHandlerRootView style={styles.overlay}>
-        <View style={styles.header}>
-          <Text numberOfLines={1} style={styles.title}>
+        <ThemedView
+          alignItems='center'
+          flexDirection='row'
+          gap={Spacing.three}
+          justifyContent='space-between'
+          left={0}
+          paddingHorizontal={Spacing.four}
+          paddingTop={54}
+          position='absolute'
+          right={0}
+          top={0}
+          zIndex={2}>
+          <ThemedText numberOfLines={1} color='#FFFFFF' flex={1} fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20}>
             {title || 'Image'}
-          </Text>
+          </ThemedText>
           <Pressable accessibilityLabel='Close image preview' onPress={close} style={styles.closeButton}>
             <SymbolView name='xmark' resizeMode='scaleAspectFit' size={18} tintColor='#FFFFFF' />
           </Pressable>
-        </View>
+        </ThemedView>
 
         {imageUrl ? (
           <GestureDetector gesture={imageGesture}>
@@ -113,19 +125,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 38,
   },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: Spacing.three,
-    justifyContent: 'space-between',
-    left: 0,
-    paddingHorizontal: Spacing.four,
-    paddingTop: 54,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    zIndex: 2,
-  },
   image: {
     height: '100%',
     width: '100%',
@@ -137,12 +136,5 @@ const styles = StyleSheet.create({
   overlay: {
     backgroundColor: '#000000',
     flex: 1,
-  },
-  title: {
-    color: '#FFFFFF',
-    flex: 1,
-    fontFamily: FontFamily.semibold,
-    fontSize: 15,
-    lineHeight: 20,
   },
 });

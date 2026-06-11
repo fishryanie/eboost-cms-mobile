@@ -2,8 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { loginAdmin } from 'features/auth/auth-service';
@@ -121,22 +122,35 @@ export default function DrawerSettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior='automatic' keyboardShouldPersistTaps='handled'>
-        <View style={styles.header}>
-          <Text style={styles.eyebrow}>Settings</Text>
-          <Text style={styles.title}>Security</Text>
-        </View>
+        <ThemedView gap={Spacing.one} paddingTop={Spacing.two}>
+          <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={12} lineHeight={18} textTransform='uppercase'>
+            Settings
+          </ThemedText>
+          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={32} lineHeight={38}>
+            Security
+          </ThemedText>
+        </ThemedView>
 
-        <View style={styles.panel}>
-          <View style={styles.settingRow}>
-            <View style={styles.settingIcon}>
+        <ThemedView
+          backgroundColor={Palette.surfaceRaised}
+          borderColor={Palette.borderSubtle}
+          borderRadius={Radius.large}
+          borderWidth={1}
+          boxShadow='0 12px 30px rgba(22, 72, 52, 0.08)'
+          gap={Spacing.four}
+          padding={Spacing.four}>
+          <ThemedView alignItems='center' flexDirection='row' gap={Spacing.three}>
+            <ThemedView alignItems='center' backgroundColor='#E8F4EF' borderRadius={Radius.pill} height={48} justifyContent='center' width={48}>
               <SymbolView name={biometricIcon as never} resizeMode='scaleAspectFit' size={24} tintColor={Palette.accent} />
-            </View>
-            <View style={styles.settingCopy}>
-              <Text style={styles.settingTitle}>{biometricLabel} sign in</Text>
-              <Text style={styles.settingDescription}>
+            </ThemedView>
+            <ThemedView flex={1} gap={Spacing.half}>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={16} lineHeight={22}>
+                {biometricLabel} sign in
+              </ThemedText>
+              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={18}>
                 {biometricEnabled ? `Enabled for ${displayUsername}.` : 'Unlock your saved CMS account for faster sign in.'}
-              </Text>
-            </View>
+              </ThemedText>
+            </ThemedView>
             <Switch
               disabled={isSaving}
               onValueChange={handleSwitchChange}
@@ -144,10 +158,10 @@ export default function DrawerSettingsScreen() {
               thumbColor={Palette.surfaceRaised}
               value={biometricEnabled || showPasswordForm}
             />
-          </View>
+          </ThemedView>
 
           {showPasswordForm ? (
-            <View style={styles.passwordForm}>
+            <ThemedView gap={Spacing.three}>
               {!lastUsername ? (
                 <TextInput
                   autoCapitalize='none'
@@ -177,11 +191,13 @@ export default function DrawerSettingsScreen() {
                 value={password}
               />
               {errorMessage ? (
-                <View style={styles.errorBox}>
-                  <Text style={styles.errorText}>{errorMessage}</Text>
-                </View>
+                <ThemedView backgroundColor={Palette.dangerSurface} borderColor='#FDA29B' borderRadius={Radius.medium} borderWidth={1} padding={Spacing.three}>
+                  <ThemedText color='#B42318' fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20}>
+                    {errorMessage}
+                  </ThemedText>
+                </ThemedView>
               ) : null}
-              <View style={styles.formActions}>
+              <ThemedView flexDirection='row' gap={Spacing.two}>
                 <Pressable
                   accessibilityRole='button'
                   disabled={isSaving}
@@ -191,23 +207,29 @@ export default function DrawerSettingsScreen() {
                     setErrorMessage('');
                   }}
                   style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
-                  <Text style={styles.secondaryButtonText}>Cancel</Text>
+                  <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20}>
+                    Cancel
+                  </ThemedText>
                 </Pressable>
                 <Pressable
                   accessibilityRole='button'
                   disabled={isSaving}
                   onPress={() => enableBiometricMutation.mutate()}
                   style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed, isSaving && styles.disabled]}>
-                  <Text style={styles.primaryButtonText}>{isSaving ? 'Verifying...' : 'Enable'}</Text>
+                  <ThemedText color='#FFFFFF' fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
+                    {isSaving ? 'Verifying...' : 'Enable'}
+                  </ThemedText>
                 </Pressable>
-              </View>
-            </View>
+              </ThemedView>
+            </ThemedView>
           ) : errorMessage ? (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{errorMessage}</Text>
-            </View>
+            <ThemedView backgroundColor={Palette.dangerSurface} borderColor='#FDA29B' borderRadius={Radius.medium} borderWidth={1} padding={Spacing.three}>
+              <ThemedText color='#B42318' fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20}>
+                {errorMessage}
+              </ThemedText>
+            </ThemedView>
           ) : null}
-        </View>
+        </ThemedView>
       </ScrollView>
     </SafeAreaView>
   );
@@ -225,34 +247,6 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.72,
   },
-  errorBox: {
-    backgroundColor: Palette.dangerSurface,
-    borderColor: '#FDA29B',
-    borderRadius: Radius.medium,
-    borderWidth: 1,
-    padding: Spacing.three,
-  },
-  errorText: {
-    color: '#B42318',
-    fontFamily: FontFamily.semibold,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  eyebrow: {
-    color: Palette.accent,
-    fontFamily: FontFamily.bold,
-    fontSize: 12,
-    lineHeight: 18,
-    textTransform: 'uppercase',
-  },
-  formActions: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
-  header: {
-    gap: Spacing.one,
-    paddingTop: Spacing.two,
-  },
   input: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.border,
@@ -263,18 +257,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 52,
     paddingHorizontal: Spacing.four,
-  },
-  panel: {
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: Palette.borderSubtle,
-    borderRadius: Radius.large,
-    borderWidth: 1,
-    boxShadow: '0 12px 30px rgba(22, 72, 52, 0.08)',
-    gap: Spacing.four,
-    padding: Spacing.four,
-  },
-  passwordForm: {
-    gap: Spacing.three,
   },
   pressed: {
     opacity: 0.78,
@@ -288,12 +270,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 48,
   },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontFamily: FontFamily.bold,
-    fontSize: 15,
-    lineHeight: 20,
-  },
   secondaryButton: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceMuted,
@@ -303,46 +279,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     minHeight: 48,
-  },
-  secondaryButtonText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  settingCopy: {
-    flex: 1,
-    gap: Spacing.half,
-  },
-  settingDescription: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  settingIcon: {
-    alignItems: 'center',
-    backgroundColor: '#E8F4EF',
-    borderRadius: Radius.pill,
-    height: 48,
-    justifyContent: 'center',
-    width: 48,
-  },
-  settingRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: Spacing.three,
-  },
-  settingTitle: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  title: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 32,
-    lineHeight: 38,
   },
 });

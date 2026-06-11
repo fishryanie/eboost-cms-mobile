@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { ThemedView } from 'components/base';
 
 import { Palette, Radius, Spacing } from 'themes';
 
@@ -16,26 +17,35 @@ export function LocationListSkeleton() {
   const shimmerStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
 
   return (
-    <View>
+    <ThemedView>
       {rows.map(row => (
-        <View key={row} style={styles.row}>
+        <ThemedView
+          key={row}
+          alignItems='center'
+          borderBottomColor={Palette.borderSubtle}
+          borderBottomWidth={StyleSheet.hairlineWidth}
+          flexDirection='row'
+          gap={Spacing.two}
+          minHeight={82}
+          paddingHorizontal={Spacing.three}
+          paddingVertical={Spacing.two}>
           <Animated.View style={[styles.thumbnail, shimmerStyle]} />
-          <View style={styles.main}>
-            <View style={styles.stats}>
+          <ThemedView flex={1} gap={6}>
+            <ThemedView flexDirection='row' gap={Spacing.two}>
               <Animated.View style={[styles.stat, shimmerStyle]} />
               <Animated.View style={[styles.stat, shimmerStyle]} />
               <Animated.View style={[styles.stat, shimmerStyle]} />
-            </View>
+            </ThemedView>
             <Animated.View style={[styles.title, shimmerStyle]} />
             <Animated.View style={[styles.address, shimmerStyle]} />
-          </View>
-          <View style={styles.trailing}>
+          </ThemedView>
+          <ThemedView alignItems='flex-end' alignSelf='stretch' justifyContent='space-between' paddingVertical={3} width={76}>
             <Animated.View style={[styles.status, shimmerStyle]} />
             <Animated.View style={[styles.toggle, shimmerStyle]} />
-          </View>
-        </View>
+          </ThemedView>
+        </ThemedView>
       ))}
-    </View>
+    </ThemedView>
   );
 }
 
@@ -46,29 +56,11 @@ const styles = StyleSheet.create({
     height: 10,
     width: '78%',
   },
-  main: {
-    flex: 1,
-    gap: 6,
-  },
-  row: {
-    alignItems: 'center',
-    borderBottomColor: Palette.borderSubtle,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: Spacing.two,
-    minHeight: 82,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-  },
   stat: {
     backgroundColor: Palette.surfaceMuted,
     borderRadius: Radius.small,
     height: 9,
     width: 44,
-  },
-  stats: {
-    flexDirection: 'row',
-    gap: Spacing.two,
   },
   status: {
     backgroundColor: Palette.surfaceMuted,
@@ -93,12 +85,5 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     height: 20,
     width: 38,
-  },
-  trailing: {
-    alignItems: 'flex-end',
-    alignSelf: 'stretch',
-    justifyContent: 'space-between',
-    paddingVertical: 3,
-    width: 76,
   },
 });

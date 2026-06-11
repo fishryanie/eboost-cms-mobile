@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { UserCard } from 'features/users/components/user-card';
@@ -42,15 +43,17 @@ export default function UsersScreen() {
         keyExtractor={user => String(user.id)}
         ListEmptyComponent={
           usersQuery.isLoading ? (
-            <View style={styles.centerState}>
+            <ThemedView gap={Spacing.four} paddingTop={Spacing.five}>
               <ActivityIndicator color={Palette.accent} />
-              <Text style={styles.stateText}>Loading users</Text>
-            </View>
+              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} textAlign='center'>
+                Loading users
+              </ThemedText>
+            </ThemedView>
           ) : usersQuery.isError ? (
-            <View style={styles.centerState}>
+            <ThemedView gap={Spacing.four} paddingTop={Spacing.five}>
               <EmptyState message='The user list could not be loaded.' title='Users unavailable' />
               <AppButton label='Retry' onPress={() => usersQuery.refetch()} />
-            </View>
+            </ThemedView>
           ) : (
             <EmptyState message={search ? 'Try another ID, phone number, or email.' : 'No user records were returned.'} title='No users found' />
           )
@@ -60,25 +63,31 @@ export default function UsersScreen() {
             <ActivityIndicator color={Palette.accent} style={styles.footerLoader} />
           ) : usersQuery.isFetchNextPageError ? (
             <Pressable onPress={() => usersQuery.fetchNextPage()} style={styles.retryMore}>
-              <Text style={styles.retryMoreText}>Retry loading more</Text>
+              <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20}>
+                Retry loading more
+              </ThemedText>
             </Pressable>
           ) : null
         }
         ListHeaderComponent={
-          <View style={styles.header}>
-            <View style={styles.titleRow}>
-              <View>
-                <Text style={styles.title}>Users</Text>
-                <Text style={styles.subtitle}>
+          <ThemedView gap={Spacing.four} padding={Spacing.four}>
+            <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
+              <ThemedView>
+                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={27} letterSpacing={0} lineHeight={34}>
+                  Users
+                </ThemedText>
+                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} marginTop={3}>
                   {totalItems.toLocaleString()} {totalItems === 1 ? 'account' : 'accounts'}
-                </Text>
-              </View>
+                </ThemedText>
+              </ThemedView>
               {searchInput ? (
                 <Pressable onPress={() => setSearchInput('')} style={styles.clearButton}>
-                  <Text style={styles.clearText}>Clear</Text>
+                  <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20}>
+                    Clear
+                  </ThemedText>
                 </Pressable>
               ) : null}
-            </View>
+            </ThemedView>
             <TextInput
               autoCapitalize='none'
               autoCorrect={false}
@@ -89,7 +98,7 @@ export default function UsersScreen() {
               style={styles.search}
               value={searchInput}
             />
-          </View>
+          </ThemedView>
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
@@ -108,19 +117,9 @@ export default function UsersScreen() {
 }
 
 const styles = StyleSheet.create({
-  centerState: {
-    gap: Spacing.four,
-    paddingTop: Spacing.five,
-  },
   clearButton: {
     paddingHorizontal: 4,
     paddingVertical: 8,
-  },
-  clearText: {
-    color: Palette.accent,
-    fontFamily: FontFamily.bold,
-    fontSize: 14,
-    lineHeight: 20,
   },
   content: {
     paddingBottom: 120,
@@ -128,19 +127,9 @@ const styles = StyleSheet.create({
   footerLoader: {
     paddingVertical: Spacing.five,
   },
-  header: {
-    gap: Spacing.four,
-    padding: Spacing.four,
-  },
   retryMore: {
     alignItems: 'center',
     paddingVertical: 20,
-  },
-  retryMoreText: {
-    color: Palette.accent,
-    fontFamily: FontFamily.bold,
-    fontSize: 14,
-    lineHeight: 20,
   },
   safeArea: {
     backgroundColor: Palette.surfaceBase,
@@ -156,30 +145,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     height: 48,
     paddingHorizontal: Spacing.four,
-  },
-  stateText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 13,
-    marginTop: 3,
-  },
-  title: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 27,
-    letterSpacing: 0,
-    lineHeight: 34,
-  },
-  titleRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
   },
 });

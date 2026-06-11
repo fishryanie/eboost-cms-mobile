@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, type TextInputProps, type TextInput as TextInputRef, View, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, TextInput, type TextInputProps, type TextInput as TextInputRef, type ViewStyle } from 'react-native';
 import Animated, { interpolate, interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { fs, mhs, rv } from 'themes/scaling';
@@ -42,7 +43,7 @@ export default function FloatingTextInput({ error, label, onBlur, onFocus, style
   });
 
   return (
-    <View style={[styles.container, style]}>
+    <ThemedView style={[styles.container, style]}>
       <Pressable onPress={() => inputRef.current?.focus()} style={[styles.inputFrame, isFocused && styles.focusedFrame, Boolean(error) && styles.errorFrame]}>
         <Animated.Text pointerEvents='none' style={[styles.label, labelAnimatedStyle]}>
           {label}
@@ -64,8 +65,12 @@ export default function FloatingTextInput({ error, label, onBlur, onFocus, style
           value={value}
         />
       </Pressable>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-    </View>
+      {error ? (
+        <ThemedText color='#B42318' fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
+          {error}
+        </ThemedText>
+      ) : null}
+    </ThemedView>
   );
 }
 
@@ -75,12 +80,6 @@ const styles = StyleSheet.create({
   },
   errorFrame: {
     borderColor: '#FDA29B',
-  },
-  errorText: {
-    color: '#B42318',
-    fontFamily: FontFamily.semibold,
-    fontSize: fs(13),
-    lineHeight: fs(18),
   },
   focusedFrame: {
     borderColor: Palette.accent,

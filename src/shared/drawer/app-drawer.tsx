@@ -1,10 +1,11 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { PropsWithChildren, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, { Easing, Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { adminProfile } from 'features/auth/admin-profile';
@@ -118,7 +119,7 @@ export function AppDrawer({ children }: PropsWithChildren) {
   };
 
   return (
-    <View style={styles.root}>
+    <ThemedView backgroundColor={colors.backgroundGreen} flex={1}>
       <Animated.View style={drawerStyle}>
         <Animated.View
           pointerEvents='none'
@@ -133,18 +134,20 @@ export function AppDrawer({ children }: PropsWithChildren) {
             hazeStyle,
           ]}
         />
-        <View style={[styles.drawerContent, { paddingTop: Math.max(insets.top + 96, 120) }]}>
-          <View style={[styles.drawerHeader, { borderBottomColor: drawerMutedColor }]}>
-            <View style={styles.drawerAvatar}>
-              <Text style={styles.drawerAvatarText}>{adminProfile.initials}</Text>
-            </View>
-            <View style={styles.drawerIdentity}>
-              <Text numberOfLines={2} style={[styles.drawerName, { color: drawerTextColor }]}>
+        <ThemedView style={[styles.drawerContent, { paddingTop: Math.max(insets.top + 96, 120) }]}>
+          <ThemedView style={[styles.drawerHeader, { borderBottomColor: drawerMutedColor }]}>
+            <ThemedView alignItems='center' backgroundColor={colors.text} borderRadius={Radius.pill} height={48} justifyContent='center' width={48}>
+              <ThemedText color={colors.backgroundGreen} fontFamily={FontFamily.bold} fontSize={14}>
+                {adminProfile.initials}
+              </ThemedText>
+            </ThemedView>
+            <ThemedView flex={1} gap={Spacing.one}>
+              <ThemedText numberOfLines={2} style={[styles.drawerName, { color: drawerTextColor }]}>
                 {adminProfile.name}
-              </Text>
-              <Text style={[styles.drawerRole, { color: drawerMutedColor }]}>{adminProfile.role}</Text>
-            </View>
-          </View>
+              </ThemedText>
+              <ThemedText style={[styles.drawerRole, { color: drawerMutedColor }]}>{adminProfile.role}</ThemedText>
+            </ThemedView>
+          </ThemedView>
 
           {drawerItems.map(item => (
             <Pressable
@@ -152,11 +155,11 @@ export function AppDrawer({ children }: PropsWithChildren) {
               onPress={() => void handlePressItem(item)}
               style={({ pressed }) => [styles.drawerItem, pressed && styles.drawerItemPressed]}>
               <SymbolView name={item.icon} resizeMode='scaleAspectFit' size={20} tintColor={colors.text} />
-              <Text style={[styles.drawerItemText, { color: colors.text }]}>{item.name}</Text>
+              <ThemedText style={[styles.drawerItemText, { color: colors.text }]}>{item.name}</ThemedText>
             </Pressable>
           ))}
 
-          <View style={styles.themeGroup}>
+          <ThemedView flexDirection='row' flexWrap='wrap' gap={Spacing.two} marginTop={Spacing.four}>
             {(['system', 'light', 'dark'] as const).map(option => {
               const selected = theme === option;
               return (
@@ -170,7 +173,7 @@ export function AppDrawer({ children }: PropsWithChildren) {
                       borderColor: drawerMutedColor,
                     },
                   ]}>
-                  <Text
+                  <ThemedText
                     style={[
                       styles.themeText,
                       {
@@ -178,21 +181,21 @@ export function AppDrawer({ children }: PropsWithChildren) {
                       },
                     ]}>
                     {option}
-                  </Text>
+                  </ThemedText>
                 </Pressable>
               );
             })}
-          </View>
-        </View>
+          </ThemedView>
+        </ThemedView>
 
-        <Text style={[styles.version, { bottom: insets.bottom + 12, color: drawerMutedColor }]}>v1.0.0</Text>
+        <ThemedText style={[styles.version, { bottom: insets.bottom + 12, color: drawerMutedColor }]}>v1.0.0</ThemedText>
       </Animated.View>
 
       <Animated.View needsOffscreenAlphaCompositing renderToHardwareTextureAndroid style={appStyle}>
         {children}
         <AnimatedPressable accessibilityLabel='Close drawer' accessibilityRole='button' onPress={handleClose} style={[StyleSheet.absoluteFill, overlayStyle]} />
       </Animated.View>
-    </View>
+    </ThemedView>
   );
 }
 
@@ -209,23 +212,6 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     marginBottom: Spacing.three,
     paddingBottom: Spacing.five,
-  },
-  drawerAvatar: {
-    alignItems: 'center',
-    backgroundColor: colors.text,
-    borderRadius: Radius.pill,
-    height: 48,
-    justifyContent: 'center',
-    width: 48,
-  },
-  drawerAvatarText: {
-    color: colors.backgroundGreen,
-    fontFamily: FontFamily.bold,
-    fontSize: 14,
-  },
-  drawerIdentity: {
-    flex: 1,
-    gap: Spacing.one,
   },
   drawerItem: {
     alignItems: 'center',
@@ -252,20 +238,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
   },
-  root: {
-    backgroundColor: colors.backgroundGreen,
-    flex: 1,
-  },
   hazeLayer: {
     backgroundColor: 'rgba(255,255,255,0.16)',
     borderRadius: 34,
     position: 'absolute',
-  },
-  themeGroup: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
-    marginTop: Spacing.four,
   },
   themePill: {
     borderRadius: Radius.pill,

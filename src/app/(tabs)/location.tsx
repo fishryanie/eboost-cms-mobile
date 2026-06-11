@@ -1,8 +1,9 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { LocationActionsSheet } from 'features/locations/components/location-actions-sheet';
@@ -119,25 +120,27 @@ export default function LocationScreen() {
           locationsQuery.isLoading ? (
             <LocationListSkeleton />
           ) : locationsQuery.isError ? (
-            <View style={styles.centerState}>
+            <ThemedView alignItems='center' gap={Spacing.four} paddingTop={Spacing.eight}>
               <EmptyState message='The location list could not be loaded.' title='Locations unavailable' />
               <AppButton label='Retry' onPress={() => locationsQuery.refetch()} />
-            </View>
+            </ThemedView>
           ) : (
             <EmptyState message={search.trim() ? 'Try another location name.' : 'Create a location to get started.'} title='No locations found' />
           )
         }
         ListHeaderComponent={
-          <View style={styles.header}>
-            <View style={styles.titleRow}>
-              <View style={styles.titleBlock}>
-                <Text style={styles.title}>Locations</Text>
-                <Text style={styles.subtitle}>
+          <ThemedView gap={Spacing.three} padding={Spacing.four}>
+            <ThemedView alignItems='center' flexDirection='row' gap={Spacing.three} justifyContent='space-between'>
+              <ThemedView flex={1} minWidth={0}>
+                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={28} letterSpacing={0} lineHeight={34}>
+                  Locations
+                </ThemedText>
+                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} marginTop={2}>
                   {filteredLocations.length.toLocaleString()} of {locations.length.toLocaleString()} locations
-                </Text>
-              </View>
+                </ThemedText>
+              </ThemedView>
               <AppButton label='Create' onPress={() => setCreateOpenState(true)} style={styles.createButton} />
-            </View>
+            </ThemedView>
             <TextInput
               autoCapitalize='none'
               autoCorrect={false}
@@ -154,7 +157,7 @@ export default function LocationScreen() {
                 <StatusFilterChip active={statusFilter === status} key={status} label={status} onPress={() => setStatusFilter(status)} />
               ))}
             </ScrollView>
-          </View>
+          </ThemedView>
         }
         refreshControl={<RefreshControl onRefresh={() => locationsQuery.refetch()} refreshing={locationsQuery.isRefetching} tintColor={Palette.accent} />}
         renderItem={renderLocation}
@@ -164,15 +167,25 @@ export default function LocationScreen() {
       <LocationActionsSheet location={selectedLocation} onClose={() => setSelectedLocation(undefined)} open={Boolean(selectedLocation)} />
 
       <Modal animationType='slide' onRequestClose={closeCreate} transparent visible={createOpen}>
-        <View style={styles.modalBackdrop}>
+        <ThemedView backgroundColor='rgba(15, 23, 42, 0.28)' flex={1} justifyContent='flex-end'>
           <Pressable accessibilityLabel='Close create location' onPress={closeCreate} style={StyleSheet.absoluteFill} />
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create location</Text>
+          <ThemedView
+            backgroundColor={Palette.surfaceBase}
+            borderTopLeftRadius={Radius.large}
+            borderTopRightRadius={Radius.large}
+            gap={Spacing.four}
+            padding={Spacing.four}
+            paddingBottom={Spacing.six}>
+            <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
+                Create location
+              </ThemedText>
               <Pressable onPress={closeCreate} style={styles.closeButton}>
-                <Text style={styles.closeText}>Close</Text>
+                <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={14}>
+                  Close
+                </ThemedText>
               </Pressable>
-            </View>
+            </ThemedView>
             <TextInput
               autoFocus
               onChangeText={setNewLocationName}
@@ -183,10 +196,14 @@ export default function LocationScreen() {
               value={newLocationName}
               onSubmitEditing={submitCreate}
             />
-            {createLocation.isError ? <Text style={styles.errorText}>Could not create this location. Please try again.</Text> : null}
+            {createLocation.isError ? (
+              <ThemedText color={Palette.danger} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
+                Could not create this location. Please try again.
+              </ThemedText>
+            ) : null}
             <AppButton block disabled={!newLocationName.trim()} label='Create new location' loading={createLocation.isPending} onPress={submitCreate} />
-          </View>
-        </View>
+          </ThemedView>
+        </ThemedView>
       </Modal>
     </SafeAreaView>
   );
@@ -195,37 +212,21 @@ export default function LocationScreen() {
 function StatusFilterChip({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.filterChip, active && styles.filterChipActive, pressed && styles.filterChipPressed]}>
-      <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
+      <ThemedText style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</ThemedText>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  centerState: {
-    alignItems: 'center',
-    gap: Spacing.four,
-    paddingTop: Spacing.eight,
-  },
   closeButton: {
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.one,
-  },
-  closeText: {
-    color: Palette.accent,
-    fontFamily: FontFamily.bold,
-    fontSize: 14,
   },
   content: {
     paddingBottom: 120,
   },
   createButton: {
     minHeight: 42,
-  },
-  errorText: {
-    color: Palette.danger,
-    fontFamily: FontFamily.semibold,
-    fontSize: 13,
-    lineHeight: 18,
   },
   filterChip: {
     backgroundColor: Palette.surfaceRaised,
@@ -255,28 +256,6 @@ const styles = StyleSheet.create({
   filters: {
     gap: Spacing.two,
   },
-  header: {
-    gap: Spacing.three,
-    padding: Spacing.four,
-  },
-  modalBackdrop: {
-    backgroundColor: 'rgba(15, 23, 42, 0.28)',
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    backgroundColor: Palette.surfaceBase,
-    borderTopLeftRadius: Radius.large,
-    borderTopRightRadius: Radius.large,
-    gap: Spacing.four,
-    padding: Spacing.four,
-    paddingBottom: Spacing.six,
-  },
-  modalHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
   modalInput: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.border,
@@ -287,12 +266,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 54,
     paddingHorizontal: Spacing.four,
-  },
-  modalTitle: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 20,
-    lineHeight: 26,
   },
   safeArea: {
     backgroundColor: Palette.surfaceBase,
@@ -308,34 +281,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     minHeight: 48,
     paddingHorizontal: Spacing.four,
-  },
-  stateText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  subtitle: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 14,
-    marginTop: 2,
-  },
-  title: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 28,
-    letterSpacing: 0,
-    lineHeight: 34,
-  },
-  titleBlock: {
-    flex: 1,
-    minWidth: 0,
-  },
-  titleRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: Spacing.three,
-    justifyContent: 'space-between',
   },
 });

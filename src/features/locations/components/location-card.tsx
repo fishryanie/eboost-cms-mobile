@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { ImagePreviewModal } from 'shared/media/image-preview-modal';
@@ -95,7 +96,7 @@ export function LocationCard({
   }));
 
   return (
-    <View style={styles.swipeContainer}>
+    <ThemedView backgroundColor={Palette.surfaceBase} overflow='hidden'>
       <Animated.View style={[styles.actionsRail, actionStyle]}>
         <Pressable
           onPress={() => {
@@ -103,7 +104,9 @@ export function LocationCard({
             onRelocate();
           }}
           style={({ pressed }) => [styles.actionButton, styles.relocateAction, pressed && styles.actionPressed]}>
-          <Text style={styles.actionText}>Relocate</Text>
+          <ThemedText color='#071C12' fontFamily={FontFamily.medium} fontSize={14} lineHeight={18}>
+            Relocate
+          </ThemedText>
         </Pressable>
         <Pressable
           onPress={() => {
@@ -111,7 +114,7 @@ export function LocationCard({
             onEdit();
           }}
           style={({ pressed }) => [styles.actionButton, styles.editAction, pressed && styles.actionPressed]}>
-          <Text style={[styles.actionText, styles.editActionText]}>Edit</Text>
+          <ThemedText style={[styles.actionText, styles.editActionText]}>Edit</ThemedText>
         </Pressable>
       </Animated.View>
 
@@ -123,7 +126,7 @@ export function LocationCard({
               onPress();
             }}
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-            <View style={styles.thumbnail}>
+            <ThemedView height={THUMB_SIZE} width={THUMB_SIZE}>
               {imageUrl ? (
                 <Pressable
                   accessibilityLabel={`Open image for ${location.name}`}
@@ -145,53 +148,60 @@ export function LocationCard({
                   }}
                   style={({ pressed }) => [styles.uploadPlaceholder, pressed && styles.uploadPlaceholderPressed]}>
                   <SymbolView name='square.and.arrow.up' resizeMode='scaleAspectFit' size={18} tintColor='#A6B5C8' />
-                  <Text numberOfLines={1} style={styles.uploadText}>
+                  <ThemedText
+                    numberOfLines={1}
+                    color={Palette.textSecondary}
+                    fontFamily={FontFamily.semibold}
+                    fontSize={9}
+                    lineHeight={11}
+                    marginTop={2}
+                    maxWidth={THUMB_SIZE - 6}>
                     Upload
-                  </Text>
+                  </ThemedText>
                 </Pressable>
               )}
-            </View>
+            </ThemedView>
 
-            <View style={styles.main}>
-              <View style={styles.statsRow}>
+            <ThemedView flex={1} gap={1} justifyContent='center' minWidth={0}>
+              <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two}>
                 <CountPill icon='bicycle' label={`${getCount(location, 'bikeCount')} bikes`} />
                 <CountPill icon='car.fill' label={`${getCount(location, 'carCount')} cars`} />
                 <CountPill icon='fuelpump.fill' label={`${getCount(location, 'stationCount')} stations`} />
-              </View>
-              <Text numberOfLines={1} style={styles.title}>
+              </ThemedView>
+              <ThemedText numberOfLines={1} color='#202124' fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20}>
                 {location.name}
-              </Text>
-              <Text numberOfLines={1} style={styles.address}>
+              </ThemedText>
+              <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={16}>
                 {address}
-              </Text>
-            </View>
+              </ThemedText>
+            </ThemedView>
 
-            <View style={styles.trailing}>
-              <View style={[styles.statusBubble, { backgroundColor: statusState.color }]}>
-                <Text numberOfLines={1} style={styles.statusText}>
+            <ThemedView alignItems='flex-end' alignSelf='stretch' justifyContent='space-between' paddingVertical={3} width={76}>
+              <ThemedView style={[styles.statusBubble, { backgroundColor: statusState.color }]}>
+                <ThemedText numberOfLines={1} color='#FFFFFF' fontFamily={FontFamily.medium} fontSize={10} lineHeight={13}>
                   {statusState.label}
-                </Text>
-              </View>
-              <View style={[styles.toggle, location.visible === false && styles.toggleOff]}>
-                <View style={[styles.toggleKnob, location.visible === false && styles.toggleKnobOff]} />
-              </View>
-            </View>
+                </ThemedText>
+              </ThemedView>
+              <ThemedView style={[styles.toggle, location.visible === false && styles.toggleOff]}>
+                <ThemedView style={[styles.toggleKnob, location.visible === false && styles.toggleKnobOff]} />
+              </ThemedView>
+            </ThemedView>
             <ImagePreviewModal imageUrl={imageUrl} onClose={() => setPreviewOpen(false)} title={location.name} visible={previewOpen} />
           </Pressable>
         </Animated.View>
       </GestureDetector>
-    </View>
+    </ThemedView>
   );
 }
 
 function CountPill({ icon, label }: { icon: 'bicycle' | 'car.fill' | 'fuelpump.fill'; label: string }) {
   return (
-    <View style={styles.countPill}>
+    <ThemedView alignItems='center' flexDirection='row' gap={3} maxWidth={76}>
       <SymbolView name={icon} resizeMode='scaleAspectFit' size={11} tintColor='#8E8E93' />
-      <Text numberOfLines={1} style={styles.countText}>
+      <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={14}>
         {label}
-      </Text>
-    </View>
+      </ThemedText>
+    </ThemedView>
   );
 }
 
@@ -219,24 +229,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
   },
-  address: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  countPill: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 3,
-    maxWidth: 76,
-  },
-  countText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.medium,
-    fontSize: 11,
-    lineHeight: 14,
-  },
   editAction: {
     backgroundColor: '#FFAA0A',
   },
@@ -245,12 +237,6 @@ const styles = StyleSheet.create({
   },
   foreground: {
     backgroundColor: Palette.surfaceBase,
-  },
-  main: {
-    flex: 1,
-    gap: 1,
-    justifyContent: 'center',
-    minWidth: 0,
   },
   pressed: {
     backgroundColor: '#F7F8FA',
@@ -270,11 +256,6 @@ const styles = StyleSheet.create({
     paddingRight: Spacing.three,
     paddingVertical: Spacing.two,
   },
-  statsRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
   statusBubble: {
     alignItems: 'center',
     borderRadius: Radius.small,
@@ -283,30 +264,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  statusText: {
-    color: '#FFFFFF',
-    fontFamily: FontFamily.medium,
-    fontSize: 10,
-    lineHeight: 13,
-  },
-  swipeContainer: {
-    backgroundColor: Palette.surfaceBase,
-    overflow: 'hidden',
-  },
-  thumbnail: {
-    height: THUMB_SIZE,
-    width: THUMB_SIZE,
-  },
   thumbnailImage: {
     borderRadius: Radius.medium,
     height: THUMB_SIZE,
     width: THUMB_SIZE,
-  },
-  title: {
-    color: '#202124',
-    fontFamily: FontFamily.semibold,
-    fontSize: 15,
-    lineHeight: 20,
   },
   toggle: {
     alignItems: 'flex-end',
@@ -330,13 +291,6 @@ const styles = StyleSheet.create({
   toggleOff: {
     backgroundColor: '#C9C9CC',
   },
-  trailing: {
-    alignItems: 'flex-end',
-    alignSelf: 'stretch',
-    justifyContent: 'space-between',
-    paddingVertical: 3,
-    width: 76,
-  },
   uploadPlaceholder: {
     alignItems: 'center',
     borderColor: '#D4DFEC',
@@ -350,13 +304,5 @@ const styles = StyleSheet.create({
   uploadPlaceholderPressed: {
     backgroundColor: Palette.surfaceMuted,
     borderColor: Palette.accent,
-  },
-  uploadText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 9,
-    lineHeight: 11,
-    marginTop: 2,
-    maxWidth: THUMB_SIZE - 6,
   },
 });

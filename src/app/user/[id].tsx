@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { useUserProfile } from 'features/users/hooks';
@@ -26,12 +27,14 @@ function BooleanChip({ label, value }: { label: string; value?: boolean }) {
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text selectable style={styles.infoValue}>
+    <ThemedView borderBottomColor={Palette.borderSubtle} borderBottomWidth={1} gap={Spacing.one} padding={Spacing.four}>
+      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={13}>
+        {label}
+      </ThemedText>
+      <ThemedText selectable color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20}>
         {value || 'Not available'}
-      </Text>
-    </View>
+      </ThemedText>
+    </ThemedView>
   );
 }
 
@@ -39,16 +42,28 @@ function BalanceHistoryRow({ item }: { item: BalanceHistoryItem }) {
   const positive = item.balanceAction === '+';
 
   return (
-    <View style={styles.historyRow}>
-      <View style={styles.historyTop}>
-        <Text style={[styles.historyAmount, positive ? styles.positive : styles.negative]}>
+    <ThemedView
+      backgroundColor={Palette.surfaceRaised}
+      borderColor={Palette.borderSubtle}
+      borderRadius={Radius.large}
+      borderWidth={1}
+      gap={Spacing.two}
+      padding={Spacing.four}>
+      <ThemedView alignItems='center' flexDirection='row' gap={Spacing.three} justifyContent='space-between'>
+        <ThemedText style={[styles.historyAmount, positive ? styles.positive : styles.negative]}>
           {positive ? '+' : '-'} {currencyFormatter.format(Math.abs(item.amount))}
-        </Text>
-        <Text style={styles.historyWallet}>{currencyFormatter.format(item.wallet)}</Text>
-      </View>
-      <Text style={styles.historyReason}>{item.reason || 'No reason provided'}</Text>
-      <Text style={styles.historyDate}>{formatDate(item.createdAt)}</Text>
-    </View>
+        </ThemedText>
+        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={13}>
+          {currencyFormatter.format(item.wallet)}
+        </ThemedText>
+      </ThemedView>
+      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={18}>
+        {item.reason || 'No reason provided'}
+      </ThemedText>
+      <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={12}>
+        {formatDate(item.createdAt)}
+      </ThemedText>
+    </ThemedView>
   );
 }
 
@@ -62,70 +77,99 @@ export default function UserProfileScreen() {
   return (
     <AppScreen>
       <Pressable onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backText}>Back</Text>
+        <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
+          Back
+        </ThemedText>
       </Pressable>
 
       {!userId ? (
         <EmptyState message='No user ID was provided.' title='User unavailable' />
       ) : profileQuery.isLoading ? (
-        <View style={styles.centerState}>
+        <ThemedView gap={Spacing.four}>
           <ActivityIndicator color={Palette.accent} />
-          <Text style={styles.stateText}>Loading user profile</Text>
-        </View>
+          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} textAlign='center'>
+            Loading user profile
+          </ThemedText>
+        </ThemedView>
       ) : profileQuery.isError || !user ? (
-        <View style={styles.centerState}>
+        <ThemedView gap={Spacing.four}>
           <EmptyState message='The user profile could not be loaded.' title='User unavailable' />
           <AppButton label='Retry' onPress={() => profileQuery.refetch()} />
-        </View>
+        </ThemedView>
       ) : (
         <>
-          <View style={styles.hero}>
-            <Text style={styles.eyebrow}>User #{user.id}</Text>
-            <Text style={styles.title}>{user.name || user.username || user.email || `User #${user.id}`}</Text>
-            <Text style={styles.balance}>{currencyFormatter.format(user.balance || 0)}</Text>
-            <View style={styles.chips}>
+          <ThemedView
+            backgroundColor={Palette.surfaceRaised}
+            borderColor={Palette.borderSubtle}
+            borderRadius={Radius.large}
+            borderWidth={1}
+            gap={Spacing.three}
+            padding={Spacing.four}>
+            <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={13} textTransform='uppercase'>
+              User #{user.id}
+            </ThemedText>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={27} letterSpacing={0} lineHeight={33}>
+              {user.name || user.username || user.email || `User #${user.id}`}
+            </ThemedText>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={24} lineHeight={30}>
+              {currencyFormatter.format(user.balance || 0)}
+            </ThemedText>
+            <ThemedView flexDirection='row' flexWrap='wrap' gap={8}>
               <StatusChip label={user.enabled === false ? 'Disabled' : 'Enabled'} tone={user.enabled === false ? 'danger' : 'success'} />
               {user.userLevel?.name ? <StatusChip label={user.userLevel.name} /> : null}
-            </View>
-          </View>
+            </ThemedView>
+          </ThemedView>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Identity</Text>
-            <View style={styles.infoList}>
+          <ThemedView gap={Spacing.three}>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={19} lineHeight={24}>
+              Identity
+            </ThemedText>
+            <ThemedView
+              backgroundColor={Palette.surfaceRaised}
+              borderColor={Palette.borderSubtle}
+              borderRadius={Radius.large}
+              borderWidth={1}
+              overflow='hidden'>
               <InfoRow label='Username' value={user.username} />
               <InfoRow label='Email' value={user.email} />
               <InfoRow label='Phone' value={user.phoneNumber} />
               <InfoRow label='Address' value={user.address} />
               <InfoRow label='Created' value={formatDate(user.createdAt)} />
-            </View>
-          </View>
+            </ThemedView>
+          </ThemedView>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Account state</Text>
-            <View style={styles.chips}>
+          <ThemedView gap={Spacing.three}>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={19} lineHeight={24}>
+              Account state
+            </ThemedText>
+            <ThemedView flexDirection='row' flexWrap='wrap' gap={8}>
               <BooleanChip label='Email activated' value={user.activatedMail} />
               <BooleanChip label='Phone verified' value={user.isPhoneVerified} />
               <BooleanChip label='Citizen verified' value={user.isCitizenVerified} />
               <BooleanChip label='Auto charge' value={user.autoCharge} />
               <BooleanChip label='Auto promotion' value={user.autoApplyPromotionCode} />
-            </View>
-          </View>
+            </ThemedView>
+          </ThemedView>
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Balance history</Text>
-              <Text style={styles.count}>{user.balanceHistory?.length || 0}</Text>
-            </View>
+          <ThemedView gap={Spacing.three}>
+            <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={19} lineHeight={24}>
+                Balance history
+              </ThemedText>
+              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.bold} fontSize={14}>
+                {user.balanceHistory?.length || 0}
+              </ThemedText>
+            </ThemedView>
             {user.balanceHistory?.length ? (
-              <View style={styles.historyList}>
+              <ThemedView gap={Spacing.two}>
                 {user.balanceHistory.map(item => (
                   <BalanceHistoryRow item={item} key={item.id} />
                 ))}
-              </View>
+              </ThemedView>
             ) : (
               <EmptyState message='No balance movements were returned.' title='No balance history' />
             )}
-          </View>
+          </ThemedView>
         </>
       )}
     </AppScreen>
@@ -137,105 +181,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingVertical: Spacing.one,
   },
-  backText: {
-    color: Palette.accent,
-    fontFamily: FontFamily.bold,
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  balance: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 24,
-    lineHeight: 30,
-  },
-  centerState: {
-    gap: Spacing.four,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  count: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.bold,
-    fontSize: 14,
-  },
-  eyebrow: {
-    color: Palette.accent,
-    fontFamily: FontFamily.bold,
-    fontSize: 13,
-    textTransform: 'uppercase',
-  },
-  hero: {
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: Palette.borderSubtle,
-    borderRadius: Radius.large,
-    borderWidth: 1,
-    gap: Spacing.three,
-    padding: Spacing.four,
-  },
   historyAmount: {
     fontFamily: FontFamily.bold,
     fontSize: 15,
-    lineHeight: 20,
-  },
-  historyDate: {
-    color: Palette.textTertiary,
-    fontFamily: FontFamily.regular,
-    fontSize: 12,
-  },
-  historyList: {
-    gap: Spacing.two,
-  },
-  historyReason: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  historyRow: {
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: Palette.borderSubtle,
-    borderRadius: Radius.large,
-    borderWidth: 1,
-    gap: Spacing.two,
-    padding: Spacing.four,
-  },
-  historyTop: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: Spacing.three,
-    justifyContent: 'space-between',
-  },
-  historyWallet: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 13,
-  },
-  infoLabel: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 13,
-  },
-  infoList: {
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: Palette.borderSubtle,
-    borderRadius: Radius.large,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  infoRow: {
-    borderBottomColor: Palette.borderSubtle,
-    borderBottomWidth: 1,
-    gap: Spacing.one,
-    padding: Spacing.four,
-  },
-  infoValue: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 14,
     lineHeight: 20,
   },
   negative: {
@@ -243,33 +191,5 @@ const styles = StyleSheet.create({
   },
   positive: {
     color: '#027A48',
-  },
-  section: {
-    gap: Spacing.three,
-  },
-  sectionHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 19,
-    lineHeight: 24,
-  },
-  stateText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  title: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 27,
-    letterSpacing: 0,
-    lineHeight: 33,
   },
 });

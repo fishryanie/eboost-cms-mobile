@@ -1,7 +1,8 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Switch } from 'react-native';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { getBiometricButtonLabel, getBiometricSymbolName } from 'features/auth/biometric-auth';
@@ -78,18 +79,42 @@ export function BiometricOptInPrompt() {
 
   return (
     <Modal animationType='fade' onRequestClose={closePrompt} transparent visible={Boolean(pendingCredentials)}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.card}>
-          <View style={styles.icon}>
+      <ThemedView alignItems='center' backgroundColor='rgba(16,24,40,0.42)' flex={1} justifyContent='center' padding={Spacing.five}>
+        <ThemedView backgroundColor={Palette.surfaceRaised} borderRadius={Radius.large} gap={Spacing.four} maxWidth={420} padding={Spacing.five} width='88%'>
+          <ThemedView
+            alignItems='center'
+            alignSelf='flex-start'
+            backgroundColor='#E8F4EF'
+            borderRadius={Radius.pill}
+            height={52}
+            justifyContent='center'
+            width={52}>
             <SymbolView name={biometricIcon as never} resizeMode='scaleAspectFit' size={28} tintColor={Palette.accent} />
-          </View>
-          <Text style={styles.title}>Enable {biometricLabel} sign in?</Text>
-          <Text style={styles.text}>Use your saved CMS account to sign in faster next time after biometric verification.</Text>
-          <View style={styles.switchRow}>
-            <View style={styles.switchCopy}>
-              <Text style={styles.switchTitle}>Fast sign in</Text>
-              <Text style={styles.switchText}>You can turn this off later in Settings.</Text>
-            </View>
+          </ThemedView>
+          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
+            Enable {biometricLabel} sign in?
+          </ThemedText>
+          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} lineHeight={20}>
+            Use your saved CMS account to sign in faster next time after biometric verification.
+          </ThemedText>
+          <ThemedView
+            alignItems='center'
+            backgroundColor={Palette.surfaceMuted}
+            borderColor={Palette.borderSubtle}
+            borderRadius={Radius.medium}
+            borderWidth={1}
+            flexDirection='row'
+            gap={Spacing.three}
+            justifyContent='space-between'
+            padding={Spacing.three}>
+            <ThemedView flex={1} gap={Spacing.half}>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20}>
+                Fast sign in
+              </ThemedText>
+              <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={16}>
+                You can turn this off later in Settings.
+              </ThemedText>
+            </ThemedView>
             <Switch
               disabled={isSaving}
               onValueChange={value => {
@@ -101,47 +126,25 @@ export function BiometricOptInPrompt() {
               thumbColor={Palette.surfaceRaised}
               value={isSaving}
             />
-          </View>
+          </ThemedView>
           <Pressable
             accessibilityRole='button'
             disabled={isSaving}
             onPress={closePrompt}
             style={({ pressed }) => [styles.skipButton, pressed && styles.pressed, isSaving && styles.disabled]}>
-            <Text style={styles.skipText}>{isSaving ? 'Saving...' : 'Not now'}</Text>
+            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20}>
+              {isSaving ? 'Saving...' : 'Not now'}
+            </ThemedText>
           </Pressable>
-        </View>
-      </View>
+        </ThemedView>
+      </ThemedView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Palette.surfaceRaised,
-    borderRadius: Radius.large,
-    gap: Spacing.four,
-    maxWidth: 420,
-    padding: Spacing.five,
-    width: '88%',
-  },
   disabled: {
     opacity: 0.72,
-  },
-  icon: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#E8F4EF',
-    borderRadius: Radius.pill,
-    height: 52,
-    justifyContent: 'center',
-    width: 52,
-  },
-  modalOverlay: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(16,24,40,0.42)',
-    flex: 1,
-    justifyContent: 'center',
-    padding: Spacing.five,
   },
   pressed: {
     opacity: 0.72,
@@ -151,50 +154,5 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     justifyContent: 'center',
     minHeight: 44,
-  },
-  skipText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  switchCopy: {
-    flex: 1,
-    gap: Spacing.half,
-  },
-  switchRow: {
-    alignItems: 'center',
-    backgroundColor: Palette.surfaceMuted,
-    borderColor: Palette.borderSubtle,
-    borderRadius: Radius.medium,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: Spacing.three,
-    justifyContent: 'space-between',
-    padding: Spacing.three,
-  },
-  switchText: {
-    color: Palette.textTertiary,
-    fontFamily: FontFamily.regular,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  switchTitle: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  text: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  title: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 20,
-    lineHeight: 26,
   },
 });

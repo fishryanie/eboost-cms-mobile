@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { Dimensions, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Dimensions, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { ThemedView } from 'components/base';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
@@ -78,7 +79,7 @@ const glowKeyframe = new Keyframe({
 
 export function AnimatedIcon() {
   return (
-    <View style={styles.iconContainer}>
+    <ThemedView justifyContent='center' alignItems='center' width={128} height={128} zIndex={100}>
       <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
         <Image style={styles.glow} source={require('assets/images/logo-glow.png')} />
       </Animated.View>
@@ -87,7 +88,7 @@ export function AnimatedIcon() {
       <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
         <Image style={styles.image} source={require('assets/images/icon.png')} />
       </Animated.View>
-    </View>
+    </ThemedView>
   );
 }
 
@@ -100,13 +101,6 @@ const styles = StyleSheet.create({
     width: 201,
     height: 201,
     position: 'absolute',
-  },
-  iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 128,
-    height: 128,
-    zIndex: 100,
   },
   image: {
     position: 'absolute',

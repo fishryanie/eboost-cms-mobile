@@ -1,6 +1,7 @@
 import { PropsWithChildren } from 'react';
-import { ScrollView, ScrollViewProps, StyleSheet, View } from 'react-native';
+import { ScrollView, ScrollViewProps, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedView } from 'components/base';
 
 import { Palette, Spacing } from 'themes';
 
@@ -8,7 +9,9 @@ export function AppScreen({ children, scroll = true, ...props }: PropsWithChildr
   if (!scroll) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.staticContent}>{children}</View>
+        <ThemedView flex={1} padding={Spacing.four}>
+          {children}
+        </ThemedView>
       </SafeAreaView>
     );
   }
@@ -34,9 +37,5 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
-  },
-  staticContent: {
-    flex: 1,
-    padding: Spacing.four,
   },
 });

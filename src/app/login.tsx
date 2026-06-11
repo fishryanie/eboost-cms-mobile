@@ -9,15 +9,15 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableWithoutFeedback,
   useWindowDimensions,
-  View,
   type KeyboardEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type View as NativeView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { loginAdmin } from 'features/auth/auth-service';
 import { biometricCredentialStore } from 'features/auth/biometric-credentials';
@@ -26,20 +26,20 @@ import { parseLoginForm, type LoginFieldErrors } from 'features/auth/login-valid
 import { useBiometricLogin } from 'hooks/use-biometric-login';
 import FloatingTextInput from 'shared/ui/FloatingTextInput';
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
-import { fs, mhs, mvs } from 'themes/scaling';
+import { mhs, mvs } from 'themes/scaling';
 
 const KEYBOARD_CARD_GAP = mvs(20);
 const actionControlHeight = 45;
 const biometricSymbolSize = mhs(24);
-const cardLogoWidth = mhs(128);
-const formGap = mvs(Spacing.four);
-const radiusLarge = mhs(Radius.large);
-const radiusMedium = mhs(Radius.medium);
+const cardLogoWidth = 128;
+const formGap = Spacing.four;
+const radiusLarge = Radius.large;
+const radiusMedium = Radius.medium;
 const radiusPill = Radius.pill;
 const appVersionLabel = 'v1.0.0';
 
 export default function LoginScreen() {
-  const formCardRef = useRef<View>(null);
+  const formCardRef = useRef<NativeView>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const scrollYRef = useRef(0);
   const [errorMessage, setErrorMessage] = useState('');
@@ -138,29 +138,48 @@ export default function LoginScreen() {
             onScroll={handleScroll}
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}>
-            <View style={styles.headingContainer}>
-              <View style={styles.headingTag}>
-                <Text style={styles.headingTagText}>CMS Admin Portal</Text>
-              </View>
-              <Text style={styles.headingCoreText}>Welcome back! 👋</Text>
-              <Text style={styles.headingSubtitle}>Sign in to manage and publish digital content efficiently</Text>
-            </View>
+            <ThemedView alignItems='center' marginBottom={Spacing.six}>
+              <ThemedView backgroundColor='#E8F4EF' borderRadius={radiusPill} marginBottom={Spacing.four} paddingHorizontal={Spacing.four} paddingVertical={7}>
+                <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={11} letterSpacing={0}>
+                  CMS Admin Portal
+                </ThemedText>
+              </ThemedView>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={36} lineHeight={42} marginBottom={Spacing.two} textAlign='center'>
+                Welcome back! 👋
+              </ThemedText>
+              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={15} lineHeight={22} maxWidth={300} textAlign='center'>
+                Sign in to manage and publish digital content efficiently
+              </ThemedText>
+            </ThemedView>
 
-            <View ref={formCardRef} style={styles.formCard}>
-              <View style={styles.formHeader}>
-                <View style={styles.cardLogoWrap}>
+            <ThemedView
+              ref={formCardRef}
+              backgroundColor={Palette.surfaceRaised}
+              borderColor='rgba(1,167,78,0.12)'
+              borderRadius={radiusLarge}
+              borderWidth={1}
+              boxShadow='0 18px 44px rgba(1, 167, 78, 0.16)'
+              gap={formGap}
+              paddingHorizontal={15}
+              paddingVertical={24}>
+              <ThemedView alignItems='center' flexDirection='row' justifyContent='flex-start' marginBottom={12}>
+                <ThemedView alignItems='center' flexShrink={0} height={36} justifyContent='center' marginLeft={-12} marginRight={-8} width={cardLogoWidth}>
                   <Image
                     contentFit='contain'
                     accessibilityLabel='EBOOST logo'
                     source={require('assets/images/logo-text-black.png')}
                     style={styles.cardLogoImage}
                   />
-                </View>
-                <View style={styles.formHeaderText}>
-                  <Text style={styles.formTitle}>Admin access</Text>
-                  <Text style={styles.formSubtitle}>Use your CMS account to continue</Text>
-                </View>
-              </View>
+                </ThemedView>
+                <ThemedView borderLeftColor={Palette.borderSubtle} borderLeftWidth={1} flex={1} gap={Spacing.half} paddingLeft={Spacing.two}>
+                  <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
+                    Admin access
+                  </ThemedText>
+                  <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={16}>
+                    Use your CMS account to continue
+                  </ThemedText>
+                </ThemedView>
+              </ThemedView>
 
               <FloatingTextInput
                 autoCapitalize='none'
@@ -193,18 +212,22 @@ export default function LoginScreen() {
               />
 
               {errorMessage ? (
-                <View style={styles.errorBox}>
-                  <Text style={styles.errorText}>{errorMessage}</Text>
-                </View>
+                <ThemedView backgroundColor={Palette.dangerSurface} borderColor='#FDA29B' borderRadius={radiusMedium} borderWidth={1} padding={Spacing.three}>
+                  <ThemedText color='#B42318' fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20}>
+                    {errorMessage}
+                  </ThemedText>
+                </ThemedView>
               ) : null}
 
-              <View style={styles.actionRow}>
+              <ThemedView alignItems='stretch' flexDirection='row' gap={Spacing.two}>
                 <Pressable
                   accessibilityRole='button'
                   disabled={!canSubmit}
                   onPress={handleLogin}
                   style={({ pressed }) => [styles.signInButton, pressed && styles.pressed, !canSubmit && styles.disabled]}>
-                  <Text style={styles.signInButtonText}>{isLoading ? 'Signing in...' : 'Sign in'}</Text>
+                  <ThemedText color='#FFFFFF' fontFamily={FontFamily.bold} fontSize={16} lineHeight={22}>
+                    {isLoading ? 'Signing in...' : 'Sign in'}
+                  </ThemedText>
                 </Pressable>
 
                 <Pressable
@@ -220,13 +243,17 @@ export default function LoginScreen() {
                     tintColor={canSubmitBiometric ? Palette.accent : Palette.textTertiary}
                   />
                 </Pressable>
-              </View>
-            </View>
+              </ThemedView>
+            </ThemedView>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>EBOOST · Digital Development Team</Text>
-              <Text style={styles.footerMeta}>{appVersionLabel} · Secure CMS access</Text>
-            </View>
+            <ThemedView alignItems='center' gap={Spacing.half} marginTop={Spacing.six}>
+              <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={18} textAlign='center'>
+                EBOOST · Digital Development Team
+              </ThemedText>
+              <ThemedText color='rgba(102, 112, 133, 0.74)' fontFamily={FontFamily.regular} fontSize={10} lineHeight={14} textAlign='center'>
+                {appVersionLabel} · Secure CMS access
+              </ThemedText>
+            </ThemedView>
           </ScrollView>
         </TouchableWithoutFeedback>
       </SafeAreaView>
@@ -247,28 +274,14 @@ function BackgroundGradient({ children, colors }: { children: ReactNode; colors:
           <LinearGradient start={vec(width / 2, height * 0.72)} end={vec(width / 2, height)} colors={['rgba(255,255,255,0)', 'rgba(1,167,78,0.08)']} />
         </Rect>
       </Canvas>
-      <View style={styles.gradientContent}>{children}</View>
+      <ThemedView bottom={0} left={0} position='absolute' right={0} top={0}>
+        {children}
+      </ThemedView>
     </>
   );
 }
 
-const formBaseStyle = {
-  backgroundColor: Palette.surfaceRaised,
-  borderColor: 'rgba(1,167,78,0.12)',
-  borderRadius: radiusLarge,
-  borderWidth: 1,
-  boxShadow: '0 18px 44px rgba(1, 167, 78, 0.16)',
-  gap: formGap,
-  paddingHorizontal: mhs(15),
-  paddingVertical: mvs(24),
-} as const;
-
 const styles = StyleSheet.create({
-  actionRow: {
-    alignItems: 'stretch',
-    flexDirection: 'row',
-    gap: mhs(Spacing.two),
-  },
   biometricButton: {
     alignItems: 'center',
     backgroundColor: '#F3FAF6',
@@ -285,17 +298,8 @@ const styles = StyleSheet.create({
   },
   cardLogoImage: {
     height: mvs(34),
-    width: cardLogoWidth,
+    width: mhs(cardLogoWidth),
     objectFit: 'fill',
-  },
-  cardLogoWrap: {
-    alignItems: 'center',
-    flexShrink: 0,
-    height: mvs(36),
-    justifyContent: 'center',
-    marginLeft: -mhs(12),
-    marginRight: -mhs(8),
-    width: cardLogoWidth,
   },
   container: {
     flex: 1,
@@ -303,106 +307,8 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 1,
   },
-  errorBox: {
-    backgroundColor: Palette.dangerSurface,
-    borderColor: '#FDA29B',
-    borderRadius: radiusMedium,
-    borderWidth: 1,
-    padding: mhs(Spacing.three),
-  },
-  errorText: {
-    color: '#B42318',
-    fontFamily: FontFamily.semibold,
-    fontSize: fs(14),
-    lineHeight: fs(20),
-  },
-  footer: {
-    alignItems: 'center',
-    gap: mvs(Spacing.half),
-    marginTop: mvs(Spacing.six),
-  },
-  footerMeta: {
-    color: 'rgba(102, 112, 133, 0.74)',
-    fontFamily: FontFamily.regular,
-    fontSize: fs(10),
-    lineHeight: fs(14),
-    textAlign: 'center',
-  },
-  footerText: {
-    color: Palette.textTertiary,
-    fontFamily: FontFamily.regular,
-    fontSize: fs(11),
-    lineHeight: fs(18),
-    textAlign: 'center',
-  },
-  formCard: formBaseStyle,
-  formHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginBottom: mvs(12),
-  },
-  formHeaderText: {
-    borderLeftColor: Palette.borderSubtle,
-    borderLeftWidth: 1,
-    flex: 1,
-    gap: mvs(Spacing.half),
-    paddingLeft: mhs(Spacing.two),
-  },
-  formSubtitle: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: fs(12),
-    lineHeight: fs(16),
-  },
-  formTitle: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: fs(15),
-    lineHeight: fs(20),
-  },
   gradientCanvas: {
     flex: 1,
-  },
-  gradientContent: {
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-  },
-  headingContainer: {
-    alignItems: 'center',
-    marginBottom: mvs(Spacing.six),
-  },
-  headingCoreText: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: fs(36),
-    lineHeight: fs(42),
-    marginBottom: mvs(Spacing.two),
-    textAlign: 'center',
-  },
-  headingSubtitle: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: fs(15),
-    lineHeight: fs(22),
-    maxWidth: mhs(300),
-    textAlign: 'center',
-  },
-  headingTag: {
-    backgroundColor: '#E8F4EF',
-    borderRadius: radiusPill,
-    marginBottom: mvs(Spacing.four),
-    paddingHorizontal: mhs(Spacing.four),
-    paddingVertical: mvs(7),
-  },
-  headingTagText: {
-    color: Palette.accent,
-    fontFamily: FontFamily.bold,
-    fontSize: fs(11),
-    letterSpacing: 0,
   },
   pressed: {
     opacity: 0.78,
@@ -421,11 +327,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     height: actionControlHeight,
-  },
-  signInButtonText: {
-    color: '#FFFFFF',
-    fontFamily: FontFamily.bold,
-    fontSize: fs(16),
-    lineHeight: fs(22),
   },
 });

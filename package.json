@@ -28,6 +28,7 @@
     "expo-status-bar": "~56.0.4",
     "expo-symbols": "~56.0.6",
     "expo-system-ui": "~56.0.5",
+    "expo-updates": "~56.0.19",
     "expo-web-browser": "~56.0.5",
     "lodash": "^4.18.1",
     "react": "19.2.3",
@@ -56,14 +57,21 @@
   },
   "scripts": {
     "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "lint": "expo lint",
     "test:services": "tsx --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
-    "build": "sh ./scripts/build-ios-release.sh",
-    "submit": "sh ./scripts/submit-ios-release.sh"
+    "build": "sh ./scripts/ios-build.sh",
+    "build:android": "sh ./scripts/android-build.sh",
+    "build:android:apk": "sh ./scripts/android-build-apk.sh",
+    "build:android:aab": "sh ./scripts/android-build-aab.sh",
+    "submit": "sh ./scripts/ios-submit.sh",
+    "testflight": "sh ./scripts/ios-release.sh",
+    "update:development": "npx eas-cli@latest update --channel development",
+    "update:preview": "npx eas-cli@latest update --channel preview",
+    "update:production": "npx eas-cli@latest update --channel production",
+    "update:list": "npx eas-cli@latest update:list"
   },
   "trustedDependencies": [
     "@shopify/react-native-skia"

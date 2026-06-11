@@ -2,8 +2,9 @@ import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomShe
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { getCmsServiceRoute, type CmsServiceGroup, type CmsServiceItem } from 'features/services/service-catalog';
@@ -51,17 +52,19 @@ export function ServiceChildrenSheet({ onClose, service }: { onClose: () => void
       <BottomSheetScrollView contentContainerStyle={[styles.content, { paddingBottom: Math.max(bottom + 20, 32) }]}>
         {service ? (
           <>
-            <View style={styles.header}>
-              <View style={[styles.iconSurface, { backgroundColor: `${service.accentColor}14` }]}>
+            <ThemedView alignItems='center' flexDirection='row' gap={Spacing.four}>
+              <ThemedView style={[styles.iconSurface, { backgroundColor: `${service.accentColor}14` }]}>
                 <Image contentFit='contain' source={{ uri: service.iconUrl }} style={styles.icon} />
-              </View>
-              <View style={styles.headerText}>
-                <Text numberOfLines={1} style={styles.title}>
+              </ThemedView>
+              <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
+                <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
                   {service.name}
-                </Text>
-                <Text style={styles.description}>{service.description}</Text>
-              </View>
-            </View>
+                </ThemedText>
+                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={18}>
+                  {service.description}
+                </ThemedText>
+              </ThemedView>
+            </ThemedView>
 
             <BottomSheetTextInput
               autoCapitalize='none'
@@ -75,7 +78,7 @@ export function ServiceChildrenSheet({ onClose, service }: { onClose: () => void
               value={query}
             />
 
-            <View style={styles.serviceList}>
+            <ThemedView gap={Spacing.three}>
               {filteredChildren.length > 0 ? (
                 filteredChildren.map(child => (
                   <Pressable
@@ -83,25 +86,35 @@ export function ServiceChildrenSheet({ onClose, service }: { onClose: () => void
                     key={child.slug}
                     onPress={() => openChild(child)}
                     style={({ pressed }) => [styles.childItem, pressed && styles.pressed]}>
-                    <View style={[styles.childAccent, { backgroundColor: service.accentColor }]} />
-                    <View style={styles.childText}>
-                      <Text numberOfLines={1} style={styles.childName}>
+                    <ThemedView style={[styles.childAccent, { backgroundColor: service.accentColor }]} />
+                    <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
+                      <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
                         {child.name}
-                      </Text>
-                      <Text numberOfLines={2} style={styles.childDescription}>
+                      </ThemedText>
+                      <ThemedText numberOfLines={2} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
                         {child.description}
-                      </Text>
-                    </View>
-                    <Text style={[styles.chevron, { color: service.accentColor }]}>{'>'}</Text>
+                      </ThemedText>
+                    </ThemedView>
+                    <ThemedText style={[styles.chevron, { color: service.accentColor }]}>{'>'}</ThemedText>
                   </Pressable>
                 ))
               ) : (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyTitle}>No services found</Text>
-                  <Text style={styles.emptyDescription}>Try another keyword.</Text>
-                </View>
+                <ThemedView
+                  alignItems='center'
+                  backgroundColor={Palette.surfaceMuted}
+                  borderRadius={Radius.large}
+                  gap={Spacing.one}
+                  paddingHorizontal={Spacing.four}
+                  paddingVertical={Spacing.five}>
+                  <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
+                    No services found
+                  </ThemedText>
+                  <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13}>
+                    Try another keyword.
+                  </ThemedText>
+                </ThemedView>
               )}
-            </View>
+            </ThemedView>
           </>
         ) : null}
       </BottomSheetScrollView>
@@ -121,12 +134,6 @@ const styles = StyleSheet.create({
     opacity: 0.18,
     width: 4,
   },
-  childDescription: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 12,
-    lineHeight: 17,
-  },
   childItem: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceMuted,
@@ -137,55 +144,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
   },
-  childName: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  childText: {
-    flex: 1,
-    gap: Spacing.one,
-    minWidth: 0,
-  },
   content: {
     gap: Spacing.four,
     padding: Spacing.four,
-  },
-  description: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  emptyDescription: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 13,
-  },
-  emptyState: {
-    alignItems: 'center',
-    backgroundColor: Palette.surfaceMuted,
-    borderRadius: Radius.large,
-    gap: Spacing.one,
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.five,
-  },
-  emptyTitle: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: Spacing.four,
-  },
-  headerText: {
-    flex: 1,
-    gap: Spacing.one,
-    minWidth: 0,
   },
   icon: {
     height: 30,
@@ -211,14 +172,5 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
-  },
-  serviceList: {
-    gap: Spacing.three,
-  },
-  title: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 20,
-    lineHeight: 26,
   },
 });

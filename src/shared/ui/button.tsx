@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { PropsWithChildren } from 'react';
-import { Pressable, PressableProps, StyleSheet, Text, ViewStyle } from 'react-native';
+import { Pressable, PressableProps, StyleSheet, ViewStyle } from 'react-native';
+import { ThemedText } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
@@ -26,7 +27,7 @@ export function AppButton({ block, children, disabled, label, loading, onPress, 
       }}
       style={({ pressed }) => [styles.base, styles[variant], block && styles.block, (disabled || loading) && styles.disabled, pressed && styles.pressed, style]}
       {...props}>
-      <Text style={[styles.label, variant === 'ghost' && styles.ghostLabel]}>{loading ? 'Loading...' : label || children}</Text>
+      <ThemedText style={[styles.label, variant === 'ghost' && styles.ghostLabel]}>{loading ? 'Loading...' : label || children}</ThemedText>
     </Pressable>
   );
 }

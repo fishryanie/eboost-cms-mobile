@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { memo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { ImagePreviewModal } from 'shared/media/image-preview-modal';
@@ -18,9 +19,9 @@ function VerificationIcon({ verified }: { verified?: boolean }) {
   const color = verified ? '#00B85A' : '#FF3B4E';
 
   return (
-    <View style={[styles.verifyCircle, { borderColor: color }]}>
+    <ThemedView style={[styles.verifyCircle, { borderColor: color }]}>
       <SymbolView name={verified ? 'checkmark' : 'exclamationmark'} resizeMode='scaleAspectFit' size={10} tintColor={color} />
-    </View>
+    </ThemedView>
   );
 }
 
@@ -28,7 +29,11 @@ function ProviderIcon({ username }: { username?: string | null }) {
   const provider = getUserLoginProvider(username);
 
   if (provider === 'google') {
-    return <Text style={styles.googleIcon}>G</Text>;
+    return (
+      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.bold} fontSize={14} lineHeight={16}>
+        G
+      </ThemedText>
+    );
   }
 
   if (provider === 'apple') {
@@ -50,8 +55,17 @@ export const UserCard = memo(function UserCard({ onPress, user }: { onPress: () 
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-      <View style={styles.avatarColumn}>
-        <View style={styles.avatar}>
+      <ThemedView alignItems='center' alignSelf='stretch' justifyContent='center' width={58}>
+        <ThemedView
+          alignItems='center'
+          backgroundColor='#66769E'
+          borderColor={Palette.border}
+          borderRadius={Radius.pill}
+          borderWidth={2}
+          height={50}
+          justifyContent='center'
+          overflow='hidden'
+          width={50}>
           {avatarUrl ? (
             <Pressable
               accessibilityLabel={`Open avatar for ${displayName}`}
@@ -64,95 +78,68 @@ export const UserCard = memo(function UserCard({ onPress, user }: { onPress: () 
           ) : (
             <SymbolView name='person.fill' resizeMode='scaleAspectFit' size={38} tintColor='#FFFFFF' />
           )}
-        </View>
-        <View style={styles.idBadge}>
-          <Text style={styles.idText}>#{user.id}</Text>
-        </View>
-      </View>
+        </ThemedView>
+        <ThemedView
+          backgroundColor={Palette.surfaceRaised}
+          borderColor={Palette.border}
+          borderRadius={Radius.small}
+          borderWidth={1}
+          marginTop={-7}
+          paddingHorizontal={4}
+          paddingVertical={1}>
+          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={10}>
+            #{user.id}
+          </ThemedText>
+        </ThemedView>
+      </ThemedView>
 
-      <View style={styles.details}>
-        <Text numberOfLines={1} style={styles.name}>
+      <ThemedView flex={1} gap={2} minWidth={0}>
+        <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={19}>
           {displayName}
-        </Text>
+        </ThemedText>
 
-        <View style={styles.contactRow}>
+        <ThemedView alignItems='center' flexDirection='row' gap={Spacing.one} minWidth={0}>
           <VerificationIcon verified={user.isPhoneVerified} />
-          <Text numberOfLines={1} style={[styles.contactText, styles.phoneText]}>
+          <ThemedText numberOfLines={1} style={[styles.contactText, styles.phoneText]}>
             {user.phoneNumber || 'eboost-phone'}
-          </Text>
+          </ThemedText>
           <SymbolView name='doc.on.doc' resizeMode='scaleAspectFit' size={14} tintColor='#00AF55' />
-        </View>
+        </ThemedView>
 
-        <View style={styles.contactRow}>
+        <ThemedView alignItems='center' flexDirection='row' gap={Spacing.one} minWidth={0}>
           <VerificationIcon verified={user.activatedMail} />
           <ProviderIcon username={user.username} />
-          <Text numberOfLines={1} style={styles.contactText}>
+          <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} flexShrink={1} fontSize={12} lineHeight={17} minWidth={0}>
             {user.email || 'No email'}
-          </Text>
+          </ThemedText>
           <SymbolView name='doc.on.doc' resizeMode='scaleAspectFit' size={14} tintColor='#00AF55' />
-        </View>
-      </View>
+        </ThemedView>
+      </ThemedView>
 
-      <View style={styles.summary}>
+      <ThemedView alignItems='flex-end' alignSelf='stretch' justifyContent='center' flexShrink={0} width={74}>
         {user.userLevel?.name ? (
-          <View style={[styles.levelBadge, { backgroundColor: levelColor }]}>
-            <Text numberOfLines={1} style={styles.levelText}>
+          <ThemedView style={[styles.levelBadge, { backgroundColor: levelColor }]}>
+            <ThemedText numberOfLines={1} color='#FFFFFF' fontFamily={FontFamily.semibold} fontSize={10}>
               {user.userLevel.name}
-            </Text>
-          </View>
+            </ThemedText>
+          </ThemedView>
         ) : null}
-        <Text style={styles.balanceLabel}>BALANCE</Text>
-        <Text numberOfLines={1} style={styles.balance}>
+        <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.semibold} fontSize={10} marginTop={4} textAlign='right'>
+          BALANCE
+        </ThemedText>
+        <ThemedText numberOfLines={1} color='#00AF55' fontFamily={FontFamily.semibold} fontSize={14} lineHeight={18} marginTop={1} textAlign='right'>
           {currencyFormatter.format(user.balance || 0)} đ
-        </Text>
-      </View>
+        </ThemedText>
+      </ThemedView>
       <ImagePreviewModal imageUrl={avatarUrl} onClose={() => setPreviewOpen(false)} title={displayName} visible={previewOpen} />
     </Pressable>
   );
 });
 
 const styles = StyleSheet.create({
-  avatar: {
-    alignItems: 'center',
-    backgroundColor: '#66769E',
-    borderColor: Palette.border,
-    borderRadius: Radius.pill,
-    borderWidth: 2,
-    height: 50,
-    justifyContent: 'center',
-    overflow: 'hidden',
-    width: 50,
-  },
-  avatarColumn: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    justifyContent: 'center',
-    width: 58,
-  },
   avatarImage: {
     height: 50,
     width: 50,
-  },
-  balance: {
-    color: '#00AF55',
-    fontFamily: FontFamily.semibold,
-    fontSize: 14,
-    lineHeight: 18,
-    marginTop: 1,
-    textAlign: 'right',
-  },
-  balanceLabel: {
-    color: Palette.textTertiary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 10,
-    marginTop: 4,
-    textAlign: 'right',
-  },
-  contactRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: Spacing.one,
-    minWidth: 0,
   },
   contactText: {
     color: Palette.textSecondary,
@@ -162,48 +149,12 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     minWidth: 0,
   },
-  details: {
-    flex: 1,
-    gap: 2,
-    minWidth: 0,
-  },
-  googleIcon: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.bold,
-    fontSize: 14,
-    lineHeight: 16,
-  },
-  idBadge: {
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: Palette.border,
-    borderRadius: Radius.small,
-    borderWidth: 1,
-    marginTop: -7,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-  },
-  idText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 10,
-  },
   levelBadge: {
     alignSelf: 'flex-end',
     borderRadius: Radius.small,
     maxWidth: 74,
     paddingHorizontal: 6,
     paddingVertical: 3,
-  },
-  levelText: {
-    color: '#FFFFFF',
-    fontFamily: FontFamily.semibold,
-    fontSize: 10,
-  },
-  name: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 14,
-    lineHeight: 19,
   },
   phoneText: {
     fontVariant: ['tabular-nums'],
@@ -221,13 +172,6 @@ const styles = StyleSheet.create({
     minHeight: 82,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.three,
-  },
-  summary: {
-    alignItems: 'flex-end',
-    alignSelf: 'stretch',
-    justifyContent: 'center',
-    flexShrink: 0,
-    width: 74,
   },
   verifyCircle: {
     alignItems: 'center',

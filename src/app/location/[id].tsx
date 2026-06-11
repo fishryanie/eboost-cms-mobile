@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { ChargerCard } from 'features/chargers/components/charger-card';
@@ -20,64 +21,100 @@ export default function LocationDetailScreen() {
   return (
     <AppScreen>
       <Pressable onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backText}>Back</Text>
+        <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
+          Back
+        </ThemedText>
       </Pressable>
 
       {locationQuery.isLoading ? (
-        <View style={styles.centerState}>
+        <ThemedView gap={Spacing.four}>
           <ActivityIndicator color={Palette.accent} />
-          <Text style={styles.stateText}>Loading location</Text>
-        </View>
+          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} textAlign='center'>
+            Loading location
+          </ThemedText>
+        </ThemedView>
       ) : locationQuery.isError || !location ? (
-        <View style={styles.centerState}>
+        <ThemedView gap={Spacing.four}>
           <EmptyState title='Location unavailable' message='The location could not be loaded.' />
           <AppButton label='Retry' onPress={() => locationQuery.refetch()} />
-        </View>
+        </ThemedView>
       ) : (
         <>
-          <View style={styles.hero}>
-            <View style={styles.heroTop}>
-              <View style={styles.titleBlock}>
-                <Text style={styles.eyebrow}>Location #{location.id}</Text>
-                <Text style={styles.title}>{location.name}</Text>
-              </View>
+          <ThemedView
+            backgroundColor={Palette.surfaceRaised}
+            borderColor={Palette.borderSubtle}
+            borderRadius={Radius.large}
+            borderWidth={1}
+            gap={Spacing.four}
+            padding={Spacing.four}>
+            <ThemedView alignItems='flex-start' flexDirection='row' gap={Spacing.three} justifyContent='space-between'>
+              <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
+                <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={13} textTransform='uppercase'>
+                  Location #{location.id}
+                </ThemedText>
+                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={28} letterSpacing={0} lineHeight={34}>
+                  {location.name}
+                </ThemedText>
+              </ThemedView>
               <AppButton label='Actions' onPress={() => setActionsOpen(true)} />
-            </View>
-            <View style={styles.chips}>
+            </ThemedView>
+            <ThemedView flexDirection='row' flexWrap='wrap' gap={Spacing.two}>
               <StatusChip label={location.operationStatus?.label || 'Unknown'} tone={location.visible === false ? 'danger' : 'success'} />
               <StatusChip label={location.visible === false ? 'Hidden' : 'On map'} tone={location.visible === false ? 'danger' : 'success'} />
-            </View>
-          </View>
+            </ThemedView>
+          </ThemedView>
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Stations</Text>
-              <Text style={styles.count}>{stationsQuery.data?.length || 0}</Text>
-            </View>
+          <ThemedView gap={Spacing.three}>
+            <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
+                Stations
+              </ThemedText>
+              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.bold} fontSize={14}>
+                {stationsQuery.data?.length || 0}
+              </ThemedText>
+            </ThemedView>
             {stationsQuery.isLoading ? (
-              <Text style={styles.stateText}>Loading stations</Text>
+              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} textAlign='center'>
+                Loading stations
+              </ThemedText>
             ) : (stationsQuery.data || []).length === 0 ? (
               <EmptyState title='No stations' message='No station records were returned for this location.' />
             ) : (
-              <View style={styles.list}>
+              <ThemedView gap={Spacing.three}>
                 {(stationsQuery.data || []).map(station => (
-                  <View key={station.id} style={styles.stationCard}>
-                    <View>
-                      <Text style={styles.stationTitle}>{station.name || `Station #${station.id}`}</Text>
-                      <Text style={styles.stationMeta}>Station #{station.id}</Text>
-                    </View>
+                  <ThemedView
+                    key={station.id}
+                    alignItems='center'
+                    backgroundColor={Palette.surfaceRaised}
+                    borderColor={Palette.borderSubtle}
+                    borderRadius={Radius.large}
+                    borderWidth={1}
+                    flexDirection='row'
+                    gap={Spacing.three}
+                    justifyContent='space-between'
+                    padding={Spacing.four}>
+                    <ThemedView>
+                      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={16} lineHeight={22}>
+                        {station.name || `Station #${station.id}`}
+                      </ThemedText>
+                      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} marginTop={3}>
+                        Station #{station.id}
+                      </ThemedText>
+                    </ThemedView>
                     <StatusChip label={station.visible === false ? 'Hidden' : 'Visible'} tone={station.visible === false ? 'danger' : 'success'} />
-                  </View>
+                  </ThemedView>
                 ))}
-              </View>
+              </ThemedView>
             )}
-          </View>
+          </ThemedView>
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Charger actions</Text>
+          <ThemedView gap={Spacing.three}>
+            <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
+                Charger actions
+              </ThemedText>
               <StatusChip label='Service ready' tone='success' />
-            </View>
+            </ThemedView>
             <ChargerCard
               charger={{
                 enabled: true,
@@ -87,7 +124,7 @@ export default function LocationDetailScreen() {
                 visible: true,
               }}
             />
-          </View>
+          </ThemedView>
         </>
       )}
 
@@ -100,103 +137,5 @@ const styles = StyleSheet.create({
   backButton: {
     alignSelf: 'flex-start',
     paddingVertical: Spacing.one,
-  },
-  backText: {
-    color: Palette.accent,
-    fontFamily: FontFamily.bold,
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  centerState: {
-    gap: Spacing.four,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
-  },
-  count: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.bold,
-    fontSize: 14,
-  },
-  eyebrow: {
-    color: Palette.accent,
-    fontFamily: FontFamily.bold,
-    fontSize: 13,
-    textTransform: 'uppercase',
-  },
-  hero: {
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: Palette.borderSubtle,
-    borderRadius: Radius.large,
-    borderWidth: 1,
-    gap: Spacing.four,
-    padding: Spacing.four,
-  },
-  heroTop: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: Spacing.three,
-    justifyContent: 'space-between',
-  },
-  list: {
-    gap: Spacing.three,
-  },
-  section: {
-    gap: Spacing.three,
-  },
-  sectionHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 20,
-    lineHeight: 26,
-  },
-  stateText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  stationCard: {
-    alignItems: 'center',
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: Palette.borderSubtle,
-    borderRadius: Radius.large,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: Spacing.three,
-    justifyContent: 'space-between',
-    padding: Spacing.four,
-  },
-  stationMeta: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 13,
-    marginTop: 3,
-  },
-  stationTitle: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  title: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 28,
-    letterSpacing: 0,
-    lineHeight: 34,
-  },
-  titleBlock: {
-    flex: 1,
-    gap: Spacing.one,
-    minWidth: 0,
   },
 });

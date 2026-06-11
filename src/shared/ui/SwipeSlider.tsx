@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import type { ReactElement } from 'react';
-import { StyleProp, StyleSheet, TextStyle, useWindowDimensions, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, TextStyle, useWindowDimensions, ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -13,6 +13,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { ThemedView } from 'components/base';
 
 const DEFAULT_TRACK_WIDTH_RATIO = 0.8;
 const DEFAULT_SLIDER_SIZE = 50;
@@ -174,14 +175,14 @@ export function SwipeSlider({
         </Animated.View>
       </GestureDetector>
 
-      <View pointerEvents='none' style={styles.textContainer}>
+      <ThemedView pointerEvents='none' alignItems='center' bottom={0} justifyContent='center' left={0} position='absolute' right={0} top={0}>
         <Animated.Text numberOfLines={1} style={[styles.sliderTextBase, { color: textColor }, initialContentAnimatedStyle, textStyle]}>
           {initialText}
         </Animated.Text>
         <Animated.Text numberOfLines={1} style={[styles.sliderTextBase, { color: textColor }, completeContentAnimatedStyle, textStyle]}>
           {completeText}
         </Animated.Text>
-      </View>
+      </ThemedView>
     </Animated.View>
   );
 }
@@ -210,14 +211,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: DEFAULT_TRACK_PADDING,
-  },
-  textContainer: {
-    alignItems: 'center',
-    bottom: 0,
-    justifyContent: 'center',
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 0,
   },
 });

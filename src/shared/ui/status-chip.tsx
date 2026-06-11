@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius } from 'themes';
 
@@ -15,11 +16,11 @@ export function StatusChip({ label, tone = 'muted' }: { label: string; tone?: St
   const colors = toneStyles[tone];
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.backgroundColor }]}>
-      <Text numberOfLines={1} style={[styles.label, { color: colors.color }]}>
+    <ThemedView style={[styles.container, { backgroundColor: colors.backgroundColor }]}>
+      <ThemedText numberOfLines={1} style={[styles.label, { color: colors.color }]}>
         {label}
-      </Text>
-    </View>
+      </ThemedText>
+    </ThemedView>
   );
 }
 

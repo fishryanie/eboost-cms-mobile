@@ -23,17 +23,31 @@ In the output, you'll find options to open the app in a
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## EAS Update
 
-## Get a fresh project
+This app is configured for EAS Update with `expo-updates`.
 
-When you're ready, run:
+- Project ID: `26625cb7-5cd2-42c2-97d4-5aecd7e83ffb`
+- Runtime version policy: `appVersion`
+- Update URL: `https://u.expo.dev/26625cb7-5cd2-42c2-97d4-5aecd7e83ffb`
+- Build channels: `development`, `preview`, `android-apk`, `android-aab`, `production`
+
+Publish an over-the-air update to the matching build channel:
 
 ```bash
-npm run reset-project
+bun run update:preview -- --message "Describe the update"
+bun run update:production -- --message "Describe the update"
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Check previous updates:
+
+```bash
+bun run update:list
+```
+
+EAS Update can ship JavaScript and asset changes without a new App Store or Play Store build. Create a new native build instead when changing native dependencies, native config, app icon/splash config, permissions, bundle identifiers, or anything that changes the runtime. With the current `appVersion` runtime policy, bump `expo.version` in `app.json` when you intentionally want future updates to target a new runtime.
+
+You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
 ### Other setup steps
 

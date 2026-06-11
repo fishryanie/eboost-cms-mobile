@@ -1,6 +1,7 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { ReactNode, useEffect, useMemo, useRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
@@ -33,9 +34,11 @@ export function ActionSheet({ items, onClose, open, title }: { items: ActionShee
       ref={ref}
       snapPoints={snapPoints}>
       <BottomSheetScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{title}</Text>
-        </View>
+        <ThemedView paddingBottom={8}>
+          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={18} lineHeight={24}>
+            {title}
+          </ThemedText>
+        </ThemedView>
         {items.map(item => (
           <Pressable
             disabled={item.disabled}
@@ -45,8 +48,12 @@ export function ActionSheet({ items, onClose, open, title }: { items: ActionShee
               item.onPress();
             }}
             style={({ pressed }) => [styles.item, item.disabled && styles.disabled, pressed && styles.pressed]}>
-            <Text style={[styles.itemLabel, item.danger && styles.danger]}>{item.label}</Text>
-            {item.meta ? <Text style={styles.meta}>{item.meta}</Text> : null}
+            <ThemedText style={[styles.itemLabel, item.danger && styles.danger]}>{item.label}</ThemedText>
+            {item.meta ? (
+              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} marginTop={3}>
+                {item.meta}
+              </ThemedText>
+            ) : null}
           </Pressable>
         ))}
       </BottomSheetScrollView>
@@ -66,9 +73,6 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.45,
   },
-  header: {
-    paddingBottom: 8,
-  },
   item: {
     backgroundColor: Palette.surfaceMuted,
     borderRadius: Radius.large,
@@ -81,19 +85,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
   },
-  meta: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.regular,
-    fontSize: 13,
-    marginTop: 3,
-  },
   pressed: {
     opacity: 0.7,
-  },
-  title: {
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.bold,
-    fontSize: 18,
-    lineHeight: 24,
   },
 });
