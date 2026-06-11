@@ -6,7 +6,6 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   Keyboard,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   TouchableWithoutFeedback,
@@ -24,6 +23,7 @@ import { biometricCredentialStore } from 'features/auth/biometric-credentials';
 import { calculateKeyboardAwareScrollY } from 'features/auth/keyboard-avoidance';
 import { parseLoginForm, type LoginFieldErrors } from 'features/auth/login-validation';
 import { useBiometricLogin } from 'hooks/use-biometric-login';
+import { AppButton } from 'shared/ui';
 import FloatingTextInput from 'shared/ui/FloatingTextInput';
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { mhs, mvs } from 'themes/scaling';
@@ -220,29 +220,35 @@ export default function LoginScreen() {
               ) : null}
 
               <ThemedView alignItems='stretch' flexDirection='row' gap={Spacing.two}>
-                <Pressable
-                  accessibilityRole='button'
+                <AppButton
+                  buttonColor={Palette.accent}
                   disabled={!canSubmit}
+                  label='Sign in'
+                  loading={isLoading}
+                  loadingLabel='Signing in...'
                   onPress={handleLogin}
-                  style={({ pressed }) => [styles.signInButton, pressed && styles.pressed, !canSubmit && styles.disabled]}>
-                  <ThemedText color='#FFFFFF' fontFamily={FontFamily.bold} fontSize={16} lineHeight={22}>
-                    {isLoading ? 'Signing in...' : 'Sign in'}
-                  </ThemedText>
-                </Pressable>
+                  style={styles.primaryActionButton}
+                  textColor='#FFFFFF'
+                  textStyle={styles.primaryActionLabel}
+                />
 
-                <Pressable
+                <AppButton
                   accessibilityLabel={`Sign in with ${biometricLabel}`}
-                  accessibilityRole='button'
+                  buttonColor={canSubmitBiometric ? '#F3FAF6' : Palette.surfaceMuted}
                   disabled={!canSubmitBiometric}
+                  icon={
+                    <SymbolView
+                      name={biometricIcon as never}
+                      resizeMode='scaleAspectFit'
+                      size={biometricSymbolSize}
+                      tintColor={canSubmitBiometric ? Palette.accent : Palette.textTertiary}
+                    />
+                  }
                   onPress={handleBiometricLogin}
-                  style={({ pressed }) => [styles.biometricButton, pressed && styles.pressed, !canSubmitBiometric && styles.biometricButtonDisabled]}>
-                  <SymbolView
-                    name={biometricIcon as never}
-                    resizeMode='scaleAspectFit'
-                    size={biometricSymbolSize}
-                    tintColor={canSubmitBiometric ? Palette.accent : Palette.textTertiary}
-                  />
-                </Pressable>
+                  scale={0.92}
+                  style={[styles.iconActionButton, !canSubmitBiometric && styles.iconActionButtonDisabled]}
+                  textColor={Palette.accent}
+                />
               </ThemedView>
             </ThemedView>
 
@@ -282,18 +288,17 @@ function BackgroundGradient({ children, colors }: { children: ReactNode; colors:
 }
 
 const styles = StyleSheet.create({
-  biometricButton: {
+  iconActionButton: {
     alignItems: 'center',
-    backgroundColor: '#F3FAF6',
     borderColor: 'rgba(1,167,78,0.22)',
     borderRadius: radiusPill,
     borderWidth: 1,
-    justifyContent: 'center',
     height: actionControlHeight,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
     width: actionControlHeight,
   },
-  biometricButtonDisabled: {
-    backgroundColor: Palette.surfaceMuted,
+  iconActionButtonDisabled: {
     borderColor: Palette.borderSubtle,
   },
   cardLogoImage: {
@@ -304,28 +309,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  disabled: {
-    opacity: 1,
-  },
   gradientCanvas: {
     flex: 1,
-  },
-  pressed: {
-    opacity: 0.78,
-    transform: [{ scale: 0.99 }],
   },
   scrollContainer: {
     paddingBottom: mvs(84),
     paddingHorizontal: mhs(Spacing.five),
     paddingTop: mvs(94),
   },
-  signInButton: {
-    alignItems: 'center',
-    backgroundColor: Palette.accent,
+  primaryActionButton: {
     borderRadius: radiusPill,
     boxShadow: '0 8px 18px rgba(1, 167, 78, 0.18)',
     flex: 1,
-    justifyContent: 'center',
     height: actionControlHeight,
+  },
+  primaryActionLabel: {
+    fontSize: 16,
+    lineHeight: 22,
   },
 });

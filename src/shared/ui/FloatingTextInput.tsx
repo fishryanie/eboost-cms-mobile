@@ -61,7 +61,7 @@ export default function FloatingTextInput({ error, label, onBlur, onFocus, style
           }}
           placeholderTextColor={isFloating ? '#8A948E' : 'transparent'}
           selectionColor={Palette.accent}
-          style={[styles.input, isFloating && styles.floatingInput]}
+          style={styles.input}
           value={value}
         />
       </Pressable>
@@ -106,9 +106,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     height: inputHeight,
     justifyContent: 'center',
-  },
-  floatingInput: {
-    paddingTop: rv({ compact: 8, medium: 8, expanded: 8 }),
   },
   label: {
     backgroundColor: Palette.surfaceRaised,

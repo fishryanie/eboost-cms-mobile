@@ -1,7 +1,8 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
+import Modal from 'react-native-modal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
 
@@ -166,43 +167,54 @@ export default function LocationScreen() {
 
       <LocationActionsSheet location={selectedLocation} onClose={() => setSelectedLocation(undefined)} open={Boolean(selectedLocation)} />
 
-      <Modal animationType='slide' onRequestClose={closeCreate} transparent visible={createOpen}>
-        <ThemedView backgroundColor='rgba(15, 23, 42, 0.28)' flex={1} justifyContent='flex-end'>
-          <Pressable accessibilityLabel='Close create location' onPress={closeCreate} style={StyleSheet.absoluteFill} />
-          <ThemedView
-            backgroundColor={Palette.surfaceBase}
-            borderTopLeftRadius={Radius.large}
-            borderTopRightRadius={Radius.large}
-            gap={Spacing.four}
-            padding={Spacing.four}
-            paddingBottom={Spacing.six}>
-            <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
-              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
-                Create location
+      <Modal
+        animationIn='slideInUp'
+        animationInTiming={360}
+        animationOut='slideOutDown'
+        animationOutTiming={260}
+        avoidKeyboard
+        backdropColor='#0F172A'
+        backdropOpacity={0.28}
+        backdropTransitionInTiming={360}
+        backdropTransitionOutTiming={260}
+        hideModalContentWhileAnimating
+        isVisible={createOpen}
+        onBackButtonPress={closeCreate}
+        onBackdropPress={closeCreate}
+        style={styles.bottomModal}>
+        <ThemedView
+          backgroundColor={Palette.surfaceBase}
+          borderTopLeftRadius={Radius.large}
+          borderTopRightRadius={Radius.large}
+          gap={Spacing.four}
+          padding={Spacing.four}
+          paddingBottom={Spacing.six}>
+          <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
+              Create location
+            </ThemedText>
+            <Pressable onPress={closeCreate} style={styles.closeButton}>
+              <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={14}>
+                Close
               </ThemedText>
-              <Pressable onPress={closeCreate} style={styles.closeButton}>
-                <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={14}>
-                  Close
-                </ThemedText>
-              </Pressable>
-            </ThemedView>
-            <TextInput
-              autoFocus
-              onChangeText={setNewLocationName}
-              placeholder='Location name'
-              placeholderTextColor='#98A2B3'
-              returnKeyType='done'
-              style={styles.modalInput}
-              value={newLocationName}
-              onSubmitEditing={submitCreate}
-            />
-            {createLocation.isError ? (
-              <ThemedText color={Palette.danger} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
-                Could not create this location. Please try again.
-              </ThemedText>
-            ) : null}
-            <AppButton block disabled={!newLocationName.trim()} label='Create new location' loading={createLocation.isPending} onPress={submitCreate} />
+            </Pressable>
           </ThemedView>
+          <TextInput
+            autoFocus
+            onChangeText={setNewLocationName}
+            placeholder='Location name'
+            placeholderTextColor='#98A2B3'
+            returnKeyType='done'
+            style={styles.modalInput}
+            value={newLocationName}
+            onSubmitEditing={submitCreate}
+          />
+          {createLocation.isError ? (
+            <ThemedText color={Palette.danger} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
+              Could not create this location. Please try again.
+            </ThemedText>
+          ) : null}
+          <AppButton block disabled={!newLocationName.trim()} label='Create new location' loading={createLocation.isPending} onPress={submitCreate} />
         </ThemedView>
       </Modal>
     </SafeAreaView>
@@ -218,6 +230,10 @@ function StatusFilterChip({ active, label, onPress }: { active: boolean; label: 
 }
 
 const styles = StyleSheet.create({
+  bottomModal: {
+    justifyContent: 'flex-end',
+    margin: 0,
+  },
   closeButton: {
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.one,

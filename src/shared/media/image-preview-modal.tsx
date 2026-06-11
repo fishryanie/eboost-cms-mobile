@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
-import { Modal, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Modal from 'react-native-modal';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ThemedText, ThemedView } from 'components/base';
 
@@ -82,7 +83,20 @@ export function ImagePreviewModal({ imageUrl, onClose, title, visible }: { image
   }));
 
   return (
-    <Modal animationType='fade' onRequestClose={close} statusBarTranslucent transparent visible={visible}>
+    <Modal
+      animationIn='fadeIn'
+      animationInTiming={260}
+      animationOut='fadeOut'
+      animationOutTiming={220}
+      backdropColor='#000000'
+      backdropOpacity={1}
+      backdropTransitionInTiming={260}
+      backdropTransitionOutTiming={220}
+      hideModalContentWhileAnimating
+      isVisible={visible}
+      onBackButtonPress={close}
+      statusBarTranslucent
+      style={styles.modal}>
       <GestureHandlerRootView style={styles.overlay}>
         <ThemedView
           alignItems='center'
@@ -132,6 +146,9 @@ const styles = StyleSheet.create({
   imageWrap: {
     height: '100%',
     width: '100%',
+  },
+  modal: {
+    margin: 0,
   },
   overlay: {
     backgroundColor: '#000000',

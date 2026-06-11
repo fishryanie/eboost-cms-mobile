@@ -1,7 +1,8 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Switch } from 'react-native';
+import { Platform, Pressable, StyleSheet, Switch } from 'react-native';
+import Modal from 'react-native-modal';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
@@ -78,8 +79,21 @@ export function BiometricOptInPrompt() {
   };
 
   return (
-    <Modal animationType='fade' onRequestClose={closePrompt} transparent visible={Boolean(pendingCredentials)}>
-      <ThemedView alignItems='center' backgroundColor='rgba(16,24,40,0.42)' flex={1} justifyContent='center' padding={Spacing.five}>
+    <Modal
+      animationIn='zoomIn'
+      animationInTiming={300}
+      animationOut='zoomOut'
+      animationOutTiming={220}
+      backdropColor='#101828'
+      backdropOpacity={0.42}
+      backdropTransitionInTiming={300}
+      backdropTransitionOutTiming={220}
+      hideModalContentWhileAnimating
+      isVisible={Boolean(pendingCredentials)}
+      onBackButtonPress={closePrompt}
+      onBackdropPress={closePrompt}
+      style={styles.centerModal}>
+      <ThemedView alignItems='center' flex={1} justifyContent='center' padding={Spacing.five}>
         <ThemedView backgroundColor={Palette.surfaceRaised} borderRadius={Radius.large} gap={Spacing.four} maxWidth={420} padding={Spacing.five} width='88%'>
           <ThemedView
             alignItems='center'
@@ -143,6 +157,9 @@ export function BiometricOptInPrompt() {
 }
 
 const styles = StyleSheet.create({
+  centerModal: {
+    margin: 0,
+  },
   disabled: {
     opacity: 0.72,
   },
