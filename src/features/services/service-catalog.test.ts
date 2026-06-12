@@ -11,10 +11,11 @@ describe('cms service catalog', () => {
     );
   });
 
-  it('uses route-safe slugs and image icon urls from the CMS menu data', () => {
+  it('uses route-safe slugs and lucide icons from the CMS menu data', () => {
     for (const service of cmsServiceGroups) {
       assert.match(service.slug, /^[a-z0-9-]+$/);
-      assert.match(service.iconUrl, /^https?:\/\//);
+      assert.equal(typeof service.icon, 'string');
+      assert.equal('iconUrl' in service, false);
       assert.equal(getCmsServiceRoute(service), `/menu/${service.slug}`);
       assert.equal(service.routeCount, service.children.length);
 

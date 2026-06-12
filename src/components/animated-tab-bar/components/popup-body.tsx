@@ -78,6 +78,51 @@ function getRouteActions(routeName: string, router: ReturnType<typeof useRouter>
     ];
   }
 
+  if (routeName === 'technical') {
+    return [
+      {
+        icon: 'technical',
+        key: 'technical-chargers',
+        label: 'Chargers',
+        onPress: () =>
+          router.push({
+            pathname: '/technical',
+            params: { panel: 'chargers' },
+          } as never),
+      },
+      {
+        icon: 'technical',
+        key: 'technical-meter-hourly',
+        label: 'Meter Hourly',
+        onPress: () =>
+          router.push({
+            pathname: '/technical',
+            params: { panel: 'meter-hourly' },
+          } as never),
+      },
+      {
+        icon: 'history',
+        key: 'technical-status-logs',
+        label: 'Status Logs',
+        onPress: () =>
+          router.push({
+            pathname: '/technical',
+            params: { panel: 'status-logs' },
+          } as never),
+      },
+      {
+        icon: 'technical',
+        key: 'technical-energy-differ',
+        label: 'Energy Differ',
+        onPress: () =>
+          router.push({
+            pathname: '/technical',
+            params: { panel: 'energy-differ' },
+          } as never),
+      },
+    ];
+  }
+
   return [];
 }
 

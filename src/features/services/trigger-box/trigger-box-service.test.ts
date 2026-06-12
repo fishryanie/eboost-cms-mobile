@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { fetchUtilityChargers, requestTriggerBox, TriggerBoxResponseError } from './trigger-box-service';
+import {
+  fetchUtilityChargers,
+  requestResetBox,
+  requestTriggerBox,
+  requestUnlockBox,
+  ResetBoxStatusError,
+  TriggerBoxResponseError,
+} from './trigger-box-service';
 
 describe('trigger box service', () => {
   it('triggers meter values on the hub service for a box id', async () => {
@@ -60,6 +67,96 @@ describe('trigger box service', () => {
       {
         options: { params: { pagination: false } },
         url: 'api/controller/utilities/chargers',
+      },
+    ]);
+  });
+
+  it('checks box status before resetting a selected box', async () => {
+    const calls: { options?: { data?: unknown; method?: string; service?: string }; url: string }[] = [];
+    const request = async (url: string, options?: { data?: unknown; method?: string; service?: string }) => {
+      calls.push({ options, url });
+      if (url === 'api/box-status') {
+        return {
+          'CP-001_0': 'Available',
+          'CP-001_1': 'Preparing',
+        };
+      }
+      return { status: 'Accepted' };
+    };
+
+    const response = await requestResetBox({
+      boxId: 'CP-001',
+      request,
+      vendorId: 'CP-001',
+    });
+
+    assert.deepEqual(response, { status: 'Accepted' });
+    assert.deepEqual(calls, [
+      {
+        options: { service: 'hub' },
+        url: 'api/box-status',
+      },
+      {
+        options: {
+          data: { type: 'Soft' },
+          method: 'POST',
+          service: 'hub',
+        },
+        url: 'api/v1/device/CP-001/reset',
+      },
+    ]);
+  });
+
+  it('blocks reset when any matching vendor connector is charging', async () => {
+    const calls: { options?: { data?: unknown; method?: string; service?: string }; url: string }[] = [];
+    const request = async (url: string, options?: { data?: unknown; method?: string; service?: string }) => {
+      calls.push({ options, url });
+      return {
+        'CP-001_0': 'Unavailable',
+        'CP-001_1': 'Charging',
+        'CP-002_1': 'Available',
+      };
+    };
+
+    await assert.rejects(
+      () =>
+        requestResetBox({
+          boxId: 'CP-001',
+          request,
+          vendorId: 'CP-001',
+        }),
+      (error: unknown) => error instanceof ResetBoxStatusError && error.message === 'Box CP-001 is charging and cannot be reset.',
+    );
+
+    assert.deepEqual(calls, [
+      {
+        options: { service: 'hub' },
+        url: 'api/box-status',
+      },
+    ]);
+  });
+
+  it('unlocks connector 1 on the hub service for a box id', async () => {
+    const calls: { options?: { data?: unknown; method?: string; service?: string }; url: string }[] = [];
+    const request = async (url: string, options?: { data?: unknown; method?: string; service?: string }) => {
+      calls.push({ options, url });
+      return { status: 'Accepted' };
+    };
+
+    const response = await requestUnlockBox({
+      boxId: ' CP-001 ',
+      request,
+    });
+
+    assert.deepEqual(response, { status: 'Accepted' });
+    assert.deepEqual(calls, [
+      {
+        options: {
+          data: { connectorID: 1 },
+          method: 'POST',
+          service: 'hub',
+        },
+        url: 'api/v1/device/CP-001/unlock',
       },
     ]);
   });

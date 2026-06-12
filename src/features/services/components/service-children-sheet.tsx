@@ -1,13 +1,24 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { Activity, ChartColumn, Handshake, Megaphone, Settings, ShieldUser, Wrench, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
-import { getCmsServiceRoute, type CmsServiceGroup, type CmsServiceItem } from 'features/services/service-catalog';
+import { getCmsServiceRoute, type CmsServiceGroup, type CmsServiceIconName, type CmsServiceItem } from 'features/services/service-catalog';
+
+const activeBottomButtonColor = 'rgba(0,0,0,0.06)';
+const cmsServiceIcons: Record<CmsServiceIconName, LucideIcon> = {
+  activity: Activity,
+  chartColumn: ChartColumn,
+  handshake: Handshake,
+  megaphone: Megaphone,
+  settings: Settings,
+  shieldUser: ShieldUser,
+  wrench: Wrench,
+};
 
 export function ServiceChildrenSheet({ onClose, service }: { onClose: () => void; service: CmsServiceGroup | null }) {
   const ref = useRef<BottomSheetModal>(null);
@@ -53,9 +64,7 @@ export function ServiceChildrenSheet({ onClose, service }: { onClose: () => void
         {service ? (
           <>
             <ThemedView alignItems='center' flexDirection='row' gap={Spacing.four}>
-              <ThemedView style={[styles.iconSurface, { backgroundColor: `${service.accentColor}14` }]}>
-                <Image contentFit='contain' source={{ uri: service.iconUrl }} style={styles.icon} />
-              </ThemedView>
+              <ServiceHeaderIcon service={service} />
               <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
                 <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
                   {service.name}
@@ -122,6 +131,16 @@ export function ServiceChildrenSheet({ onClose, service }: { onClose: () => void
   );
 }
 
+function ServiceHeaderIcon({ service }: { service: CmsServiceGroup }) {
+  const Icon = cmsServiceIcons[service.icon];
+
+  return (
+    <ThemedView style={styles.iconSurface}>
+      <Icon color={Palette.textTertiary} size={24} strokeWidth={1.9} />
+    </ThemedView>
+  );
+}
+
 const styles = StyleSheet.create({
   chevron: {
     fontFamily: FontFamily.medium,
@@ -148,13 +167,10 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
     padding: Spacing.four,
   },
-  icon: {
-    height: 30,
-    width: 30,
-  },
   iconSurface: {
     alignItems: 'center',
-    borderRadius: Radius.pill,
+    backgroundColor: activeBottomButtonColor,
+    borderRadius: Radius.small,
     height: 54,
     justifyContent: 'center',
     width: 54,

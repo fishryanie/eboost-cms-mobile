@@ -9,6 +9,7 @@ const tabs: { icon: TabIconName; label: string; name: string }[] = [
   { icon: 'home', label: 'Home', name: 'home' },
   { icon: 'history', label: 'History', name: 'history' },
   { icon: 'location', label: 'Location', name: 'location' },
+  { icon: 'technical', label: 'Technical', name: 'technical' },
   { icon: 'users', label: 'Users', name: 'users' },
 ];
 

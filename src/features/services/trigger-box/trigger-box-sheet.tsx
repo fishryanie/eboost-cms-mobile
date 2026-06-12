@@ -6,8 +6,10 @@ import {
   BottomSheetTextInput,
   type BottomSheetFooterProps,
 } from '@gorhom/bottom-sheet';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
 
@@ -15,41 +17,297 @@ import { AppButton, EmptyState } from 'shared/ui';
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
 import { useUtilityChargers } from './trigger-box-hooks';
-import { getUtilityChargerTriggerId, requestTriggerBox, stringifyTriggerBoxResponse, type UtilityCharger } from './trigger-box-service';
+import {
+  getUtilityChargerTriggerId,
+  requestResetBox,
+  requestTriggerBox,
+  requestUnlockBox,
+  stringifyTriggerBoxResponse,
+  type UtilityCharger,
+} from './trigger-box-service';
 
 type TriggerBoxSheetProps = {
+  mode?: 'reset' | 'trigger' | 'unlock';
   onClose: () => void;
   visible: boolean;
 };
 
+type BoxActionMode = NonNullable<TriggerBoxSheetProps['mode']>;
+
 const emptyChargers: UtilityCharger[] = [];
+const triggerBoxSnapPoints = ['72%', '92%'];
+const phaseLabels = ['L1', 'L2', 'L3'];
+
+type TriggerSampledValue = {
+  value?: unknown;
+  measurand?: unknown;
+  phase?: unknown;
+  unit?: unknown;
+};
+
+type TriggerResponseSummary = {
+  chargePointID: string;
+  connectorID: string;
+  energyText: string;
+  phases: { currentText: string; phase: string; voltageText: string }[];
+  powerText: string;
+  rawTimestamp: string;
+  timestampText: string;
+  transactionID: string;
+};
 
 function getChargerSearchText(charger: UtilityCharger) {
   return `${charger.uniqueId} ${charger.vendorId} ${charger.stationName || ''}`.toLowerCase();
 }
 
-export function TriggerBoxSheet({ onClose, visible }: TriggerBoxSheetProps) {
+function getUtilityChargerSelectionKey(charger: UtilityCharger) {
+  return `${charger.id}-${charger.vendorId}-${charger.uniqueId}`;
+}
+
+function getUtilityChargerListKey(charger: UtilityCharger, index: number) {
+  return `${getUtilityChargerSelectionKey(charger)}-${index}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object';
+}
+
+function getSampleValue(samples: TriggerSampledValue[], measurand: string, phase?: string) {
+  return samples.find(sample => sample.measurand === measurand && (phase === undefined || sample.phase === phase));
+}
+
+function formatSample(sample?: TriggerSampledValue, fallback = '--') {
+  if (!sample || sample.value === undefined || sample.value === null || sample.value === '') return fallback;
+  const value = Number(sample.value);
+  const formattedValue = Number.isFinite(value) ? value.toLocaleString(undefined, { maximumFractionDigits: 3 }) : String(sample.value);
+  return `${formattedValue}${sample.unit ? ` ${sample.unit}` : ''}`;
+}
+
+function formatEnergy(sample?: TriggerSampledValue) {
+  if (!sample || sample.value === undefined || sample.value === null || sample.value === '') return '--';
+  const value = Number(sample.value);
+  if (!Number.isFinite(value)) return formatSample(sample);
+  if (sample.unit === 'Wh') return `${(value / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 })} kWh`;
+  return formatSample(sample);
+}
+
+function formatTimestamp(timestamp?: unknown) {
+  if (typeof timestamp !== 'string' || !timestamp.trim()) return { rawTimestamp: '--', timestampText: '--' };
+
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return { rawTimestamp: timestamp, timestampText: timestamp };
+
+  return {
+    rawTimestamp: timestamp,
+    timestampText: date.toLocaleString(undefined, {
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }),
+  };
+}
+
+function getTriggerResponseSummary(response: unknown): TriggerResponseSummary {
+  const root = isRecord(response) ? response : {};
+  const meterValues = Array.isArray(root.meterValue) ? root.meterValue : [];
+  const firstMeterValue = isRecord(meterValues[0]) ? meterValues[0] : {};
+  const samples = Array.isArray(firstMeterValue.sampledValue) ? (firstMeterValue.sampledValue.filter(isRecord) as TriggerSampledValue[]) : [];
+  const timestamp = formatTimestamp(firstMeterValue.timestamp);
+  const phases = phaseLabels.map(phase => ({
+    currentText: formatSample(getSampleValue(samples, 'Current.Import', phase)),
+    phase,
+    voltageText: formatSample(getSampleValue(samples, 'Voltage', phase)),
+  }));
+
+  return {
+    chargePointID: typeof root.chargePointID === 'string' ? root.chargePointID : '--',
+    connectorID: root.connectorID !== undefined && root.connectorID !== null ? String(root.connectorID) : '--',
+    energyText: formatEnergy(getSampleValue(samples, 'Energy.Active.Import.Register')),
+    phases,
+    powerText: formatSample(getSampleValue(samples, 'Power.Active.Import')),
+    rawTimestamp: timestamp.rawTimestamp,
+    timestampText: timestamp.timestampText,
+    transactionID: root.transactionID !== undefined && root.transactionID !== null ? String(root.transactionID) : '--',
+  };
+}
+
+function InfoPill({ label, value }: { label: string; value: string }) {
+  return (
+    <ThemedView style={styles.infoPill}>
+      <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.semibold} fontSize={11} lineHeight={15}>
+        {label}
+      </ThemedText>
+      <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20} selectable>
+        {value}
+      </ThemedText>
+    </ThemedView>
+  );
+}
+
+function MetricCard({ label, tone = 'neutral', value }: { label: string; tone?: 'accent' | 'neutral'; value: string }) {
+  return (
+    <ThemedView style={[styles.metricCard, tone === 'accent' && styles.metricCardAccent]}>
+      <ThemedText color={tone === 'accent' ? Palette.accent : Palette.textTertiary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+        {label}
+      </ThemedText>
+      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={18} lineHeight={24} selectable>
+        {value}
+      </ThemedText>
+    </ThemedView>
+  );
+}
+
+function TriggerResponseModal({
+  mode,
+  onClose,
+  response,
+  responseText,
+  visible,
+}: {
+  mode: BoxActionMode;
+  onClose: () => void;
+  response: unknown;
+  responseText: string;
+  visible: boolean;
+}) {
+  const summary = getTriggerResponseSummary(response);
+  const isReset = mode === 'reset';
+  const isUnlock = mode === 'unlock';
+
+  return (
+    <Modal
+      animationIn='zoomIn'
+      animationInTiming={260}
+      animationOut='zoomOut'
+      animationOutTiming={200}
+      backdropColor='#101828'
+      backdropOpacity={0.46}
+      backdropTransitionInTiming={260}
+      backdropTransitionOutTiming={200}
+      hideModalContentWhileAnimating
+      isVisible={visible}
+      onBackButtonPress={onClose}
+      onBackdropPress={onClose}
+      style={styles.responseModal}>
+      <ThemedView alignItems='center' flex={1} justifyContent='center' padding={Spacing.four}>
+        <ThemedView backgroundColor={Palette.surfaceRaised} borderRadius={Radius.large} maxHeight='88%' maxWidth={520} overflow='hidden' width='100%'>
+          <ScrollView contentContainerStyle={styles.responseModalContent} showsVerticalScrollIndicator={false}>
+            <ThemedView alignItems='flex-start' flexDirection='row' gap={Spacing.three}>
+              <ThemedView style={styles.successIcon}>
+                <SymbolView name='bolt.fill' resizeMode='scaleAspectFit' size={24} tintColor={Palette.accent} />
+              </ThemedView>
+              <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
+                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={21} lineHeight={27}>
+                  {isReset ? 'Reset thành công' : isUnlock ? 'Unlock thành công' : 'Trigger thành công'}
+                </ThemedText>
+                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={19}>
+                  {isReset
+                    ? 'Lệnh reset đã được gửi tới box qua hub service.'
+                    : isUnlock
+                      ? 'Lệnh unlock connector 1 đã được gửi tới box qua hub service.'
+                      : 'MeterValues đã trả về các chỉ số hiện tại của cổng sạc.'}
+                </ThemedText>
+              </ThemedView>
+              <Pressable accessibilityLabel='Close trigger response' accessibilityRole='button' onPress={onClose} style={styles.modalCloseButton}>
+                <SymbolView name='xmark' resizeMode='scaleAspectFit' size={15} tintColor={Palette.textSecondary} />
+              </Pressable>
+            </ThemedView>
+
+            {!isReset && !isUnlock ? (
+              <>
+                <ThemedView flexDirection='row' gap={Spacing.two} wrap>
+                  <InfoPill label='Charge point' value={summary.chargePointID} />
+                  <InfoPill label='Connector' value={summary.connectorID} />
+                  <InfoPill label='Transaction' value={summary.transactionID === '0' ? 'Không có phiên' : summary.transactionID} />
+                </ThemedView>
+
+                <ThemedView style={styles.timestampPanel}>
+                  <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+                    Thời điểm ghi nhận
+                  </ThemedText>
+                  <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={16} lineHeight={22} selectable>
+                    {summary.timestampText}
+                  </ThemedText>
+                  <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17} selectable>
+                    {summary.rawTimestamp}
+                  </ThemedText>
+                </ThemedView>
+
+                <ThemedView flexDirection='row' gap={Spacing.two} wrap>
+                  <MetricCard label='Tổng năng lượng' tone='accent' value={summary.energyText} />
+                  <MetricCard label='Công suất tức thời' value={summary.powerText} />
+                </ThemedView>
+
+                <ThemedView style={styles.phasePanel}>
+                  <ThemedView flexDirection='row' gap={Spacing.two} paddingBottom={Spacing.two}>
+                    <ThemedText color={Palette.textTertiary} flex={0.7} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+                      Pha
+                    </ThemedText>
+                    <ThemedText color={Palette.textTertiary} flex={1} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+                      Điện áp
+                    </ThemedText>
+                    <ThemedText color={Palette.textTertiary} flex={1} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+                      Dòng điện
+                    </ThemedText>
+                  </ThemedView>
+                  {summary.phases.map(phase => (
+                    <ThemedView key={phase.phase} style={styles.phaseRow}>
+                      <ThemedText color={Palette.textPrimary} flex={0.7} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20}>
+                        {phase.phase}
+                      </ThemedText>
+                      <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} selectable>
+                        {phase.voltageText}
+                      </ThemedText>
+                      <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} selectable>
+                        {phase.currentText}
+                      </ThemedText>
+                    </ThemedView>
+                  ))}
+                </ThemedView>
+              </>
+            ) : null}
+
+            <ThemedView style={styles.rawPanel}>
+              <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+                Raw response
+              </ThemedText>
+              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={16} selectable>
+                {responseText}
+              </ThemedText>
+            </ThemedView>
+
+            <AppButton block label='Đã hiểu' onPress={onClose} />
+          </ScrollView>
+        </ThemedView>
+      </ThemedView>
+    </Modal>
+  );
+}
+
+export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerBoxSheetProps) {
   const ref = useRef<BottomSheetModal>(null);
   const isPresentedRef = useRef(false);
-  const { bottom } = useSafeAreaInsets();
+  const { bottom, top } = useSafeAreaInsets();
   const [query, setQuery] = useState('');
-  const [selectedChargerId, setSelectedChargerId] = useState<number>();
+  const [selectedChargerKey, setSelectedChargerKey] = useState<string>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastResponse, setLastResponse] = useState<unknown>();
+  const [responseModalVisible, setResponseModalVisible] = useState(false);
+  const [triggerSucceeded, setTriggerSucceeded] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const chargersQuery = useUtilityChargers(visible);
   const chargers = chargersQuery.data || emptyChargers;
-  const snapPoints = useMemo(() => ['72%', '92%'], []);
-  const selectedCharger = chargers.find(charger => charger.id === selectedChargerId);
+  const selectedCharger = chargers.find(charger => getUtilityChargerSelectionKey(charger) === selectedChargerKey);
   const selectedBoxId = getUtilityChargerTriggerId(selectedCharger);
-  const canConfirm = Boolean(selectedBoxId) && !isSubmitting;
-  const responseText = useMemo(() => stringifyTriggerBoxResponse(lastResponse), [lastResponse]);
-  const filteredChargers = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return chargers;
-
-    return chargers.filter(charger => getChargerSearchText(charger).includes(normalizedQuery));
-  }, [chargers, query]);
+  const canConfirm = Boolean(selectedBoxId) && (mode !== 'reset' || Boolean(selectedCharger?.vendorId)) && !isSubmitting;
+  const headerPadding = { paddingTop: Spacing.two };
+  const responseText = stringifyTriggerBoxResponse(lastResponse);
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredChargers = normalizedQuery ? chargers.filter(charger => getChargerSearchText(charger).includes(normalizedQuery)) : chargers;
+  const isResetMode = mode === 'reset';
+  const isUnlockMode = mode === 'unlock';
 
   useEffect(() => {
     if (visible) {
@@ -74,8 +332,10 @@ export function TriggerBoxSheet({ onClose, visible }: TriggerBoxSheetProps) {
 
     isPresentedRef.current = false;
     setQuery('');
-    setSelectedChargerId(undefined);
+    setSelectedChargerKey(undefined);
     setLastResponse(undefined);
+    setResponseModalVisible(false);
+    setTriggerSucceeded(false);
     setToastMessage('');
     onClose();
   }
@@ -94,13 +354,64 @@ export function TriggerBoxSheet({ onClose, visible }: TriggerBoxSheetProps) {
     try {
       const response = await requestTriggerBox({ boxId: selectedBoxId });
       setLastResponse(response);
+      setResponseModalVisible(true);
+      setTriggerSucceeded(true);
       setToastMessage(`Sent MeterValues trigger to ${selectedBoxId}.`);
+      setIsSubmitting(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Trigger failed. Please try again.';
+      setTriggerSucceeded(false);
       setToastMessage(message);
-    } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function submitReset() {
+    if (!selectedBoxId || !selectedCharger?.vendorId) return;
+
+    setIsSubmitting(true);
+    setToastMessage('');
+
+    try {
+      const response = await requestResetBox({ boxId: selectedBoxId, vendorId: selectedCharger.vendorId });
+      setLastResponse(response);
+      setResponseModalVisible(true);
+      setTriggerSucceeded(true);
+      setToastMessage(`Sent reset command to ${selectedBoxId}.`);
+      setIsSubmitting(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Reset failed. Please try again.';
+      setTriggerSucceeded(false);
+      setToastMessage(message);
+      setIsSubmitting(false);
+    }
+  }
+
+  async function submitUnlock() {
+    if (!selectedBoxId) return;
+
+    setIsSubmitting(true);
+    setToastMessage('');
+
+    try {
+      const response = await requestUnlockBox({ boxId: selectedBoxId });
+      setLastResponse(response);
+      setResponseModalVisible(true);
+      setTriggerSucceeded(true);
+      setToastMessage(`Sent unlock command to ${selectedBoxId}.`);
+      setIsSubmitting(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unlock failed. Please try again.';
+      setTriggerSucceeded(false);
+      setToastMessage(message);
+      setIsSubmitting(false);
+    }
+  }
+
+  function submitSelectedAction() {
+    if (isResetMode) return submitReset();
+    if (isUnlockMode) return submitUnlock();
+    return submitTrigger();
   }
 
   function renderFooter(props: BottomSheetFooterProps) {
@@ -113,7 +424,7 @@ export function TriggerBoxSheet({ onClose, visible }: TriggerBoxSheetProps) {
             <AppButton block disabled={isSubmitting} label='Cancel' onPress={close} variant='ghost' />
           </ThemedView>
           <ThemedView flex={1}>
-            <AppButton block disabled={!canConfirm} label='Confirm' loading={isSubmitting} onPress={() => void submitTrigger()} />
+            <AppButton block disabled={!canConfirm} label='Confirm' loading={isSubmitting} onPress={() => void submitSelectedAction()} />
           </ThemedView>
         </ThemedView>
       </BottomSheetFooter>
@@ -126,12 +437,13 @@ export function TriggerBoxSheet({ onClose, visible }: TriggerBoxSheetProps) {
       footerComponent={renderFooter}
       onDismiss={handleDismiss}
       ref={ref}
-      snapPoints={snapPoints}>
+      snapPoints={triggerBoxSnapPoints}
+      topInset={top}>
       <BottomSheetFlatList
         contentContainerStyle={[styles.content, { paddingBottom: Math.max(bottom + 112, 132) }]}
         data={filteredChargers}
         ItemSeparatorComponent={() => <ThemedView style={styles.chargerSeparator} />}
-        keyExtractor={charger => String(charger.id)}
+        keyExtractor={(charger, index) => getUtilityChargerListKey(charger, index)}
         keyboardShouldPersistTaps='handled'
         stickyHeaderIndices={[0]}
         ListEmptyComponent={
@@ -152,10 +464,10 @@ export function TriggerBoxSheet({ onClose, visible }: TriggerBoxSheetProps) {
           )
         }
         ListHeaderComponent={
-          <ThemedView style={styles.stickyHeader}>
+          <ThemedView style={[styles.stickyHeader, headerPadding]}>
             {toastMessage ? (
-              <ThemedView style={[styles.notice, lastResponse !== undefined && styles.noticeSuccess]}>
-                <ThemedText color={lastResponse !== undefined ? Palette.accent : Palette.danger} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
+              <ThemedView style={[styles.notice, triggerSucceeded && styles.noticeSuccess]}>
+                <ThemedText color={triggerSucceeded ? Palette.accent : Palette.danger} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
                   {toastMessage}
                 </ThemedText>
               </ThemedView>
@@ -163,10 +475,14 @@ export function TriggerBoxSheet({ onClose, visible }: TriggerBoxSheetProps) {
 
             <ThemedView gap={Spacing.two}>
               <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={22} lineHeight={28}>
-                Trigger Box
+                {isResetMode ? 'Reset Box' : isUnlockMode ? 'Unlock Charger' : 'Trigger Box'}
               </ThemedText>
               <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} lineHeight={20}>
-                Select a charger, then confirm to send a MeterValues trigger through the hub service.
+                {isResetMode
+                  ? 'Select a charger, then confirm to check live box status and send a reset command.'
+                  : isUnlockMode
+                    ? 'Select a charger, then confirm to unlock connector 1 through the hub service.'
+                    : 'Select a charger, then confirm to send a MeterValues trigger through the hub service.'}
               </ThemedText>
             </ThemedView>
 
@@ -181,52 +497,25 @@ export function TriggerBoxSheet({ onClose, visible }: TriggerBoxSheetProps) {
               style={styles.searchInput}
               value={query}
             />
-
-            {selectedCharger ? (
-              <ThemedView style={styles.selectedPanel}>
-                <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={13} lineHeight={18}>
-                  Selected charger
-                </ThemedText>
-                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20}>
-                  {selectedBoxId}
-                </ThemedText>
-                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
-                  {selectedCharger.stationName || 'No station assigned'}
-                </ThemedText>
-              </ThemedView>
-            ) : null}
-
-            {lastResponse !== undefined ? (
-              <ThemedView style={styles.resultPanel}>
-                <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={13} lineHeight={18}>
-                  Trigger response
-                </ThemedText>
-                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17} selectable>
-                  {responseText}
-                </ThemedText>
-              </ThemedView>
-            ) : null}
           </ThemedView>
         }
         renderItem={({ item }) => {
-          const selected = item.id === selectedChargerId;
-          const triggerId = getUtilityChargerTriggerId(item);
+          const selected = getUtilityChargerSelectionKey(item) === selectedChargerKey;
 
           return (
             <Pressable
               accessibilityRole='radio'
               accessibilityState={{ checked: selected }}
               onPress={() => {
-                setSelectedChargerId(item.id);
+                setSelectedChargerKey(getUtilityChargerSelectionKey(item));
                 setLastResponse(undefined);
+                setResponseModalVisible(false);
+                setTriggerSucceeded(false);
               }}
               style={({ pressed }) => [styles.chargerItem, selected && styles.chargerItemSelected, pressed && styles.pressed]}>
               <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
-                <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
-                  {triggerId}
-                </ThemedText>
-                <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
-                  {item.vendorId} / {item.uniqueId}
+                <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.regular} fontSize={15} lineHeight={20}>
+                  <ThemedText fontFamily={FontFamily.bold}>{item.uniqueId}</ThemedText> / {item.vendorId}
                 </ThemedText>
                 <ThemedText numberOfLines={1} color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
                   {item.stationName || 'No station assigned'}
@@ -236,6 +525,13 @@ export function TriggerBoxSheet({ onClose, visible }: TriggerBoxSheetProps) {
             </Pressable>
           );
         }}
+      />
+      <TriggerResponseModal
+        mode={mode}
+        onClose={() => setResponseModalVisible(false)}
+        response={lastResponse}
+        responseText={responseText}
+        visible={responseModalVisible && lastResponse !== undefined}
       />
     </BottomSheetModal>
   );
@@ -281,6 +577,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FAF4',
     borderColor: '#CDEEDB',
   },
+  infoPill: {
+    backgroundColor: Palette.surfaceMuted,
+    borderColor: Palette.borderSubtle,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
+    flexGrow: 1,
+    gap: Spacing.half,
+    minWidth: 130,
+    padding: Spacing.three,
+  },
+  metricCard: {
+    backgroundColor: Palette.surfaceMuted,
+    borderColor: Palette.borderSubtle,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
+    flexBasis: '48%',
+    flexGrow: 1,
+    gap: Spacing.one,
+    minWidth: 150,
+    padding: Spacing.three,
+  },
+  metricCardAccent: {
+    backgroundColor: '#F0FAF4',
+    borderColor: '#CDEEDB',
+  },
+  modalCloseButton: {
+    alignItems: 'center',
+    backgroundColor: Palette.surfaceMuted,
+    borderRadius: Radius.pill,
+    height: 34,
+    justifyContent: 'center',
+    width: 34,
+  },
   pressed: {
     opacity: 0.72,
   },
@@ -302,13 +631,19 @@ const styles = StyleSheet.create({
   radioSelected: {
     borderColor: Palette.accent,
   },
-  resultPanel: {
-    backgroundColor: '#F0FAF4',
-    borderColor: '#CDEEDB',
-    borderRadius: Radius.large,
+  responseModal: {
+    margin: 0,
+  },
+  responseModalContent: {
+    gap: Spacing.four,
+    padding: Spacing.four,
+  },
+  rawPanel: {
+    backgroundColor: '#F8FAFC',
+    borderColor: Palette.borderSubtle,
+    borderRadius: Radius.medium,
     borderWidth: 1,
     gap: Spacing.two,
-    maxHeight: 180,
     padding: Spacing.three,
   },
   searchInput: {
@@ -321,14 +656,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
   },
-  selectedPanel: {
-    backgroundColor: '#F0FAF4',
-    borderColor: '#CDEEDB',
-    borderRadius: Radius.large,
-    borderWidth: 1,
-    gap: Spacing.one,
-    padding: Spacing.three,
-  },
   stickyHeader: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
@@ -337,5 +664,35 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.three,
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.two,
+  },
+  successIcon: {
+    alignItems: 'center',
+    backgroundColor: '#E8F4EF',
+    borderRadius: Radius.pill,
+    height: 52,
+    justifyContent: 'center',
+    width: 52,
+  },
+  phasePanel: {
+    backgroundColor: Palette.surfaceRaised,
+    borderColor: Palette.borderSubtle,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
+    padding: Spacing.three,
+  },
+  phaseRow: {
+    borderColor: Palette.borderSubtle,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: Spacing.two,
+    paddingVertical: Spacing.two,
+  },
+  timestampPanel: {
+    backgroundColor: '#F8FAFC',
+    borderColor: Palette.borderSubtle,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
+    gap: Spacing.half,
+    padding: Spacing.three,
   },
 });

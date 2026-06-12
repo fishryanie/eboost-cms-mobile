@@ -26,7 +26,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
-      ]
+      ],
+      "package": "com.evida.eboost.cms"
     },
     "plugins": [
       "expo-router",
@@ -60,7 +61,8 @@
           "photosPermission": "Allow Eboost CMS to access your photos so you can upload location images."
         }
       ],
-      "expo-image"
+      "expo-image",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -77,7 +79,8 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/26625cb7-5cd2-42c2-97d4-5aecd7e83ffb"
+      "url": "https://u.expo.dev/26625cb7-5cd2-42c2-97d4-5aecd7e83ffb",
+      "checkAutomatically": "NEVER"
     }
   }
 }

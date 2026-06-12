@@ -1,6 +1,6 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 
-export type TabIconName = 'balance' | 'history' | 'home' | 'location' | 'map' | 'transfer' | 'users';
+export type TabIconName = 'balance' | 'history' | 'home' | 'location' | 'map' | 'technical' | 'transfer' | 'users';
 
 const symbolMap: Record<TabIconName, SymbolViewProps['name']> = {
   balance: 'creditcard.fill',
@@ -8,6 +8,7 @@ const symbolMap: Record<TabIconName, SymbolViewProps['name']> = {
   home: 'house.fill',
   location: 'mappin.and.ellipse',
   map: 'map.fill',
+  technical: 'wrench.and.screwdriver.fill',
   transfer: 'arrow.left.arrow.right',
   users: 'person.2.fill',
 };

@@ -35,6 +35,7 @@ export default function TabLayout() {
                   <Stack.Screen name='drawer/profile' />
                   <Stack.Screen name='drawer/settings' />
                   <Stack.Screen name='location/[id]' />
+                  <Stack.Screen name='technical/network-issues' />
                 </Stack>
               </AppDrawer>
             </BottomSheetModalProvider>

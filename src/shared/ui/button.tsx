@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { PropsWithChildren, type ReactElement } from 'react';
-import { ActivityIndicator, Pressable, type PressableProps, StyleSheet, Text, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, type PressableProps, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, { interpolate, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
@@ -37,6 +37,7 @@ export type ScaleAnimatedButtonProps = Omit<PressableProps, 'children' | 'disabl
   isLoading?: boolean;
   loadingLabel?: string;
   onPress: NonNullable<PressableProps['onPress']>;
+  pressableStyle?: StyleProp<ViewStyle>;
   reduceMotion?: 'always' | 'never' | 'system';
   scale?: number;
   style?: StyleProp<ViewStyle>;
@@ -47,7 +48,7 @@ export type ScaleAnimatedButtonProps = Omit<PressableProps, 'children' | 'disabl
 
 export type AppButtonProps = Omit<
   ScaleAnimatedButtonProps,
-  'Icon' | 'buttonColor' | 'containerStyle' | 'isDisabled' | 'isLoading' | 'onPress' | 'textColor' | 'title'
+  'Icon' | 'buttonColor' | 'containerStyle' | 'isDisabled' | 'isLoading' | 'onPress' | 'pressableStyle' | 'textColor' | 'title'
 > &
   PropsWithChildren<{
     block?: boolean;
@@ -69,6 +70,7 @@ export function ScaleAnimatedButton({
   isLoading = false,
   loadingLabel,
   onPress,
+  pressableStyle,
   reduceMotion = 'system',
   scale = 0.95,
   style,
@@ -84,12 +86,14 @@ export function ScaleAnimatedButton({
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       {
-        scale: interpolate(transition.value, [0, 1], [1, scale]),
+        scale: interpolate(transition.get(), [0, 1], [1, scale]),
       },
     ],
   }));
   const disabled = isDisabled || isLoading || props.disabled;
   const renderedTitle = isLoading ? loadingLabel : title;
+  const resolvedStyle = StyleSheet.flatten(style);
+  const hasExplicitWidth = resolvedStyle?.width !== undefined;
 
   return (
     <Pressable
@@ -104,28 +108,33 @@ export function ScaleAnimatedButton({
       onPress={onPress}
       onPressIn={event => {
         props.onPressIn?.(event);
-        isActive.value = true;
-        // eslint-disable-next-line react-hooks/immutability
-        transition.value = withTiming(1, { duration: DURATION, reduceMotion: motion }, () => {
-          if (!isActive.value) {
-            transition.value = withTiming(0, {
-              duration: DURATION,
-              reduceMotion: motion,
-            });
-          }
-        });
+        isActive.set(true);
+        transition.set(
+          withTiming(1, { duration: DURATION, reduceMotion: motion }, () => {
+            if (!isActive.get()) {
+              transition.set(
+                withTiming(0, {
+                  duration: DURATION,
+                  reduceMotion: motion,
+                }),
+              );
+            }
+          }),
+        );
       }}
       onPressOut={event => {
         props.onPressOut?.(event);
-        if (transition.value === 1) {
-          // eslint-disable-next-line react-hooks/immutability
-          transition.value = withTiming(0, {
-            duration: DURATION,
-            reduceMotion: motion,
-          });
+        if (transition.get() === 1) {
+          transition.set(
+            withTiming(0, {
+              duration: DURATION,
+              reduceMotion: motion,
+            }),
+          );
         }
-        isActive.value = false;
-      }}>
+        isActive.set(false);
+      }}
+      style={[hasExplicitWidth ? { width: resolvedStyle.width } : styles.defaultPressable, pressableStyle]}>
       <Animated.View
         style={[
           styles.base,
@@ -202,8 +211,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.five,
     paddingVertical: Spacing.three,
   },
-  block: {
+  block: { alignSelf: 'stretch' },
+  defaultPressable: {
     alignSelf: 'stretch',
+    flexGrow: 1,
+    flexShrink: 1,
   },
   label: {
     flexShrink: 1,

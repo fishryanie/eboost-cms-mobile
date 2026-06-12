@@ -1,5 +1,6 @@
 import { Canvas, LinearGradient, RadialGradient, Rect, vec } from '@shopify/react-native-skia';
 import { useMutation } from '@tanstack/react-query';
+import { ThemedText, ThemedView } from 'components/base';
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -16,7 +17,6 @@ import {
   type View as NativeView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedText, ThemedView } from 'components/base';
 
 import { loginAdmin } from 'features/auth/auth-service';
 import { biometricCredentialStore } from 'features/auth/biometric-credentials';
@@ -219,7 +219,7 @@ export default function LoginScreen() {
                 </ThemedView>
               ) : null}
 
-              <ThemedView alignItems='stretch' flexDirection='row' gap={Spacing.two}>
+              <ThemedView rowCenter flex={1} gap={Spacing.two}>
                 <AppButton
                   buttonColor={Palette.accent}
                   disabled={!canSubmit}
@@ -232,23 +232,25 @@ export default function LoginScreen() {
                   textStyle={styles.primaryActionLabel}
                 />
 
-                <AppButton
-                  accessibilityLabel={`Sign in with ${biometricLabel}`}
-                  buttonColor={canSubmitBiometric ? '#F3FAF6' : Palette.surfaceMuted}
-                  disabled={!canSubmitBiometric}
-                  icon={
-                    <SymbolView
-                      name={biometricIcon as never}
-                      resizeMode='scaleAspectFit'
-                      size={biometricSymbolSize}
-                      tintColor={canSubmitBiometric ? Palette.accent : Palette.textTertiary}
-                    />
-                  }
-                  onPress={handleBiometricLogin}
-                  scale={0.92}
-                  style={[styles.iconActionButton, !canSubmitBiometric && styles.iconActionButtonDisabled]}
-                  textColor={Palette.accent}
-                />
+                {canUseBiometric ? (
+                  <AppButton
+                    accessibilityLabel={`Sign in with ${biometricLabel}`}
+                    buttonColor={canSubmitBiometric ? '#F3FAF6' : Palette.surfaceMuted}
+                    disabled={!canSubmitBiometric}
+                    icon={
+                      <SymbolView
+                        name={biometricIcon as never}
+                        resizeMode='scaleAspectFit'
+                        size={biometricSymbolSize}
+                        tintColor={canSubmitBiometric ? Palette.accent : Palette.textTertiary}
+                      />
+                    }
+                    onPress={handleBiometricLogin}
+                    scale={0.92}
+                    style={[styles.iconActionButton, !canSubmitBiometric && styles.iconActionButtonDisabled]}
+                    textColor={Palette.accent}
+                  />
+                ) : null}
               </ThemedView>
             </ThemedView>
 
@@ -320,7 +322,6 @@ const styles = StyleSheet.create({
   primaryActionButton: {
     borderRadius: radiusPill,
     boxShadow: '0 8px 18px rgba(1, 167, 78, 0.18)',
-    flex: 1,
     height: actionControlHeight,
   },
   primaryActionLabel: {

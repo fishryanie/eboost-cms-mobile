@@ -1,8 +1,10 @@
+export type CmsServiceIconName = 'activity' | 'chartColumn' | 'handshake' | 'megaphone' | 'settings' | 'shieldUser' | 'wrench';
+
 export type CmsServiceGroup = {
   accentColor: string;
   children: CmsServiceItem[];
   description: string;
-  iconUrl: string;
+  icon: CmsServiceIconName;
   name: string;
   routeCount?: number;
   slug: string;
@@ -40,7 +42,7 @@ export const cmsServiceGroups: CmsServiceGroup[] = [
       },
     ],
     description: 'Overview, performance metrics, user activity, and charging trends.',
-    iconUrl: 'https://cdn-icons-png.flaticon.com/128/18536/18536031.png',
+    icon: 'chartColumn',
     name: 'Dashboard',
     routeCount: 4,
     slug: 'dashboard',
@@ -60,7 +62,7 @@ export const cmsServiceGroups: CmsServiceGroup[] = [
       },
     ],
     description: 'Realtime connector and outlet monitoring across active charging stations.',
-    iconUrl: 'https://cdn-icons-png.flaticon.com/128/7822/7822741.png',
+    icon: 'activity',
     name: 'PowerTrack',
     routeCount: 2,
     slug: 'powertrack',
@@ -120,7 +122,7 @@ export const cmsServiceGroups: CmsServiceGroup[] = [
       },
     ],
     description: 'Accounts, tariffs, locations, reservations, payments, transactions, and content.',
-    iconUrl: 'https://cdn-icons-png.flaticon.com/128/1349/1349386.png',
+    icon: 'settings',
     name: 'Operations',
     routeCount: 10,
     slug: 'operations',
@@ -155,7 +157,7 @@ export const cmsServiceGroups: CmsServiceGroup[] = [
       },
     ],
     description: 'Employees, partner locations, tariffs, mail logs, and reporting workspaces.',
-    iconUrl: 'https://cdn-icons-png.flaticon.com/128/12134/12134500.png',
+    icon: 'handshake',
     name: 'Partnerships',
     routeCount: 5,
     slug: 'partnerships',
@@ -205,7 +207,7 @@ export const cmsServiceGroups: CmsServiceGroup[] = [
       },
     ],
     description: 'Promotions, bonus top-up, referrals, notifications, ads, and subscriptions.',
-    iconUrl: 'https://cdn-icons-png.flaticon.com/128/1998/1998087.png',
+    icon: 'megaphone',
     name: 'Marketing',
     routeCount: 8,
     slug: 'marketing',
@@ -255,7 +257,7 @@ export const cmsServiceGroups: CmsServiceGroup[] = [
       },
     ],
     description: 'Chargers, status logs, meter streams, energy reports, domains, and simulators.',
-    iconUrl: 'https://cdn-icons-png.flaticon.com/128/1321/1321737.png',
+    icon: 'wrench',
     name: 'Technical',
     routeCount: 8,
     slug: 'technical',
@@ -285,7 +287,7 @@ export const cmsServiceGroups: CmsServiceGroup[] = [
       },
     ],
     description: 'Admin account management, roles, access, and staff permissions.',
-    iconUrl: 'https://cdn-icons-png.flaticon.com/128/18631/18631524.png',
+    icon: 'shieldUser',
     name: 'Administrators',
     routeCount: 4,
     slug: 'administrators',

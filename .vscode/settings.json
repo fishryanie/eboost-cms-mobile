@@ -4,5 +4,5 @@
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
   },
-  "cSpell.words": ["easignore", "eboost", "gorhom", "Pressable", "skia", "worklets"]
+  "cSpell.words": ["easignore", "eboost", "gorhom", "Pressable", "skia", "testflight", "worklets"]
 }

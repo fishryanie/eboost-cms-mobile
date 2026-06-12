@@ -17,6 +17,21 @@ export type TriggerBoxValues = {
   requestedMessage?: 'BootNotification' | 'Heartbeat' | 'MeterValues' | 'StatusNotification' | string;
 };
 
+export type ResetBoxValues = {
+  boxId: string;
+  request?: TriggerBoxRequest;
+  type?: 'Hard' | 'Soft';
+  vendorId: string;
+};
+
+export type UnlockBoxValues = {
+  boxId: string;
+  connectorID?: number;
+  request?: TriggerBoxRequest;
+};
+
+type BoxStatusMap = Record<string, string>;
+
 type CollectionResponse<T> =
   | T[]
   | {
@@ -32,6 +47,13 @@ export class TriggerBoxResponseError extends Error {
     super(message);
     this.name = 'TriggerBoxResponseError';
     this.raw = raw;
+  }
+}
+
+export class ResetBoxStatusError extends Error {
+  constructor(vendorId: string) {
+    super(`Box ${vendorId} is charging and cannot be reset.`);
+    this.name = 'ResetBoxStatusError';
   }
 }
 
@@ -58,9 +80,49 @@ export async function fetchUtilityChargers(request: TriggerBoxRequest = apiReque
   return unwrapCollection(response);
 }
 
+export function getBoxStatusVendorId(statusKey: string) {
+  return statusKey.split('_')[0];
+}
+
+export function isVendorCharging(statuses: BoxStatusMap, vendorId: string) {
+  return Object.entries(statuses).some(([statusKey, status]) => getBoxStatusVendorId(statusKey) === vendorId && status === 'Charging');
+}
+
+export function fetchBoxStatuses(request: TriggerBoxRequest = apiRequest) {
+  return request<BoxStatusMap>('api/box-status', {
+    service: 'hub',
+  });
+}
+
 export function getUtilityChargerTriggerId(charger?: Pick<UtilityCharger, 'uniqueId' | 'vendorId'>) {
   if (!charger) return '';
   return charger.uniqueId.startsWith('Ecar') ? charger.vendorId || charger.uniqueId : charger.uniqueId;
+}
+
+export async function requestResetBox({ boxId, request = apiRequest, type = 'Soft', vendorId }: ResetBoxValues) {
+  const normalizedBoxId = boxId.trim();
+  const normalizedVendorId = vendorId.trim();
+  const statuses = await fetchBoxStatuses(request);
+
+  if (isVendorCharging(statuses, normalizedVendorId)) {
+    throw new ResetBoxStatusError(normalizedVendorId);
+  }
+
+  return request(`api/v1/device/${normalizedBoxId}/reset`, {
+    data: { type },
+    method: 'POST',
+    service: 'hub',
+  });
+}
+
+export function requestUnlockBox({ boxId, connectorID = 1, request = apiRequest }: UnlockBoxValues) {
+  const normalizedBoxId = boxId.trim();
+
+  return request(`api/v1/device/${normalizedBoxId}/unlock`, {
+    data: { connectorID },
+    method: 'POST',
+    service: 'hub',
+  });
 }
 
 export async function requestTriggerBox({ boxId, connector = 0, request = apiRequest, requestedMessage = 'MeterValues' }: TriggerBoxValues) {
