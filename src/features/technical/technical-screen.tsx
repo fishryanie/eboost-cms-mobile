@@ -22,6 +22,7 @@ import {
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle } from 'react-native-svg';
 
 import { quickServiceGroups, type QuickServiceIconName, type QuickServiceItem } from 'features/services/quick-service-catalog';
 import { ReplaceMeterSheet } from 'features/services/replace-meter';
@@ -543,70 +544,64 @@ function NetworkIssueCard({ item }: { item: NetworkIssue }) {
 function DomainAnalyzeSection({ query }: { query: { data?: { items: DomainAnalyzeRecord[] }; error: Error | null; isLoading: boolean; refetch: () => void } }) {
   const items = query.data?.items || [];
   const working = items.filter(item => item.working).length;
-  const primary = items.filter(item => item.is_charging_active).length;
+  const active = items.filter(item => item.is_charging_active).length;
   const backup = items.filter(item => item.working && !item.is_charging_active).length;
   const offline = Math.max(items.length - working, 0);
   const totalSessions = items.reduce((sum, item) => sum + Number(item.total_charging || 0), 0);
   const readiness = items.length ? Math.round((working / items.length) * 100) : 0;
   const sortedItems = items.slice().sort((a, b) => Number(b.total_charging || 0) - Number(a.total_charging || 0));
+  const maxSessions = Math.max(...sortedItems.map(item => Number(item.total_charging || 0)), 0);
+  const visibleDomains = sortedItems.slice(0, 5);
 
   return (
     <ThemedView gap={Spacing.three} style={styles.dashboardSection}>
-      <SectionTitle subtitle='Domain Analyze is shown directly on Technical.' title='Domain Analyze' />
+      <SectionTitle subtitle='Load routing across active CMS domains.' title='Domain Analyze' />
       {query.isLoading ? (
         <LoadingBlock label='Loading domain analyze' />
       ) : query.error ? (
         <RetryBlock message={query.error.message} onRetry={query.refetch} title='Domain analyze unavailable' />
       ) : (
-        <ReportPanel badge={`${readiness}% working`} caption={`${totalSessions.toLocaleString()} active sessions`} title='Domain load balance'>
-          <StackedBar
-            segments={[
-              { color: '#3867D6', flex: primary, label: 'Primary' },
-              { color: Palette.accent, flex: backup, label: 'Backup' },
-              { color: '#D0D5DD', flex: offline, label: 'Offline' },
-            ]}
-          />
-          <ThemedView flexDirection='row' gap={Spacing.two}>
-            <CompactStat label='Working' value={working} />
-            <CompactStat label='Primary' value={primary} />
-            <CompactStat label='Offline' value={offline} />
+        <ThemedView gap={Spacing.four}>
+          <ThemedView alignItems='center' flexDirection='row' gap={Spacing.four}>
+            <DomainDonut
+              segments={[
+                { color: Palette.accent, value: active },
+                { color: '#3867D6', value: backup },
+                { color: '#D0D5DD', value: offline },
+              ]}
+              total={items.length}
+            />
+            <ThemedView flex={1} gap={Spacing.two} minWidth={0}>
+              <ThemedView alignItems='baseline' flexDirection='row' gap={Spacing.two}>
+                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={24} lineHeight={29} style={styles.domainReadiness}>
+                  {totalSessions.toLocaleString()}
+                </ThemedText>
+                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
+                  sessions
+                </ThemedText>
+              </ThemedView>
+              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={15}>
+                {readiness}% working • {items.length.toLocaleString()} domains
+              </ThemedText>
+              <ThemedView flexDirection='row' flexWrap='wrap' gap={Spacing.two}>
+                <DomainLegendItem color={Palette.accent} label='Active' value={active} />
+                <DomainLegendItem color='#3867D6' label='Standby' value={backup} />
+                <DomainLegendItem color='#98A2B3' label='Silent' value={offline} />
+              </ThemedView>
+            </ThemedView>
           </ThemedView>
-          <ThemedView style={styles.reportDivider} />
+
+          <ThemedView style={styles.domainDivider} />
+
           <ThemedView gap={Spacing.two}>
-            {sortedItems.slice(0, 5).map(item => {
+            {visibleDomains.map((item, index) => {
               const share = totalSessions ? Math.round((Number(item.total_charging || 0) / totalSessions) * 100) : 0;
-              const color = item.working ? (item.is_charging_active ? '#3867D6' : Palette.accent) : '#A5AFBA';
-              return (
-                <LoadBreakdownRow
-                  color={color}
-                  key={item.id}
-                  label={item.domain || '-'}
-                  percent={share}
-                  status={item.working ? (item.is_charging_active ? 'Primary' : 'Backup') : 'Offline'}
-                  value={Number(item.total_charging || 0)}
-                />
-              );
+              const relative = maxSessions ? Math.round((Number(item.total_charging || 0) / maxSessions) * 100) : 0;
+              return <DomainApiBarRow index={index + 1} item={item} key={item.id} percent={share} relative={relative} />;
             })}
           </ThemedView>
-        </ReportPanel>
+        </ThemedView>
       )}
-    </ThemedView>
-  );
-}
-
-function StackedBar({ segments }: { segments: { color: string; flex: number; label: string }[] }) {
-  const total = segments.reduce((sum, segment) => sum + Math.max(segment.flex, 0), 0);
-
-  return (
-    <ThemedView accessibilityLabel={segments.map(segment => `${segment.label}: ${segment.flex}`).join(', ')} flexDirection='row' style={styles.stackedBar}>
-      {segments.map(segment => (
-        <ThemedView
-          backgroundColor={segment.color}
-          flex={total > 0 ? Math.max(segment.flex, 0.001) : 1}
-          key={segment.label}
-          minWidth={segment.flex > 0 ? 6 : 0}
-        />
-      ))}
     </ThemedView>
   );
 }
@@ -661,23 +656,90 @@ function NetworkBreakdownRow({ accent, label, summary }: { accent: string; label
   );
 }
 
-function LoadBreakdownRow({ color, label, percent, status, value }: { color: string; label: string; percent: number; status: string; value: number }) {
+function DomainDonut({ segments, total }: { segments: { color: string; value: number }[]; total: number }) {
+  const size = 82;
+  const strokeWidth = 10;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
   return (
-    <ThemedView gap={Spacing.one} style={styles.loadRow}>
-      <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two}>
-        <ThemedView flex={1} minWidth={0}>
-          <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={12} lineHeight={17}>
-            {label}
-          </ThemedText>
-          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={10} lineHeight={14}>
-            {status}
-          </ThemedText>
-        </ThemedView>
-        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
-          {value.toLocaleString()} / {percent}%
+    <ThemedView alignItems='center' justifyContent='center' style={styles.domainDonutWrap}>
+      <Svg height={size} width={size}>
+        <Circle cx={size / 2} cy={size / 2} fill='none' r={radius} stroke='#EEF2F6' strokeWidth={strokeWidth} />
+        {segments.map(segment => {
+          const dash = total ? (segment.value / total) * circumference : 0;
+          const strokeDashoffset = -offset;
+          offset += dash;
+          return (
+            <Circle
+              cx={size / 2}
+              cy={size / 2}
+              fill='none'
+              key={segment.color}
+              r={radius}
+              rotation='-90'
+              origin={`${size / 2}, ${size / 2}`}
+              stroke={segment.color}
+              strokeDasharray={`${dash} ${circumference - dash}`}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap='round'
+              strokeWidth={strokeWidth}
+            />
+          );
+        })}
+      </Svg>
+      <ThemedView alignItems='center' justifyContent='center' style={styles.domainDonutCenter}>
+        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} lineHeight={19} style={styles.domainReadiness}>
+          {total.toLocaleString()}
+        </ThemedText>
+        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={9} lineHeight={12}>
+          APIs
         </ThemedText>
       </ThemedView>
-      <ProgressBar color={color} percent={percent} />
+    </ThemedView>
+  );
+}
+
+function DomainLegendItem({ color, label, value }: { color: string; label: string; value: number }) {
+  return (
+    <ThemedView alignItems='center' flexDirection='row' gap={Spacing.one}>
+      <ThemedView backgroundColor={color} style={styles.domainDot} />
+      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={14}>
+        {label} {value.toLocaleString()}
+      </ThemedText>
+    </ThemedView>
+  );
+}
+
+function DomainApiBarRow({ index, item, percent, relative }: { index: number; item: DomainAnalyzeRecord; percent: number; relative: number }) {
+  const routeStatus = item.working ? (item.is_charging_active ? 'Active' : 'Standby') : 'Silent';
+  const color = routeStatus === 'Active' ? Palette.accent : routeStatus === 'Standby' ? '#3867D6' : '#98A2B3';
+  const value = Number(item.total_charging || 0);
+
+  return (
+    <ThemedView gap={Spacing.one} style={styles.domainApiRow}>
+      <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two}>
+        <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.bold} fontSize={11} lineHeight={15} style={styles.domainRouteIndex}>
+          {index}
+        </ThemedText>
+        <ThemedView flex={1} minWidth={0}>
+          <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={17}>
+            {item.domain || '-'}
+          </ThemedText>
+        </ThemedView>
+        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={17} style={styles.domainRoutePercent}>
+          {percent}%
+        </ThemedText>
+      </ThemedView>
+      <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two}>
+        <ThemedView style={styles.domainApiTrack}>
+          <ThemedView backgroundColor={color} height='100%' width={`${Math.max(2, Math.min(relative, 100))}%`} />
+        </ThemedView>
+        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={14} style={styles.domainApiMeta}>
+          {value.toLocaleString()} • {routeStatus}
+        </ThemedText>
+      </ThemedView>
     </ThemedView>
   );
 }
@@ -1065,6 +1127,49 @@ const styles = StyleSheet.create({
   dashboardSection: {
     marginTop: Spacing.one,
   },
+  domainApiMeta: {
+    textAlign: 'right',
+    width: 76,
+  },
+  domainApiRow: {
+    minHeight: 42,
+  },
+  domainApiTrack: {
+    backgroundColor: '#EEF2F6',
+    borderRadius: Radius.pill,
+    flex: 1,
+    height: 6,
+    overflow: 'hidden',
+  },
+  domainDivider: {
+    backgroundColor: '#EEF2F6',
+    height: 1,
+  },
+  domainDot: {
+    borderRadius: Radius.pill,
+    height: 7,
+    width: 7,
+  },
+  domainDonutCenter: {
+    height: 48,
+    position: 'absolute',
+    width: 48,
+  },
+  domainDonutWrap: {
+    height: 82,
+    width: 82,
+  },
+  domainReadiness: {
+    fontVariant: ['tabular-nums'],
+  },
+  domainRouteIndex: {
+    textAlign: 'center',
+    width: 14,
+  },
+  domainRoutePercent: {
+    textAlign: 'right',
+    width: 38,
+  },
   itemCard: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceRaised,
@@ -1138,13 +1243,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     height: 34,
     width: 3,
-  },
-  loadRow: {
-    backgroundColor: '#FBFCFE',
-    borderColor: '#F0F3F7',
-    borderRadius: Radius.small,
-    borderWidth: 1,
-    padding: Spacing.two,
   },
   networkMarker: {
     borderRadius: Radius.pill,
@@ -1268,12 +1366,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     minHeight: 86,
     padding: Spacing.three,
-  },
-  stackedBar: {
-    backgroundColor: Palette.surfaceMuted,
-    borderRadius: Radius.pill,
-    height: 8,
-    overflow: 'hidden',
   },
   statusPill: {
     alignItems: 'center',

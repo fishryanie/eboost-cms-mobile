@@ -1,6 +1,5 @@
-import { CmsSectionScreen } from 'features/cms-menu/cms-section-screen';
-import { getCmsMobileSection } from 'features/cms-menu/mobile-cms-menu';
+import MarketingScreen from 'features/marketing/marketing-screen';
 
 export default function MarketingTabScreen() {
-  return <CmsSectionScreen section={getCmsMobileSection('marketing')} />;
+  return <MarketingScreen />;
 }

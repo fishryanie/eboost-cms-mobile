@@ -4,8 +4,10 @@ export type UserLevel = {
   image?: {
     url?: string | null;
   } | null;
+  iriId?: string;
   name: string;
   nameVn?: string | null;
+  name_vn?: string | null;
 };
 
 export type UserListItem = {

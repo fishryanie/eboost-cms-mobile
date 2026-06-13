@@ -1,6 +1,5 @@
-import { CmsSectionScreen } from 'features/cms-menu/cms-section-screen';
-import { getCmsMobileSection } from 'features/cms-menu/mobile-cms-menu';
+import { OperationScreen } from 'features/operations/operation-screen';
 
 export default function OperationTabScreen() {
-  return <CmsSectionScreen section={getCmsMobileSection('operation')} />;
+  return <OperationScreen />;
 }
