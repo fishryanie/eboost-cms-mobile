@@ -10,6 +10,7 @@ const PanelLayer: FC<IPanelLayerProps> & FunctionComponent<IPanelLayerProps> = m
     active,
     colors,
     direction,
+    onClose,
     onLayout,
     renderPopupBody,
     route,
@@ -26,7 +27,7 @@ const PanelLayer: FC<IPanelLayerProps> & FunctionComponent<IPanelLayerProps> = m
             onLayout(view, Math.ceil(width), Math.ceil(height));
           }}
           style={Platform.OS === 'android' && motion.androidBlurStyle}>
-          <PopupBody colors={colors} route={route} view={view} />
+          <PopupBody colors={colors} onClose={onClose} route={route} view={view} />
         </Animated.View>
         {Platform.OS === 'ios' && (
           <motion.AnimatedBlurView animatedProps={motion.blurProps} pointerEvents='none' tint={'systemUltraThinMaterialDark'} style={StyleSheet.absoluteFill} />

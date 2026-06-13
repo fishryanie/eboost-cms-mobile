@@ -7,10 +7,9 @@ import { TabIcon, type TabIconName } from 'components/tab-icon';
 
 const tabs: { icon: TabIconName; label: string; name: string }[] = [
   { icon: 'home', label: 'Home', name: 'home' },
-  { icon: 'history', label: 'History', name: 'history' },
-  { icon: 'location', label: 'Location', name: 'location' },
+  { icon: 'operation', label: 'Operation', name: 'operation' },
+  { icon: 'marketing', label: 'Marketing', name: 'marketing' },
   { icon: 'technical', label: 'Technical', name: 'technical' },
-  { icon: 'users', label: 'Users', name: 'users' },
 ];
 
 export default function AppTabs() {
@@ -29,7 +28,7 @@ export default function AppTabs() {
           position: 'absolute',
         },
       }}
-      tabBar={(props): ReactElement => <AnimatedTabBar {...props} popupDisabledRouteNames={['home', 'history']} />}>
+      tabBar={(props): ReactElement => <AnimatedTabBar {...props} popupDisabledRouteNames={['home']} />}>
       {tabs.map(tab => (
         <Tabs.Screen
           key={tab.name}

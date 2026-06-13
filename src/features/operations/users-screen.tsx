@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { ChevronLeft } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,7 +11,7 @@ import { useInfiniteUsers } from 'features/users/hooks';
 import type { UserListItem } from 'features/users/types';
 import { AppButton, EmptyState } from 'shared/ui';
 
-export default function UsersScreen() {
+export default function UsersScreen({ onBack }: { onBack?: () => void } = {}) {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -71,8 +72,13 @@ export default function UsersScreen() {
         }
         ListHeaderComponent={
           <ThemedView gap={Spacing.four} padding={Spacing.four}>
-            <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
-              <ThemedView>
+            <ThemedView alignItems='center' flexDirection='row' gap={Spacing.three} justifyContent='space-between'>
+              {onBack ? (
+                <Pressable accessibilityLabel='Back' accessibilityRole='button' onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+                  <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
+                </Pressable>
+              ) : null}
+              <ThemedView flex={1} minWidth={0}>
                 <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={27} letterSpacing={0} lineHeight={34}>
                   Users
                 </ThemedText>
@@ -117,6 +123,13 @@ export default function UsersScreen() {
 }
 
 const styles = StyleSheet.create({
+  backButton: {
+    alignItems: 'center',
+    borderRadius: Radius.medium,
+    height: 34,
+    justifyContent: 'center',
+    width: 34,
+  },
   clearButton: {
     paddingHorizontal: 4,
     paddingVertical: 8,
@@ -145,5 +158,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     height: 48,
     paddingHorizontal: Spacing.four,
+  },
+  pressed: {
+    opacity: 0.72,
   },
 });

@@ -8,7 +8,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
@@ -16,6 +16,7 @@ import { ThemedText, ThemedView } from 'components/base';
 import { AppButton, EmptyState } from 'shared/ui';
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
+import { getServiceSheetMetrics, type ServiceSheetMetrics } from '../service-sheet-metrics';
 import { useUtilityChargers } from './trigger-box-hooks';
 import {
   getUtilityChargerTriggerId,
@@ -35,7 +36,7 @@ type TriggerBoxSheetProps = {
 type BoxActionMode = NonNullable<TriggerBoxSheetProps['mode']>;
 
 const emptyChargers: UtilityCharger[] = [];
-const triggerBoxSnapPoints = ['72%', '92%'];
+const triggerBoxSnapPoints = ['54%', '78%'];
 const phaseLabels = ['L1', 'L2', 'L3'];
 
 type TriggerSampledValue = {
@@ -133,26 +134,37 @@ function getTriggerResponseSummary(response: unknown): TriggerResponseSummary {
   };
 }
 
-function InfoPill({ label, value }: { label: string; value: string }) {
+function InfoPill({ label, metrics, value }: { label: string; metrics: ServiceSheetMetrics; value: string }) {
   return (
-    <ThemedView style={styles.infoPill}>
+    <ThemedView style={[styles.infoPill, { gap: metrics.cardGap / 2, minWidth: metrics.infoPillMinWidth, padding: metrics.cardPadding }]}>
       <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.semibold} fontSize={11} lineHeight={15}>
         {label}
       </ThemedText>
-      <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20} selectable>
+      <ThemedText
+        numberOfLines={1}
+        color={Palette.textPrimary}
+        fontFamily={FontFamily.bold}
+        fontSize={metrics.itemTitleFontSize}
+        lineHeight={metrics.itemTitleLineHeight}
+        selectable>
         {value}
       </ThemedText>
     </ThemedView>
   );
 }
 
-function MetricCard({ label, tone = 'neutral', value }: { label: string; tone?: 'accent' | 'neutral'; value: string }) {
+function MetricCard({ label, metrics, tone = 'neutral', value }: { label: string; metrics: ServiceSheetMetrics; tone?: 'accent' | 'neutral'; value: string }) {
   return (
-    <ThemedView style={[styles.metricCard, tone === 'accent' && styles.metricCardAccent]}>
+    <ThemedView style={[styles.metricCard, { gap: metrics.sectionGap, padding: metrics.cardPadding }, tone === 'accent' && styles.metricCardAccent]}>
       <ThemedText color={tone === 'accent' ? Palette.accent : Palette.textTertiary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
         {label}
       </ThemedText>
-      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={18} lineHeight={24} selectable>
+      <ThemedText
+        color={Palette.textPrimary}
+        fontFamily={FontFamily.bold}
+        fontSize={metrics.metricValueFontSize}
+        lineHeight={metrics.metricValueLineHeight}
+        selectable>
         {value}
       </ThemedText>
     </ThemedView>
@@ -172,6 +184,8 @@ function TriggerResponseModal({
   responseText: string;
   visible: boolean;
 }) {
+  const { height, width } = useWindowDimensions();
+  const metrics = getServiceSheetMetrics(width, height);
   const summary = getTriggerResponseSummary(response);
   const isReset = mode === 'reset';
   const isUnlock = mode === 'unlock';
@@ -191,18 +205,28 @@ function TriggerResponseModal({
       onBackButtonPress={onClose}
       onBackdropPress={onClose}
       style={styles.responseModal}>
-      <ThemedView alignItems='center' flex={1} justifyContent='center' padding={Spacing.four}>
+      <ThemedView alignItems='center' flex={1} justifyContent='center' padding={metrics.responsePadding}>
         <ThemedView backgroundColor={Palette.surfaceRaised} borderRadius={Radius.large} maxHeight='88%' maxWidth={520} overflow='hidden' width='100%'>
-          <ScrollView contentContainerStyle={styles.responseModalContent} showsVerticalScrollIndicator={false}>
-            <ThemedView alignItems='flex-start' flexDirection='row' gap={Spacing.three}>
-              <ThemedView style={styles.successIcon}>
-                <SymbolView name='bolt.fill' resizeMode='scaleAspectFit' size={24} tintColor={Palette.accent} />
+          <ScrollView
+            contentContainerStyle={[styles.responseModalContent, { gap: metrics.headerGap, padding: metrics.responsePadding }]}
+            showsVerticalScrollIndicator={false}>
+            <ThemedView alignItems='flex-start' flexDirection='row' gap={metrics.itemGap}>
+              <ThemedView style={[styles.successIcon, { height: metrics.responseIconSize, width: metrics.responseIconSize }]}>
+                <SymbolView name='bolt.fill' resizeMode='scaleAspectFit' size={metrics.titleFontSize + 4} tintColor={Palette.accent} />
               </ThemedView>
               <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
-                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={21} lineHeight={27}>
+                <ThemedText
+                  color={Palette.textPrimary}
+                  fontFamily={FontFamily.bold}
+                  fontSize={metrics.responseTitleFontSize}
+                  lineHeight={metrics.responseTitleLineHeight}>
                   {isReset ? 'Reset thành công' : isUnlock ? 'Unlock thành công' : 'Trigger thành công'}
                 </ThemedText>
-                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={19}>
+                <ThemedText
+                  color={Palette.textSecondary}
+                  fontFamily={FontFamily.regular}
+                  fontSize={metrics.descriptionFontSize}
+                  lineHeight={metrics.descriptionLineHeight}>
                   {isReset
                     ? 'Lệnh reset đã được gửi tới box qua hub service.'
                     : isUnlock
@@ -210,20 +234,24 @@ function TriggerResponseModal({
                       : 'MeterValues đã trả về các chỉ số hiện tại của cổng sạc.'}
                 </ThemedText>
               </ThemedView>
-              <Pressable accessibilityLabel='Close trigger response' accessibilityRole='button' onPress={onClose} style={styles.modalCloseButton}>
+              <Pressable
+                accessibilityLabel='Close trigger response'
+                accessibilityRole='button'
+                onPress={onClose}
+                style={[styles.modalCloseButton, { height: metrics.modalCloseSize, width: metrics.modalCloseSize }]}>
                 <SymbolView name='xmark' resizeMode='scaleAspectFit' size={15} tintColor={Palette.textSecondary} />
               </Pressable>
             </ThemedView>
 
             {!isReset && !isUnlock ? (
               <>
-                <ThemedView flexDirection='row' gap={Spacing.two} wrap>
-                  <InfoPill label='Charge point' value={summary.chargePointID} />
-                  <InfoPill label='Connector' value={summary.connectorID} />
-                  <InfoPill label='Transaction' value={summary.transactionID === '0' ? 'Không có phiên' : summary.transactionID} />
+                <ThemedView flexDirection='row' gap={metrics.sectionGap} wrap>
+                  <InfoPill label='Charge point' metrics={metrics} value={summary.chargePointID} />
+                  <InfoPill label='Connector' metrics={metrics} value={summary.connectorID} />
+                  <InfoPill label='Transaction' metrics={metrics} value={summary.transactionID === '0' ? 'Không có phiên' : summary.transactionID} />
                 </ThemedView>
 
-                <ThemedView style={styles.timestampPanel}>
+                <ThemedView style={[styles.timestampPanel, { gap: metrics.sectionGap, padding: metrics.cardPadding }]}>
                   <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
                     Thời điểm ghi nhận
                   </ThemedText>
@@ -235,13 +263,13 @@ function TriggerResponseModal({
                   </ThemedText>
                 </ThemedView>
 
-                <ThemedView flexDirection='row' gap={Spacing.two} wrap>
-                  <MetricCard label='Tổng năng lượng' tone='accent' value={summary.energyText} />
-                  <MetricCard label='Công suất tức thời' value={summary.powerText} />
+                <ThemedView flexDirection='row' gap={metrics.sectionGap} wrap>
+                  <MetricCard label='Tổng năng lượng' metrics={metrics} tone='accent' value={summary.energyText} />
+                  <MetricCard label='Công suất tức thời' metrics={metrics} value={summary.powerText} />
                 </ThemedView>
 
-                <ThemedView style={styles.phasePanel}>
-                  <ThemedView flexDirection='row' gap={Spacing.two} paddingBottom={Spacing.two}>
+                <ThemedView style={[styles.phasePanel, { padding: metrics.cardPadding }]}>
+                  <ThemedView flexDirection='row' gap={metrics.sectionGap} paddingBottom={metrics.sectionGap}>
                     <ThemedText color={Palette.textTertiary} flex={0.7} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
                       Pha
                     </ThemedText>
@@ -253,14 +281,31 @@ function TriggerResponseModal({
                     </ThemedText>
                   </ThemedView>
                   {summary.phases.map(phase => (
-                    <ThemedView key={phase.phase} style={styles.phaseRow}>
-                      <ThemedText color={Palette.textPrimary} flex={0.7} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20}>
+                    <ThemedView key={phase.phase} style={[styles.phaseRow, { gap: metrics.sectionGap, paddingVertical: metrics.sectionGap }]}>
+                      <ThemedText
+                        color={Palette.textPrimary}
+                        flex={0.7}
+                        fontFamily={FontFamily.bold}
+                        fontSize={metrics.itemTitleFontSize}
+                        lineHeight={metrics.itemTitleLineHeight}>
                         {phase.phase}
                       </ThemedText>
-                      <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} selectable>
+                      <ThemedText
+                        color={Palette.textPrimary}
+                        flex={1}
+                        fontFamily={FontFamily.semibold}
+                        fontSize={metrics.itemTitleFontSize}
+                        lineHeight={metrics.itemTitleLineHeight}
+                        selectable>
                         {phase.voltageText}
                       </ThemedText>
-                      <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} selectable>
+                      <ThemedText
+                        color={Palette.textPrimary}
+                        flex={1}
+                        fontFamily={FontFamily.semibold}
+                        fontSize={metrics.itemTitleFontSize}
+                        lineHeight={metrics.itemTitleLineHeight}
+                        selectable>
                         {phase.currentText}
                       </ThemedText>
                     </ThemedView>
@@ -269,7 +314,7 @@ function TriggerResponseModal({
               </>
             ) : null}
 
-            <ThemedView style={styles.rawPanel}>
+            <ThemedView style={[styles.rawPanel, { gap: metrics.sectionGap, padding: metrics.cardPadding }]}>
               <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
                 Raw response
               </ThemedText>
@@ -289,6 +334,8 @@ function TriggerResponseModal({
 export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerBoxSheetProps) {
   const ref = useRef<BottomSheetModal>(null);
   const isPresentedRef = useRef(false);
+  const { height, width } = useWindowDimensions();
+  const metrics = getServiceSheetMetrics(width, height);
   const { bottom, top } = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [selectedChargerKey, setSelectedChargerKey] = useState<string>();
@@ -419,7 +466,16 @@ export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerB
 
     return (
       <BottomSheetFooter {...props} bottomInset={0}>
-        <ThemedView style={[styles.footer, footerPadding]}>
+        <ThemedView
+          style={[
+            styles.footer,
+            {
+              gap: metrics.footerGap,
+              paddingHorizontal: metrics.footerPaddingHorizontal,
+              paddingTop: metrics.footerPaddingTop,
+            },
+            footerPadding,
+          ]}>
           <ThemedView flex={1}>
             <AppButton block disabled={isSubmitting} label='Cancel' onPress={close} variant='ghost' />
           </ThemedView>
@@ -464,20 +520,38 @@ export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerB
           )
         }
         ListHeaderComponent={
-          <ThemedView style={[styles.stickyHeader, headerPadding]}>
+          <ThemedView
+            style={[
+              styles.stickyHeader,
+              {
+                gap: metrics.headerGap,
+                paddingBottom: metrics.headerPaddingBottom,
+                paddingHorizontal: metrics.headerPaddingHorizontal,
+                paddingTop: metrics.headerPaddingTop,
+              },
+              headerPadding,
+            ]}>
             {toastMessage ? (
               <ThemedView style={[styles.notice, triggerSucceeded && styles.noticeSuccess]}>
-                <ThemedText color={triggerSucceeded ? Palette.accent : Palette.danger} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
+                <ThemedText
+                  color={triggerSucceeded ? Palette.accent : Palette.danger}
+                  fontFamily={FontFamily.semibold}
+                  fontSize={metrics.noticeFontSize}
+                  lineHeight={metrics.noticeLineHeight}>
                   {toastMessage}
                 </ThemedText>
               </ThemedView>
             ) : null}
 
-            <ThemedView gap={Spacing.two}>
-              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={22} lineHeight={28}>
+            <ThemedView gap={metrics.sectionGap}>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={metrics.titleFontSize} lineHeight={metrics.titleLineHeight}>
                 {isResetMode ? 'Reset Box' : isUnlockMode ? 'Unlock Charger' : 'Trigger Box'}
               </ThemedText>
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} lineHeight={20}>
+              <ThemedText
+                color={Palette.textSecondary}
+                fontFamily={FontFamily.regular}
+                fontSize={metrics.descriptionFontSize}
+                lineHeight={metrics.descriptionLineHeight}>
                 {isResetMode
                   ? 'Select a charger, then confirm to check live box status and send a reset command.'
                   : isUnlockMode
@@ -494,7 +568,15 @@ export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerB
               placeholder='Search charger, vendor, or station'
               placeholderTextColor={Palette.textTertiary}
               returnKeyType='search'
-              style={styles.searchInput}
+              style={[
+                styles.searchInput,
+                {
+                  fontSize: metrics.inputFontSize,
+                  lineHeight: metrics.inputLineHeight,
+                  paddingHorizontal: metrics.inputPaddingHorizontal,
+                  paddingVertical: metrics.inputPaddingVertical,
+                },
+              ]}
               value={query}
             />
           </ThemedView>
@@ -512,16 +594,37 @@ export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerB
                 setResponseModalVisible(false);
                 setTriggerSucceeded(false);
               }}
-              style={({ pressed }) => [styles.chargerItem, selected && styles.chargerItemSelected, pressed && styles.pressed]}>
+              style={({ pressed }) => [
+                styles.chargerItem,
+                {
+                  gap: metrics.itemGap,
+                  paddingHorizontal: metrics.itemPaddingHorizontal,
+                  paddingVertical: metrics.itemPaddingVertical,
+                },
+                selected && styles.chargerItemSelected,
+                pressed && styles.pressed,
+              ]}>
               <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
-                <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.regular} fontSize={15} lineHeight={20}>
+                <ThemedText
+                  numberOfLines={1}
+                  color={Palette.textPrimary}
+                  fontFamily={FontFamily.regular}
+                  fontSize={metrics.itemTitleFontSize}
+                  lineHeight={metrics.itemTitleLineHeight}>
                   <ThemedText fontFamily={FontFamily.bold}>{item.uniqueId}</ThemedText> / {item.vendorId}
                 </ThemedText>
-                <ThemedText numberOfLines={1} color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
+                <ThemedText
+                  numberOfLines={1}
+                  color={Palette.textTertiary}
+                  fontFamily={FontFamily.regular}
+                  fontSize={metrics.itemSubtitleFontSize}
+                  lineHeight={metrics.itemSubtitleLineHeight}>
                   {item.stationName || 'No station assigned'}
                 </ThemedText>
               </ThemedView>
-              <ThemedView style={[styles.radio, selected && styles.radioSelected]}>{selected ? <ThemedView style={styles.radioDot} /> : null}</ThemedView>
+              <ThemedView style={[styles.radio, { height: metrics.radioSize, width: metrics.radioSize }, selected && styles.radioSelected]}>
+                {selected ? <ThemedView style={[styles.radioDot, { height: metrics.radioDotSize + 2, width: metrics.radioDotSize + 2 }]} /> : null}
+              </ThemedView>
             </Pressable>
           );
         }}
@@ -542,8 +645,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 10,
   },
   chargerItemSelected: {
     opacity: 1,
@@ -561,9 +664,9 @@ const styles = StyleSheet.create({
     borderColor: Palette.borderSubtle,
     borderTopWidth: 1,
     flexDirection: 'row',
-    gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
   },
   notice: {
     backgroundColor: '#FFF1F0',
@@ -618,9 +721,9 @@ const styles = StyleSheet.create({
     borderColor: Palette.border,
     borderRadius: Radius.pill,
     borderWidth: 2,
-    height: 24,
+    height: 22,
     justifyContent: 'center',
-    width: 24,
+    width: 22,
   },
   radioDot: {
     backgroundColor: Palette.accent,
@@ -636,7 +739,7 @@ const styles = StyleSheet.create({
   },
   responseModalContent: {
     gap: Spacing.four,
-    padding: Spacing.four,
+    padding: Spacing.three,
   },
   rawPanel: {
     backgroundColor: '#F8FAFC',
@@ -651,18 +754,18 @@ const styles = StyleSheet.create({
     borderRadius: Radius.large,
     color: Palette.textPrimary,
     fontFamily: FontFamily.semibold,
-    fontSize: 15,
+    fontSize: 14,
     lineHeight: 20,
     paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
+    paddingVertical: 10,
   },
   stickyHeader: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
     borderBottomWidth: 1,
-    gap: Spacing.four,
+    gap: Spacing.three,
     paddingBottom: Spacing.three,
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: Spacing.three,
     paddingTop: Spacing.two,
   },
   successIcon: {

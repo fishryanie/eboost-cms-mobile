@@ -18,6 +18,7 @@ interface IPalette {
 
 interface IPopupRenderContext {
   colors: IPalette;
+  onClose: () => void;
   route: Route<string>;
   view: string;
 }
@@ -58,6 +59,7 @@ interface IPanelLayerProps {
   active: boolean;
   colors: IPalette;
   direction: number;
+  onClose: () => void;
   onLayout: (view: string, width: number, height: number) => void;
   renderPopupBody: TPopupRenderer;
   route: Route<string>;
@@ -68,6 +70,7 @@ interface IPanelStackProps {
   colors: IPalette;
   direction: number;
   items: INavItem[];
+  onClose: () => void;
   onMeasure: (view: string, width: number, height: number) => void;
   renderPopupBody: TPopupRenderer;
   view: TMenuView;

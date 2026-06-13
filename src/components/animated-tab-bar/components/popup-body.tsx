@@ -3,6 +3,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { TabIcon, type TabIconName } from 'components/tab-icon';
+import { cmsMobileSections, type CmsSectionKey } from 'features/cms-menu/mobile-cms-menu';
 import type { IPalette, IPopupRenderContext } from '../types';
 
 type PopupAction = {
@@ -12,70 +13,35 @@ type PopupAction = {
   onPress: () => void;
 };
 
-function DefaultPopupBody({ colors, route }: IPopupRenderContext) {
+function DefaultPopupBody({ colors, onClose, route }: IPopupRenderContext) {
   const router = useRouter();
   const actions = getRouteActions(route.name, router);
 
   if (actions.length === 0) return null;
 
   return (
-    <ThemedView gap={3} minWidth={260} padding={10}>
+    <ThemedView gap={3} minWidth={280} padding={10} width='100%'>
       {actions.map(action => (
-        <ActionRow action={action} colors={colors} key={action.key} />
+        <ActionRow action={action} colors={colors} key={action.key} onClose={onClose} />
       ))}
     </ThemedView>
   );
 }
 
 function getRouteActions(routeName: string, router: ReturnType<typeof useRouter>): PopupAction[] {
-  if (routeName === 'location') {
-    return [
-      {
-        icon: 'location',
-        key: 'create-location',
-        label: 'Create location',
-        onPress: () =>
-          router.push({
-            pathname: '/location',
-            params: { action: 'create' },
-          } as never),
-      },
-      {
-        icon: 'map',
-        key: 'pick-lat-lng',
-        label: 'Pick lat lng',
-        onPress: () =>
-          router.push({
-            pathname: '/menu/[slug]',
-            params: { slug: 'pick-lat-lng' },
-          } as never),
-      },
-    ];
-  }
+  if (routeName === 'operation' || routeName === 'marketing') {
+    const section = cmsMobileSections[routeName as CmsSectionKey];
 
-  if (routeName === 'users') {
-    return [
-      {
-        icon: 'balance',
-        key: 'adjust-balance',
-        label: 'Adjust balance',
-        onPress: () =>
-          router.push({
-            pathname: '/menu/[slug]',
-            params: { slug: 'adjust-balance' },
-          } as never),
-      },
-      {
-        icon: 'transfer',
-        key: 'transfer-funds',
-        label: 'Transfer funds',
-        onPress: () =>
-          router.push({
-            pathname: '/menu/[slug]',
-            params: { slug: 'transfer-funds' },
-          } as never),
-      },
-    ];
+    return section.panels.map(panel => ({
+      icon: panel.icon,
+      key: `${routeName}-${panel.key}`,
+      label: panel.title,
+      onPress: () =>
+        router.push({
+          pathname: `/${routeName}/[panel]`,
+          params: { panel: panel.key },
+        } as never),
+    }));
   }
 
   if (routeName === 'technical') {
@@ -86,7 +52,7 @@ function getRouteActions(routeName: string, router: ReturnType<typeof useRouter>
         label: 'Chargers',
         onPress: () =>
           router.push({
-            pathname: '/technical',
+            pathname: '/technical/[panel]',
             params: { panel: 'chargers' },
           } as never),
       },
@@ -96,17 +62,17 @@ function getRouteActions(routeName: string, router: ReturnType<typeof useRouter>
         label: 'Meter Hourly',
         onPress: () =>
           router.push({
-            pathname: '/technical',
+            pathname: '/technical/[panel]',
             params: { panel: 'meter-hourly' },
           } as never),
       },
       {
-        icon: 'history',
+        icon: 'technical',
         key: 'technical-status-logs',
         label: 'Status Logs',
         onPress: () =>
           router.push({
-            pathname: '/technical',
+            pathname: '/technical/[panel]',
             params: { panel: 'status-logs' },
           } as never),
       },
@@ -116,7 +82,7 @@ function getRouteActions(routeName: string, router: ReturnType<typeof useRouter>
         label: 'Energy Differ',
         onPress: () =>
           router.push({
-            pathname: '/technical',
+            pathname: '/technical/[panel]',
             params: { panel: 'energy-differ' },
           } as never),
       },
@@ -126,9 +92,14 @@ function getRouteActions(routeName: string, router: ReturnType<typeof useRouter>
   return [];
 }
 
-function ActionRow({ action, colors }: { action: PopupAction; colors: IPalette }) {
+function ActionRow({ action, colors, onClose }: { action: PopupAction; colors: IPalette; onClose: () => void }) {
   return (
-    <Pressable onPress={action.onPress} style={({ pressed }) => [styles.actionRow, { backgroundColor: pressed ? colors.hover : 'transparent' }]}>
+    <Pressable
+      onPress={() => {
+        action.onPress();
+        onClose();
+      }}
+      style={({ pressed }) => [styles.actionRow, { backgroundColor: pressed ? colors.hover : 'transparent' }]}>
       <ThemedView alignItems='center' height={24} justifyContent='center' width={24}>
         <TabIcon color={colors.foreground} name={action.icon} size={18} />
       </ThemedView>
@@ -153,6 +124,9 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: 20,
     lineHeight: 20,
+    marginLeft: 'auto',
+    textAlign: 'right',
+    width: 18,
   },
   label: {
     flex: 1,

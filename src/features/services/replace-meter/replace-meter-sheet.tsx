@@ -7,14 +7,15 @@ import {
   type BottomSheetFooterProps,
 } from '@gorhom/bottom-sheet';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { EmptyState, AppButton } from 'shared/ui';
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
-import { useUtilityChargers } from '../trigger-box';
+import { getServiceSheetMetrics } from '../service-sheet-metrics';
+import { useUtilityChargers } from '../trigger-box/trigger-box-hooks';
 import { getUtilityChargerTriggerId, type UtilityCharger } from '../trigger-box/trigger-box-service';
 import { replaceMeter } from './replace-meter-service';
 
@@ -30,7 +31,7 @@ type ReplaceMeterCharger = UtilityCharger & {
 };
 
 const emptyChargers: ReplaceMeterCharger[] = [];
-const snapPoints = ['86%', '96%'];
+const snapPoints = ['68%', '84%'];
 
 function getTodayText() {
   return new Date().toISOString().slice(0, 10);
@@ -65,6 +66,8 @@ function getMetricNumber(value: string) {
 export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) {
   const ref = useRef<BottomSheetModal>(null);
   const isPresentedRef = useRef(false);
+  const { height, width } = useWindowDimensions();
+  const metrics = getServiceSheetMetrics(width, height);
   const { bottom, top } = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [selectedChargerKey, setSelectedChargerKey] = useState<string>();
@@ -143,7 +146,13 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
   }
 
   async function submitReplaceMeter() {
-    if (!boxIdentifier || !resolvedPartnerBoxId || !resolvedPartnershipLocationId || resolvedClosingIndex === undefined || resolvedNewMeterIndex === undefined) {
+    if (
+      !boxIdentifier ||
+      !resolvedPartnerBoxId ||
+      !resolvedPartnershipLocationId ||
+      resolvedClosingIndex === undefined ||
+      resolvedNewMeterIndex === undefined
+    ) {
       setSucceeded(false);
       setToastMessage('Select charger and fill all required meter fields.');
       return;
@@ -176,7 +185,16 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
   function renderFooter(props: BottomSheetFooterProps) {
     return (
       <BottomSheetFooter {...props} bottomInset={0}>
-        <ThemedView style={[styles.footer, { paddingBottom: bottom + Spacing.three }]}>
+        <ThemedView
+          style={[
+            styles.footer,
+            {
+              gap: metrics.footerGap,
+              paddingBottom: bottom + Spacing.three,
+              paddingHorizontal: metrics.footerPaddingHorizontal,
+              paddingTop: metrics.footerPaddingTop,
+            },
+          ]}>
           <ThemedView flex={1}>
             <AppButton block disabled={isSubmitting} label='Cancel' onPress={close} variant='ghost' />
           </ThemedView>
@@ -221,20 +239,37 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
           )
         }
         ListHeaderComponent={
-          <ThemedView style={styles.header}>
+          <ThemedView
+            style={[
+              styles.header,
+              {
+                gap: metrics.headerGap,
+                paddingBottom: metrics.headerPaddingBottom,
+                paddingHorizontal: metrics.headerPaddingHorizontal,
+                paddingTop: metrics.headerPaddingTop,
+              },
+            ]}>
             {toastMessage ? (
               <ThemedView style={[styles.notice, succeeded && styles.noticeSuccess]}>
-                <ThemedText color={succeeded ? Palette.accent : Palette.danger} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
+                <ThemedText
+                  color={succeeded ? Palette.accent : Palette.danger}
+                  fontFamily={FontFamily.semibold}
+                  fontSize={metrics.noticeFontSize}
+                  lineHeight={metrics.noticeLineHeight}>
                   {toastMessage}
                 </ThemedText>
               </ThemedView>
             ) : null}
 
-            <ThemedView gap={Spacing.two}>
-              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={22} lineHeight={28}>
+            <ThemedView gap={metrics.sectionGap}>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={metrics.titleFontSize} lineHeight={metrics.titleLineHeight}>
                 Replace Meter
               </ThemedText>
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} lineHeight={20}>
+              <ThemedText
+                color={Palette.textSecondary}
+                fontFamily={FontFamily.regular}
+                fontSize={metrics.descriptionFontSize}
+                lineHeight={metrics.descriptionLineHeight}>
                 Select a charger, then create the closing and new meter reports.
               </ThemedText>
             </ThemedView>
@@ -247,41 +282,92 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
               placeholder='Search charger, vendor, or station'
               placeholderTextColor={Palette.textTertiary}
               returnKeyType='search'
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  fontSize: metrics.inputFontSize,
+                  minHeight: metrics.inputMinHeight,
+                  paddingHorizontal: metrics.inputPaddingHorizontal,
+                },
+              ]}
               value={query}
             />
 
-            <ThemedView gap={Spacing.two}>
-              <BottomSheetTextInput onChangeText={setReplacementDate} placeholder='YYYY-MM-DD' style={styles.input} value={replacementDate} />
-              <ThemedView flexDirection='row' gap={Spacing.two}>
+            <ThemedView gap={metrics.formGap}>
+              <BottomSheetTextInput
+                onChangeText={setReplacementDate}
+                placeholder='YYYY-MM-DD'
+                style={[
+                  styles.input,
+                  {
+                    fontSize: metrics.inputFontSize,
+                    minHeight: metrics.inputMinHeight,
+                    paddingHorizontal: metrics.inputPaddingHorizontal,
+                  },
+                ]}
+                value={replacementDate}
+              />
+              <ThemedView flexDirection='row' gap={metrics.formGap}>
                 <BottomSheetTextInput
                   keyboardType='decimal-pad'
                   onChangeText={setClosingIndex}
                   placeholder='Closing meter index'
-                  style={[styles.input, styles.flexInput]}
+                  style={[
+                    styles.input,
+                    styles.flexInput,
+                    {
+                      fontSize: metrics.inputFontSize,
+                      minHeight: metrics.inputMinHeight,
+                      paddingHorizontal: metrics.inputPaddingHorizontal,
+                    },
+                  ]}
                   value={closingIndex}
                 />
                 <BottomSheetTextInput
                   keyboardType='decimal-pad'
                   onChangeText={setNewMeterIndex}
                   placeholder='New meter index'
-                  style={[styles.input, styles.flexInput]}
+                  style={[
+                    styles.input,
+                    styles.flexInput,
+                    {
+                      fontSize: metrics.inputFontSize,
+                      minHeight: metrics.inputMinHeight,
+                      paddingHorizontal: metrics.inputPaddingHorizontal,
+                    },
+                  ]}
                   value={newMeterIndex}
                 />
               </ThemedView>
-              <ThemedView flexDirection='row' gap={Spacing.two}>
+              <ThemedView flexDirection='row' gap={metrics.formGap}>
                 <BottomSheetTextInput
                   keyboardType='number-pad'
                   onChangeText={setPartnershipLocationId}
                   placeholder='Partner location ID'
-                  style={[styles.input, styles.flexInput]}
+                  style={[
+                    styles.input,
+                    styles.flexInput,
+                    {
+                      fontSize: metrics.inputFontSize,
+                      minHeight: metrics.inputMinHeight,
+                      paddingHorizontal: metrics.inputPaddingHorizontal,
+                    },
+                  ]}
                   value={partnershipLocationId}
                 />
                 <BottomSheetTextInput
                   keyboardType='number-pad'
                   onChangeText={setPartnerBoxId}
                   placeholder='Partner box ID'
-                  style={[styles.input, styles.flexInput]}
+                  style={[
+                    styles.input,
+                    styles.flexInput,
+                    {
+                      fontSize: metrics.inputFontSize,
+                      minHeight: metrics.inputMinHeight,
+                      paddingHorizontal: metrics.inputPaddingHorizontal,
+                    },
+                  ]}
                   value={partnerBoxId}
                 />
               </ThemedView>
@@ -290,7 +376,14 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
                   keyboardType='number-pad'
                   onChangeText={setConnectorId}
                   placeholder='Connector ID (optional)'
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    {
+                      fontSize: metrics.inputFontSize,
+                      minHeight: metrics.inputMinHeight,
+                      paddingHorizontal: metrics.inputPaddingHorizontal,
+                    },
+                  ]}
                   value={connectorId}
                 />
               ) : null}
@@ -311,16 +404,37 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
                 setSucceeded(false);
                 setToastMessage('');
               }}
-              style={({ pressed }) => [styles.chargerItem, selected && styles.chargerItemSelected, pressed && styles.pressed]}>
+              style={({ pressed }) => [
+                styles.chargerItem,
+                {
+                  gap: metrics.itemGap,
+                  paddingHorizontal: metrics.itemPaddingHorizontal,
+                  paddingVertical: metrics.itemPaddingVertical,
+                },
+                selected && styles.chargerItemSelected,
+                pressed && styles.pressed,
+              ]}>
               <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
-                <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.regular} fontSize={15} lineHeight={20}>
+                <ThemedText
+                  numberOfLines={1}
+                  color={Palette.textPrimary}
+                  fontFamily={FontFamily.regular}
+                  fontSize={metrics.itemTitleFontSize}
+                  lineHeight={metrics.itemTitleLineHeight}>
                   <ThemedText fontFamily={FontFamily.bold}>{item.uniqueId}</ThemedText> / {item.vendorId}
                 </ThemedText>
-                <ThemedText numberOfLines={1} color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
+                <ThemedText
+                  numberOfLines={1}
+                  color={Palette.textTertiary}
+                  fontFamily={FontFamily.regular}
+                  fontSize={metrics.itemSubtitleFontSize}
+                  lineHeight={metrics.itemSubtitleLineHeight}>
                   {item.stationName || 'No station assigned'}
                 </ThemedText>
               </ThemedView>
-              <ThemedView style={[styles.radio, selected && styles.radioSelected]}>{selected ? <ThemedView style={styles.radioDot} /> : null}</ThemedView>
+              <ThemedView style={[styles.radio, { height: metrics.radioSize, width: metrics.radioSize }, selected && styles.radioSelected]}>
+                {selected ? <ThemedView style={[styles.radioDot, { height: metrics.radioDotSize, width: metrics.radioDotSize }]} /> : null}
+              </ThemedView>
             </Pressable>
           );
         }}
@@ -334,8 +448,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 10,
   },
   chargerItemSelected: {
     opacity: 1,
@@ -352,15 +466,15 @@ const styles = StyleSheet.create({
     borderTopColor: Palette.borderSubtle,
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
   },
   header: {
     backgroundColor: Palette.surfaceRaised,
-    gap: Spacing.three,
+    gap: Spacing.two,
     paddingBottom: Spacing.three,
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: Spacing.three,
     paddingTop: Spacing.two,
   },
   input: {
@@ -370,8 +484,8 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     color: Palette.textPrimary,
     fontFamily: FontFamily.semibold,
-    fontSize: 14,
-    minHeight: 46,
+    fontSize: 13,
+    minHeight: 42,
     paddingHorizontal: Spacing.three,
   },
   notice: {

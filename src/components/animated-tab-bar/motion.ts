@@ -4,10 +4,10 @@ import type { INavItem, IPalette } from './types';
 
 const EASING: IEasingFunction = Easing.bezier(0.22, 1, 0.36, 1);
 const DURATION = 600;
-const ICON_BOX = 48;
+const ICON_BOX = 50;
 const LABEL_PAD = 18;
 const PANEL_SLIDE = 65;
-const TAB_HEIGHT = 44;
+const TAB_HEIGHT = 48;
 
 function palette<T extends 'dark' | 'light'>(scheme: T): IPalette {
   if (scheme === 'dark') {

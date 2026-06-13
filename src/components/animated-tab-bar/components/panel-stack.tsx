@@ -9,6 +9,7 @@ const PanelStack: FC<IPanelStackProps> & FunctionComponent<IPanelStackProps> = m
     colors,
     direction,
     items,
+    onClose,
     onMeasure,
     renderPopupBody,
     view,
@@ -21,6 +22,7 @@ const PanelStack: FC<IPanelStackProps> & FunctionComponent<IPanelStackProps> = m
             active={view === item.key}
             colors={colors}
             direction={direction}
+            onClose={onClose}
             onLayout={onMeasure}
             renderPopupBody={renderPopupBody}
             route={item.route}

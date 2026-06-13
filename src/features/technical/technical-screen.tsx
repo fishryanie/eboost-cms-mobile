@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import {
   BadgeDollarSign,
   BadgeInfo,
@@ -43,9 +43,9 @@ import type {
   TechnicalVehicle,
 } from './types';
 
-const detailPanels: TechnicalPanel[] = ['chargers', 'meter-hourly', 'status-logs', 'energy-differ'];
-const screenHorizontalPadding = 20;
-const serviceTileSize = 70;
+export const technicalDetailPanels: TechnicalPanel[] = ['chargers', 'meter-hourly', 'status-logs', 'energy-differ'];
+const screenHorizontalPadding = 18;
+const serviceTileSize = 64;
 const quickServiceIcons: Record<QuickServiceIconName, LucideIcon> = {
   badgeDollarSign: BadgeDollarSign,
   badgeInfo: BadgeInfo,
@@ -73,37 +73,90 @@ const panelTitles: Record<TechnicalPanel, string> = {
 export function TechnicalScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { panel: panelParam } = useLocalSearchParams<{ panel?: string }>();
-  const activePanel = detailPanels.includes(panelParam as TechnicalPanel) ? (panelParam as TechnicalPanel) : undefined;
-  const [vehicle, setVehicle] = useState<TechnicalVehicle>('bike');
-  const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
   const [boxActionMode, setBoxActionMode] = useState<'reset' | 'trigger' | 'unlock' | null>(null);
   const [replaceMeterVisible, setReplaceMeterVisible] = useState(false);
-  const params = useMemo<TechnicalQueryParams>(() => ({ page, search, vehicle }), [page, search, vehicle]);
-  const panelQueries = useTechnicalPanel(activePanel || 'chargers', params);
   const bikeNetworkQuery = useQuery({
-    enabled: !activePanel,
     queryFn: () => fetchNetworkStatus('bike'),
     queryKey: ['technical', 'overview-network-status', 'bike'],
   });
   const carNetworkQuery = useQuery({
-    enabled: !activePanel,
     queryFn: () => fetchNetworkStatus('car'),
     queryKey: ['technical', 'overview-network-status', 'car'],
   });
   const domainQuery = useQuery({
-    enabled: !activePanel,
     queryFn: fetchDomainAnalyze,
     queryKey: ['technical', 'overview-domain-analyze'],
   });
+  const serviceTileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - Spacing.three * 3) / 4));
+
+  return (
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <FlatList
+        ListHeaderComponent={
+          <ThemedView gap={Spacing.three} paddingHorizontal={screenHorizontalPadding} paddingTop={Spacing.two}>
+            <ThemedView>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={26} letterSpacing={0} lineHeight={31}>
+                Technical
+              </ThemedText>
+              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} marginTop={3}>
+                Charger service, network health, and domain load
+              </ThemedText>
+            </ThemedView>
+          </ThemedView>
+        }
+        contentContainerStyle={styles.content}
+        data={[]}
+        keyExtractor={(_, index) => String(index)}
+        ListEmptyComponent={
+          <ThemedView gap={Spacing.five} paddingHorizontal={screenHorizontalPadding}>
+            <ChargerServicesSection tileWidth={serviceTileWidth} onBoxAction={setBoxActionMode} onReplaceMeter={() => setReplaceMeterVisible(true)} />
+            <NetworkStatusSection
+              bikeQuery={bikeNetworkQuery}
+              carQuery={carNetworkQuery}
+              onViewIssues={() =>
+                router.push({
+                  pathname: '/technical/network-issues',
+                } as never)
+              }
+            />
+            <DomainAnalyzeSection query={domainQuery} />
+          </ThemedView>
+        }
+        refreshControl={
+          <RefreshControl
+            onRefresh={() => {
+              void bikeNetworkQuery.refetch();
+              void carNetworkQuery.refetch();
+              void domainQuery.refetch();
+            }}
+            refreshing={bikeNetworkQuery.isRefetching || carNetworkQuery.isRefetching || domainQuery.isRefetching}
+            tintColor={Palette.accent}
+          />
+        }
+        renderItem={null}
+        showsVerticalScrollIndicator={false}
+      />
+      {boxActionMode ? <TriggerBoxSheet mode={boxActionMode} onClose={() => setBoxActionMode(null)} visible={Boolean(boxActionMode)} /> : null}
+      {replaceMeterVisible ? <ReplaceMeterSheet onClose={() => setReplaceMeterVisible(false)} visible={replaceMeterVisible} /> : null}
+    </SafeAreaView>
+  );
+}
+
+export function TechnicalPanelScreen({ onBack, panel }: { onBack: () => void; panel: TechnicalPanel }) {
+  const [vehicle, setVehicle] = useState<TechnicalVehicle>('bike');
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const params = useMemo<TechnicalQueryParams>(() => ({ page, search, vehicle }), [page, search, vehicle]);
+  const panelQueries = useTechnicalPanel(panel, params);
   const energyDifferQuery = useQuery({
-    enabled: activePanel === 'energy-differ',
+    enabled: panel === 'energy-differ',
     queryFn: () => fetchEnergyDiffer({ vehicle }),
     queryKey: ['technical', 'energy-differ-detail', vehicle],
   });
-  const serviceTileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - Spacing.three * 3) / 4));
+  const listQuery = panel === 'chargers' ? panelQueries.chargers : panel === 'meter-hourly' ? panelQueries.meterHourly : panelQueries.statusLogs;
+  const isEnergyDiffer = panel === 'energy-differ';
+  const title = panelTitles[panel];
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -117,85 +170,21 @@ export function TechnicalScreen() {
     setPage(1);
     setSearchInput('');
     setSearch('');
-  }, [activePanel, vehicle]);
-
-  if (!activePanel) {
-    return (
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <FlatList
-          ListHeaderComponent={
-            <ThemedView gap={Spacing.three} paddingHorizontal={screenHorizontalPadding} paddingTop={Spacing.two}>
-              <ThemedView>
-                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={26} letterSpacing={0} lineHeight={31}>
-                  Technical
-                </ThemedText>
-                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} marginTop={3}>
-                  Charger service, network health, and domain load
-                </ThemedText>
-              </ThemedView>
-            </ThemedView>
-          }
-          contentContainerStyle={styles.content}
-          data={[]}
-          keyExtractor={(_, index) => String(index)}
-          ListEmptyComponent={
-            <ThemedView gap={Spacing.five} paddingHorizontal={screenHorizontalPadding}>
-              <ChargerServicesSection tileWidth={serviceTileWidth} onBoxAction={setBoxActionMode} onReplaceMeter={() => setReplaceMeterVisible(true)} />
-              <NetworkStatusSection
-                bikeQuery={bikeNetworkQuery}
-                carQuery={carNetworkQuery}
-                onViewIssues={() =>
-                  router.push({
-                    pathname: '/technical/network-issues',
-                  } as never)
-                }
-              />
-              <DomainAnalyzeSection query={domainQuery} />
-            </ThemedView>
-          }
-          refreshControl={
-            <RefreshControl
-              onRefresh={() => {
-                void bikeNetworkQuery.refetch();
-                void carNetworkQuery.refetch();
-                void domainQuery.refetch();
-              }}
-              refreshing={bikeNetworkQuery.isRefetching || carNetworkQuery.isRefetching || domainQuery.isRefetching}
-              tintColor={Palette.accent}
-            />
-          }
-          renderItem={null}
-          showsVerticalScrollIndicator={false}
-        />
-        {boxActionMode ? <TriggerBoxSheet mode={boxActionMode} onClose={() => setBoxActionMode(null)} visible={Boolean(boxActionMode)} /> : null}
-        {replaceMeterVisible ? <ReplaceMeterSheet onClose={() => setReplaceMeterVisible(false)} visible={replaceMeterVisible} /> : null}
-      </SafeAreaView>
-    );
-  }
-
-  const listQuery = activePanel === 'chargers' ? panelQueries.chargers : activePanel === 'meter-hourly' ? panelQueries.meterHourly : panelQueries.statusLogs;
-  const isEnergyDiffer = activePanel === 'energy-differ';
-  const title = panelTitles[activePanel];
+  }, [panel, vehicle]);
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <FlatList<unknown>
         ListHeaderComponent={
-          <ThemedView gap={Spacing.three} paddingHorizontal={screenHorizontalPadding} paddingTop={Spacing.two}>
-            <ThemedView alignItems='center' flexDirection='row' gap={Spacing.three} justifyContent='space-between'>
-              <ThemedView flex={1} minWidth={0}>
-                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={24} letterSpacing={0} lineHeight={30}>
-                  {title}
-                </ThemedText>
-                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} marginTop={3}>
-                  Opened from the Technical tab popup menu
-                </ThemedText>
-              </ThemedView>
-              <Pressable accessibilityRole='button' onPress={() => router.setParams({ panel: undefined })} style={styles.overviewButton}>
-                <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={13} lineHeight={18}>
-                  Main
-                </ThemedText>
+          <ThemedView gap={Spacing.three} paddingHorizontal={screenHorizontalPadding} paddingTop={Spacing.one}>
+            <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
+              <Pressable accessibilityLabel='Back' accessibilityRole='button' onPress={onBack} style={({ pressed }) => [styles.issueNavButton, pressed && styles.pressed]}>
+                <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
               </Pressable>
+              <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={21} textAlign='center'>
+                {title}
+              </ThemedText>
+              <ThemedView width={34} />
             </ThemedView>
             <VehicleSwitch vehicle={vehicle} onChange={setVehicle} />
             {!isEnergyDiffer ? (
@@ -205,7 +194,7 @@ export function TechnicalScreen() {
                   autoCapitalize='none'
                   autoCorrect={false}
                   onChangeText={setSearchInput}
-                  placeholder={activePanel === 'chargers' ? 'Search unique ID' : 'Search charger ID'}
+                  placeholder={panel === 'chargers' ? 'Search unique ID' : 'Search charger ID'}
                   placeholderTextColor='#98A2B3'
                   returnKeyType='search'
                   style={styles.searchInput}
@@ -247,7 +236,7 @@ export function TechnicalScreen() {
           isEnergyDiffer ? (
             <EnergyDifferCard item={item as EnergyDifferRecord} vehicle={vehicle} />
           ) : (
-            <TechnicalListItem item={item} panel={activePanel} vehicle={vehicle} />
+            <TechnicalListItem item={item} panel={panel} vehicle={vehicle} />
           )
         }
         showsVerticalScrollIndicator={false}
@@ -723,7 +712,7 @@ function VehicleSwitch({ onChange, vehicle }: { onChange: (vehicle: TechnicalVeh
           key={option}
           onPress={() => onChange(option)}
           style={({ pressed }) => [styles.vehicleChip, vehicle === option && styles.vehicleChipActive, pressed && styles.pressed]}>
-          <ThemedText color={vehicle === option ? Palette.surfaceBase : Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
+          <ThemedText color={vehicle === option ? Palette.surfaceBase : Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={17}>
             {option === 'bike' ? 'Bike' : 'Car'}
           </ThemedText>
         </Pressable>
@@ -736,7 +725,7 @@ function SectionTitle({ actionLabel, onAction, subtitle, title }: { actionLabel?
   return (
     <ThemedView gap={Spacing.one}>
       <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two} justifyContent='space-between'>
-        <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={17} lineHeight={22}>
+        <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={21}>
           {title}
         </ThemedText>
         {actionLabel && onAction ? (
@@ -748,7 +737,7 @@ function SectionTitle({ actionLabel, onAction, subtitle, title }: { actionLabel?
           </Pressable>
         ) : null}
       </ThemedView>
-      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={18}>
+      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
         {subtitle}
       </ThemedText>
     </ThemedView>
@@ -816,10 +805,10 @@ function ChargerCard({ item }: { item: ChargerRecord }) {
   return (
     <ThemedView style={styles.itemCard}>
       <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
-        <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
+        <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={14} lineHeight={19}>
           {item.vendorId || item.uniqueId || `#${item.id || '-'}`}
         </ThemedText>
-        <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
+        <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={16}>
           {item.name || item.uniqueId || 'Unnamed charger'} • {station}
         </ThemedText>
       </ThemedView>
@@ -838,10 +827,10 @@ function MeterCard({ item, vehicle }: { item: MeterValueRecord; vehicle: Technic
   return (
     <ThemedView style={styles.itemCard}>
       <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
-        <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
+        <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={14} lineHeight={19}>
           {title}
         </ThemedText>
-        <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
+        <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={16}>
           {subtitle}
         </ThemedText>
       </ThemedView>
@@ -860,10 +849,10 @@ function StatusLogCard({ item, vehicle }: { item: StatusLogRecord; vehicle: Tech
   return (
     <ThemedView style={[styles.itemCard, errorCode ? styles.itemCardWarning : undefined]}>
       <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
-        <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
+        <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={14} lineHeight={19}>
           {chargerId}
         </ThemedText>
-        <ThemedText numberOfLines={1} color={errorCode ? Palette.danger : Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
+        <ThemedText numberOfLines={1} color={errorCode ? Palette.danger : Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={16}>
           C{item.connectorID ?? item.connector_id ?? '-'} • {errorCode || item.info || 'Normal event'}
         </ThemedText>
       </ThemedView>
@@ -894,10 +883,10 @@ function EnergyDifferCard({ item, vehicle }: { item: EnergyDifferRecord; vehicle
   return (
     <ThemedView style={styles.itemCard}>
       <ThemedView flex={1} gap={Spacing.one} minWidth={0}>
-        <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
+        <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={14} lineHeight={19}>
           {item.charge_point_id || '-'}
         </ThemedText>
-        <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
+        <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={16}>
           {item.station_name || `${vehicle} energy`}
         </ThemedText>
       </ThemedView>
@@ -1060,7 +1049,7 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   content: {
-    gap: Spacing.four,
+    gap: Spacing.three,
     paddingBottom: 180,
   },
   compactStat: {
@@ -1084,9 +1073,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: Spacing.three,
-    minHeight: 76,
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
+    marginHorizontal: screenHorizontalPadding,
+    minHeight: 64,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
   },
   itemCardWarning: {
     backgroundColor: Palette.dangerSurface,
@@ -1165,7 +1155,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#E8F7EF',
     borderRadius: Radius.pill,
-    minHeight: 36,
+    minHeight: 32,
     justifyContent: 'center',
     paddingHorizontal: Spacing.three,
   },
@@ -1214,8 +1204,8 @@ const styles = StyleSheet.create({
     color: Palette.textPrimary,
     flex: 1,
     fontFamily: FontFamily.medium,
-    fontSize: 15,
-    minHeight: 46,
+    fontSize: 14,
+    minHeight: 42,
     paddingVertical: 0,
   },
   searchWrap: {
@@ -1223,7 +1213,7 @@ const styles = StyleSheet.create({
     borderColor: Palette.borderSubtle,
     borderRadius: Radius.large,
     borderWidth: 1,
-    minHeight: 48,
+    minHeight: 44,
     paddingHorizontal: Spacing.three,
   },
   sectionAction: {
@@ -1246,14 +1236,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.06)',
     borderRadius: Radius.small,
-    height: 50,
+    height: 48,
     justifyContent: 'center',
-    width: 50,
+    width: 48,
   },
   serviceShortcut: {
     alignItems: 'center',
     gap: Spacing.one,
-    minHeight: 78,
+    minHeight: 74,
   },
   serviceRow: {
     width: '100%',
@@ -1307,7 +1297,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.medium,
     borderWidth: 1,
     flex: 1,
-    minHeight: 40,
+    minHeight: 36,
     justifyContent: 'center',
   },
   vehicleChipActive: {

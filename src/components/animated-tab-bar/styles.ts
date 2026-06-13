@@ -45,6 +45,7 @@ const layoutStyles = StyleSheet.create({
     left: 0,
     position: 'absolute',
     top: 0,
+    width: '100%',
   },
   root: {
     overflow: 'visible',
@@ -88,11 +89,15 @@ const tabStyles = StyleSheet.create({
   tabLabel: {
     fontSize: 15,
     fontWeight: '600',
+    includeFontPadding: true,
+    lineHeight: 24,
+    paddingBottom: 2,
   },
   tabLabelWrap: {
     height: TAB_HEIGHT,
     justifyContent: 'center',
-    overflow: 'hidden',
+    overflow: 'visible',
+    paddingBottom: 2,
     paddingRight: LABEL_PAD,
   },
   tabMorph: {
@@ -100,7 +105,7 @@ const tabStyles = StyleSheet.create({
     borderRadius: TAB_HEIGHT / 2,
     flexDirection: 'row',
     height: TAB_HEIGHT,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
 });
 

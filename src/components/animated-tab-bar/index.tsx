@@ -65,6 +65,7 @@ const AnimatedTabBar: FC<IAnimatedTabBarProps> & FunctionComponent<IAnimatedTabB
                   colors={colors}
                   view={transition.view}
                   direction={transition.panelDirection}
+                  onClose={transition.close}
                   onMeasure={layout.handleMeasure}
                   renderPopupBody={popupRenderer}
                 />

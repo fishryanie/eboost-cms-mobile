@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ChevronLeft } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
 import Modal from 'react-native-modal';
@@ -15,7 +16,7 @@ import { useCreateLocation, useLocations, useUploadLocationImage } from 'feature
 import type { LocationRecord } from 'features/locations/types';
 import { AppButton, EmptyState } from 'shared/ui';
 
-export default function LocationScreen() {
+export default function LocationScreen({ onBack }: { onBack?: () => void } = {}) {
   const router = useRouter();
   const params = useLocalSearchParams<{ action?: string }>();
   const [search, setSearch] = useState('');
@@ -132,6 +133,11 @@ export default function LocationScreen() {
         ListHeaderComponent={
           <ThemedView gap={Spacing.three} padding={Spacing.four}>
             <ThemedView alignItems='center' flexDirection='row' gap={Spacing.three} justifyContent='space-between'>
+              {onBack ? (
+                <Pressable accessibilityLabel='Back' accessibilityRole='button' onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && styles.filterChipPressed]}>
+                  <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
+                </Pressable>
+              ) : null}
               <ThemedView flex={1} minWidth={0}>
                 <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={28} letterSpacing={0} lineHeight={34}>
                   Locations
@@ -230,6 +236,13 @@ function StatusFilterChip({ active, label, onPress }: { active: boolean; label: 
 }
 
 const styles = StyleSheet.create({
+  backButton: {
+    alignItems: 'center',
+    borderRadius: Radius.medium,
+    height: 34,
+    justifyContent: 'center',
+    width: 34,
+  },
   bottomModal: {
     justifyContent: 'flex-end',
     margin: 0,

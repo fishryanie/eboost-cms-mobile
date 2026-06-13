@@ -92,6 +92,7 @@ const VERTICAL_TEXT_KEYS = new Set([
 ]);
 
 const FONT_TEXT_KEYS = new Set(['fontSize', 'lineHeight']);
+const TYPOGRAPHY_TEXT_KEYS = new Set(['fontFamily', 'fontSize', 'fontStyle', 'fontVariant', 'fontWeight', 'lineHeight']);
 
 const TEXT_STYLE_KEYS = new Set([
   ...HORIZONTAL_TEXT_KEYS,
@@ -230,11 +231,16 @@ const splitTextProps = (props: Record<string, unknown>) => {
   return { textProps, textStyle: scaleTextStyle(textStyle as TextStyle) };
 };
 
+function hasTypographyOverride(style: TextStyle) {
+  return Object.keys(style).some(key => TYPOGRAPHY_TEXT_KEYS.has(key));
+}
+
 export const ThemedText = forwardRef<Text, ThemedTextProps>(function ThemedText(
   { style, lightColor, darkColor: _darkColor, themeColor, type = 'default', flex, color, includeFontPadding = false, ...rest },
   ref,
 ) {
   const { textProps, textStyle } = splitTextProps(rest as Record<string, unknown>);
+  const shouldApplyTypeStyle = type !== 'default' || !hasTypographyOverride(textStyle);
   const themedColor = lightColor ?? Colors.light[themeColor ?? 'text'];
   const resolvedColor = color ?? themedColor;
 
@@ -243,7 +249,7 @@ export const ThemedText = forwardRef<Text, ThemedTextProps>(function ThemedText(
       ref={ref}
       style={[
         { color: resolvedColor, includeFontPadding },
-        textTypeStyle(type),
+        shouldApplyTypeStyle ? textTypeStyle(type) : undefined,
         type === 'linkPrimary' && color === undefined ? styles.linkPrimary : undefined,
         flex !== undefined ? flexStyle(flex) : undefined,
         textStyle,

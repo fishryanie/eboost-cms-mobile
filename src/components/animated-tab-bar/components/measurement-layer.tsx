@@ -24,7 +24,7 @@ const MeasurementLayer: FC<IMeasurementLayerProps> & FunctionComponent<IMeasurem
               const { width, height } = event.nativeEvent.layout;
               onMeasure(item.key, Math.ceil(width), Math.ceil(height));
             }}>
-            <PopupBody colors={colors} route={item.route} view={item.key} />
+            <PopupBody colors={colors} onClose={() => undefined} route={item.route} view={item.key} />
           </ThemedView>
         ))}
       </ThemedView>

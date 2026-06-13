@@ -24,11 +24,11 @@ const colors = {
 const drawerItems: {
   icon: SymbolViewProps['name'];
   name: string;
-  route?: '/drawer/profile' | '/drawer/settings' | '/history' | '/home' | '/users';
+  route?: '/drawer/profile' | '/drawer/settings' | '/home' | '/marketing' | '/operation';
 }[] = [
   { icon: 'house.fill', name: 'Home', route: '/home' },
-  { icon: 'person.2.fill', name: 'Users', route: '/users' },
-  { icon: 'clock.arrow.circlepath', name: 'Activity', route: '/history' },
+  { icon: 'gearshape.2.fill', name: 'Operation', route: '/operation' },
+  { icon: 'megaphone.fill', name: 'Marketing', route: '/marketing' },
   { icon: 'person.crop.circle', name: 'My Profile', route: '/drawer/profile' },
   { icon: 'gearshape.fill', name: 'Settings', route: '/drawer/settings' },
   { icon: 'rectangle.portrait.and.arrow.right', name: 'Logout' },
