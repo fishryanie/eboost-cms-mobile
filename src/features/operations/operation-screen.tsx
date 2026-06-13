@@ -1152,7 +1152,7 @@ function TopUserPerformanceCard({
   const rankTone = getTopUserRankTone(index);
 
   return (
-    <ThemedView style={[styles.topUserCard, rankTone.cardStyle, { width }]}>
+    <ThemedView style={[styles.topUserCard, { width }]}>
       <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
         <ThemedView style={[styles.topUserRankBadge, { backgroundColor: rankTone.badgeBackground }]}>
           <ThemedText color={rankTone.badgeText} fontFamily={FontFamily.bold} fontSize={11} style={styles.topUserRankText}>
@@ -1178,35 +1178,31 @@ function TopUserPerformanceCard({
 function getTopUserRankTone(index: number) {
   if (index === 0) {
     return {
-      badgeBackground: '#FEF3C7',
+      badgeBackground: '#F1F5F9',
       badgeText: '#A16207',
-      cardStyle: styles.topUserCardGold,
       label: '1st',
     };
   }
 
   if (index === 1) {
     return {
-      badgeBackground: '#E5E7EB',
+      badgeBackground: '#F1F5F9',
       badgeText: '#4B5563',
-      cardStyle: styles.topUserCardSilver,
       label: '2nd',
     };
   }
 
   if (index === 2) {
     return {
-      badgeBackground: '#FFEDD5',
+      badgeBackground: '#F1F5F9',
       badgeText: '#C2410C',
-      cardStyle: styles.topUserCardBronze,
       label: '3rd',
     };
   }
 
   return {
-    badgeBackground: '#E8F6EF',
+    badgeBackground: '#F1F5F9',
     badgeText: '#0F9F6E',
-    cardStyle: null,
     label: `${index + 1}th`,
   };
 }
@@ -1727,18 +1723,6 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     justifyContent: 'flex-start',
     padding: Spacing.three,
-  },
-  topUserCardBronze: {
-    backgroundColor: '#FFF7ED',
-    borderColor: '#FDBA74',
-  },
-  topUserCardGold: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FCD34D',
-  },
-  topUserCardSilver: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#CBD5E1',
   },
   topUserMeta: {
     lineHeight: 13,

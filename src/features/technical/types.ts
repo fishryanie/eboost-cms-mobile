@@ -80,6 +80,27 @@ export type ConnectionLogRecord = {
   timestamp?: string;
 };
 
+export type BoxStatusData = {
+  All?: number;
+  Available?: number;
+  Charging?: number;
+  Faulted?: number;
+  Finishing?: number;
+  Other?: number;
+  Preparing?: number;
+  Reserved?: number;
+  SuspendedEV?: number;
+  SuspendedEVSE?: number;
+  Unavailable?: number;
+  offline?: number;
+  online?: number;
+};
+
+export type BoxStatusResponse = {
+  data?: BoxStatusData;
+  success?: boolean;
+};
+
 export type DomainAnalyzeRecord = {
   allow_to_release?: boolean;
   bike_charging?: number;

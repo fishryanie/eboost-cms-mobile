@@ -19,7 +19,7 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
@@ -31,8 +31,9 @@ import { AppButton, EmptyState } from 'shared/ui';
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
 import { useTechnicalPanel } from './hooks';
-import { fetchDomainAnalyze, fetchEnergyDiffer, fetchNetworkStatus } from './technical-service';
+import { fetchBikeBoxStatus, fetchCarBoxStatus, fetchDomainAnalyze, fetchEnergyDiffer, fetchNetworkStatus } from './technical-service';
 import type {
+  BoxStatusData,
   ChargerRecord,
   ConnectionLogRecord,
   DomainAnalyzeRecord,
@@ -47,6 +48,15 @@ import type {
 export const technicalDetailPanels: TechnicalPanel[] = ['chargers', 'meter-hourly', 'status-logs', 'energy-differ'];
 const screenHorizontalPadding = 18;
 const serviceTileSize = 64;
+const networkDangerTextColor = '#B42318';
+const networkSuccessTextColor = Palette.accentPressed;
+const emptyOverviewData: unknown[] = [];
+const shortDateTimeFormatter = new Intl.DateTimeFormat('en-GB', {
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  month: '2-digit',
+});
 const quickServiceIcons: Record<QuickServiceIconName, LucideIcon> = {
   badgeDollarSign: BadgeDollarSign,
   badgeInfo: BadgeInfo,
@@ -76,15 +86,53 @@ export function TechnicalScreen() {
   const { width } = useWindowDimensions();
   const [boxActionMode, setBoxActionMode] = useState<'reset' | 'trigger' | 'unlock' | null>(null);
   const [replaceMeterVisible, setReplaceMeterVisible] = useState(false);
-  const bikeNetworkQuery = useQuery({
+  const {
+    data: bikeNetworkData,
+    error: bikeNetworkError,
+    isLoading: bikeNetworkLoading,
+    isRefetching: bikeNetworkRefetching,
+    refetch: refetchBikeNetwork,
+  } = useQuery({
     queryFn: () => fetchNetworkStatus('bike'),
     queryKey: ['technical', 'overview-network-status', 'bike'],
   });
-  const carNetworkQuery = useQuery({
+  const {
+    data: bikeBoxStatusData,
+    error: bikeBoxStatusError,
+    isLoading: bikeBoxStatusLoading,
+    isRefetching: bikeBoxStatusRefetching,
+    refetch: refetchBikeBoxStatus,
+  } = useQuery({
+    queryFn: fetchBikeBoxStatus,
+    queryKey: ['technical', 'overview-bike-box-status'],
+  });
+  const {
+    data: carNetworkData,
+    error: carNetworkError,
+    isLoading: carNetworkLoading,
+    isRefetching: carNetworkRefetching,
+    refetch: refetchCarNetwork,
+  } = useQuery({
     queryFn: () => fetchNetworkStatus('car'),
     queryKey: ['technical', 'overview-network-status', 'car'],
   });
-  const domainQuery = useQuery({
+  const {
+    data: carBoxStatusData,
+    error: carBoxStatusError,
+    isLoading: carBoxStatusLoading,
+    isRefetching: carBoxStatusRefetching,
+    refetch: refetchCarBoxStatus,
+  } = useQuery({
+    queryFn: fetchCarBoxStatus,
+    queryKey: ['technical', 'overview-car-box-status'],
+  });
+  const {
+    data: domainData,
+    error: domainError,
+    isLoading: domainLoading,
+    isRefetching: domainRefetching,
+    refetch: refetchDomain,
+  } = useQuery({
     queryFn: fetchDomainAnalyze,
     queryKey: ['technical', 'overview-domain-analyze'],
   });
@@ -106,31 +154,62 @@ export function TechnicalScreen() {
           </ThemedView>
         }
         contentContainerStyle={styles.content}
-        data={[]}
+        data={emptyOverviewData}
         keyExtractor={(_, index) => String(index)}
         ListEmptyComponent={
           <ThemedView gap={Spacing.five} paddingHorizontal={screenHorizontalPadding}>
             <ChargerServicesSection tileWidth={serviceTileWidth} onBoxAction={setBoxActionMode} onReplaceMeter={() => setReplaceMeterVisible(true)} />
             <NetworkStatusSection
-              bikeQuery={bikeNetworkQuery}
-              carQuery={carNetworkQuery}
+              bikeQuery={{
+                data: bikeNetworkData,
+                error: bikeNetworkError,
+                isLoading: bikeNetworkLoading,
+                refetch: refetchBikeNetwork,
+              }}
+              bikeBoxStatusQuery={{
+                data: bikeBoxStatusData,
+                error: bikeBoxStatusError,
+                isLoading: bikeBoxStatusLoading,
+                refetch: refetchBikeBoxStatus,
+              }}
+              carBoxStatusQuery={{
+                data: carBoxStatusData,
+                error: carBoxStatusError,
+                isLoading: carBoxStatusLoading,
+                refetch: refetchCarBoxStatus,
+              }}
+              carQuery={{
+                data: carNetworkData,
+                error: carNetworkError,
+                isLoading: carNetworkLoading,
+                refetch: refetchCarNetwork,
+              }}
               onViewIssues={() =>
                 router.push({
                   pathname: '/technical/network-issues',
                 } as never)
               }
             />
-            <DomainAnalyzeSection query={domainQuery} />
+            <DomainAnalyzeSection
+              query={{
+                data: domainData,
+                error: domainError,
+                isLoading: domainLoading,
+                refetch: refetchDomain,
+              }}
+            />
           </ThemedView>
         }
         refreshControl={
           <RefreshControl
             onRefresh={() => {
-              void bikeNetworkQuery.refetch();
-              void carNetworkQuery.refetch();
-              void domainQuery.refetch();
+              void refetchBikeNetwork();
+              void refetchBikeBoxStatus();
+              void refetchCarBoxStatus();
+              void refetchCarNetwork();
+              void refetchDomain();
             }}
-            refreshing={bikeNetworkQuery.isRefetching || carNetworkQuery.isRefetching || domainQuery.isRefetching}
+            refreshing={bikeNetworkRefetching || bikeBoxStatusRefetching || carBoxStatusRefetching || carNetworkRefetching || domainRefetching}
             tintColor={Palette.accent}
           />
         }
@@ -145,12 +224,18 @@ export function TechnicalScreen() {
 
 export function TechnicalPanelScreen({ onBack, panel }: { onBack: () => void; panel: TechnicalPanel }) {
   const [vehicle, setVehicle] = useState<TechnicalVehicle>('bike');
-  const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const params = useMemo<TechnicalQueryParams>(() => ({ page, search, vehicle }), [page, search, vehicle]);
+  const stateKey = `${panel}:${vehicle}`;
+  const [listState, setListState] = useState({ page: 1, search: '', searchInput: '', stateKey });
+  const { page, search, searchInput } = listState;
+  const params: TechnicalQueryParams = { page, search, vehicle };
   const panelQueries = useTechnicalPanel(panel, params);
-  const energyDifferQuery = useQuery({
+  const {
+    data: energyDifferData,
+    error: energyDifferError,
+    isLoading: energyDifferLoading,
+    isRefetching: energyDifferRefetching,
+    refetch: refetchEnergyDiffer,
+  } = useQuery({
     enabled: panel === 'energy-differ',
     queryFn: () => fetchEnergyDiffer({ vehicle }),
     queryKey: ['technical', 'energy-differ-detail', vehicle],
@@ -159,19 +244,20 @@ export function TechnicalPanelScreen({ onBack, panel }: { onBack: () => void; pa
   const isEnergyDiffer = panel === 'energy-differ';
   const title = panelTitles[panel];
 
+  if (listState.stateKey !== stateKey) {
+    setListState({ page: 1, search: '', searchInput: '', stateKey });
+  }
+
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setPage(1);
-      setSearch(searchInput.trim());
+      setListState(current => ({ ...current, page: 1, search: current.searchInput.trim() }));
     }, 350);
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-  useEffect(() => {
-    setPage(1);
-    setSearchInput('');
-    setSearch('');
-  }, [panel, vehicle]);
+  const handleVehicleChange = (nextVehicle: TechnicalVehicle) => {
+    setVehicle(nextVehicle);
+  };
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -187,14 +273,14 @@ export function TechnicalPanelScreen({ onBack, panel }: { onBack: () => void; pa
               </ThemedText>
               <ThemedView width={34} />
             </ThemedView>
-            <VehicleSwitch vehicle={vehicle} onChange={setVehicle} />
+            <VehicleSwitch vehicle={vehicle} onChange={handleVehicleChange} />
             {!isEnergyDiffer ? (
               <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two} style={styles.searchWrap}>
                 <Search color={Palette.textTertiary} size={18} />
                 <TextInput
                   autoCapitalize='none'
                   autoCorrect={false}
-                  onChangeText={setSearchInput}
+                  onChangeText={value => setListState(current => ({ ...current, searchInput: value }))}
                   placeholder={panel === 'chargers' ? 'Search unique ID' : 'Search charger ID'}
                   placeholderTextColor='#98A2B3'
                   returnKeyType='search'
@@ -206,11 +292,19 @@ export function TechnicalPanelScreen({ onBack, panel }: { onBack: () => void; pa
           </ThemedView>
         }
         contentContainerStyle={styles.content}
-        data={isEnergyDiffer ? energyDifferQuery.data?.items || [] : listQuery.data?.items || []}
+        data={isEnergyDiffer ? energyDifferData?.items || [] : listQuery.data?.items || []}
         keyExtractor={(item, index) => getItemKey(item, index)}
         ListEmptyComponent={
           isEnergyDiffer ? (
-            <EnergyDifferState query={energyDifferQuery} vehicle={vehicle} />
+            <EnergyDifferState
+              query={{
+                data: energyDifferData,
+                error: energyDifferError,
+                isLoading: energyDifferLoading,
+                refetch: refetchEnergyDiffer,
+              }}
+              vehicle={vehicle}
+            />
           ) : (
             <ListState error={listQuery.error} isLoading={listQuery.isLoading} onRetry={() => listQuery.refetch()} title={title} />
           )
@@ -222,14 +316,14 @@ export function TechnicalPanelScreen({ onBack, panel }: { onBack: () => void; pa
               isFetching={listQuery.isFetching}
               page={page}
               total={listQuery.data.total}
-              onLoadMore={() => setPage(current => current + 1)}
+              onLoadMore={() => setListState(current => ({ ...current, page: current.page + 1 }))}
             />
           ) : null
         }
         refreshControl={
           <RefreshControl
-            onRefresh={() => (isEnergyDiffer ? energyDifferQuery.refetch() : listQuery.refetch())}
-            refreshing={(isEnergyDiffer ? energyDifferQuery.isRefetching : listQuery.isRefetching) || false}
+            onRefresh={() => (isEnergyDiffer ? refetchEnergyDiffer() : listQuery.refetch())}
+            refreshing={(isEnergyDiffer ? energyDifferRefetching : listQuery.isRefetching) || false}
             tintColor={Palette.accent}
           />
         }
@@ -312,11 +406,15 @@ function QuickServiceShortcut({ onPress, service, tileWidth }: { onPress?: () =>
 }
 
 function NetworkStatusSection({
+  bikeBoxStatusQuery,
   bikeQuery,
+  carBoxStatusQuery,
   carQuery,
   onViewIssues,
 }: {
+  bikeBoxStatusQuery: { data?: BoxStatusData; error: Error | null; isLoading: boolean; refetch: () => void };
   bikeQuery: { data?: { items: ConnectionLogRecord[] }; error: Error | null; isLoading: boolean; refetch: () => void };
+  carBoxStatusQuery: { data?: BoxStatusData; error: Error | null; isLoading: boolean; refetch: () => void };
   carQuery: { data?: { items: ConnectionLogRecord[] }; error: Error | null; isLoading: boolean; refetch: () => void };
   onViewIssues: () => void;
 }) {
@@ -351,22 +449,29 @@ function NetworkStatusSection({
           title='Network status unavailable'
         />
       ) : (
-        <ReportPanel
-          badge={`${totalPercent}% ready`}
-          caption={`${total.online.toLocaleString()} online / ${total.boxes.toLocaleString()} chargers`}
-          title='Fleet connection'>
-          <ThemedView style={styles.reportHeroLine}>
-            <ProgressBar color={Palette.accent} percent={totalPercent} />
+        <ThemedView gap={Spacing.two} style={styles.networkFlatBlock}>
+          <ThemedView alignItems='center' flexDirection='row' gap={Spacing.three}>
+            <ThemedView flex={1} minWidth={0}>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
+                Fleet connection
+              </ThemedText>
+              <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={10} lineHeight={14}>
+                {total.online.toLocaleString()} online / {total.boxes.toLocaleString()} chargers
+              </ThemedText>
+            </ThemedView>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={13} lineHeight={18} style={styles.networkReadyValue}>
+              {totalPercent}% ready
+            </ThemedText>
           </ThemedView>
+          <ProgressBar color={Palette.accent} percent={totalPercent} />
           <ThemedView flexDirection='row' gap={Spacing.two}>
             <CompactStat label='Online' value={total.online} />
             <CompactStat label='Offline' value={total.offline} />
             <CompactStat label='Total' value={total.boxes} />
           </ThemedView>
-          <ThemedView style={styles.reportDivider} />
-          <NetworkBreakdownRow accent={Palette.accent} label='Bike' summary={bike} />
-          <NetworkBreakdownRow accent='#3867D6' label='Car' summary={car} />
-        </ReportPanel>
+          <VehicleNetworkLane accent={Palette.accent} isFirst query={bikeBoxStatusQuery} summary={bike} title='Bike' vehicle='bike' />
+          <VehicleNetworkLane accent='#3867D6' query={carBoxStatusQuery} summary={car} title='Car' vehicle='car' />
+        </ThemedView>
       )}
     </ThemedView>
   );
@@ -550,7 +655,6 @@ function DomainAnalyzeSection({ query }: { query: { data?: { items: DomainAnalyz
   const totalSessions = items.reduce((sum, item) => sum + Number(item.total_charging || 0), 0);
   const readiness = items.length ? Math.round((working / items.length) * 100) : 0;
   const sortedItems = items.slice().sort((a, b) => Number(b.total_charging || 0) - Number(a.total_charging || 0));
-  const maxSessions = Math.max(...sortedItems.map(item => Number(item.total_charging || 0)), 0);
   const visibleDomains = sortedItems.slice(0, 5);
 
   return (
@@ -596,8 +700,7 @@ function DomainAnalyzeSection({ query }: { query: { data?: { items: DomainAnalyz
           <ThemedView gap={Spacing.two}>
             {visibleDomains.map((item, index) => {
               const share = totalSessions ? Math.round((Number(item.total_charging || 0) / totalSessions) * 100) : 0;
-              const relative = maxSessions ? Math.round((Number(item.total_charging || 0) / maxSessions) * 100) : 0;
-              return <DomainApiBarRow index={index + 1} item={item} key={item.id} percent={share} relative={relative} />;
+              return <DomainApiBarRow index={index + 1} item={item} key={item.id} percent={share} />;
             })}
           </ThemedView>
         </ThemedView>
@@ -606,54 +709,167 @@ function DomainAnalyzeSection({ query }: { query: { data?: { items: DomainAnalyz
   );
 }
 
-function ReportPanel({ badge, caption, children, title }: { badge: string; caption: string; children: ReactNode; title: string }) {
+type BoxStatusKey = Exclude<keyof BoxStatusData, 'All' | 'offline' | 'online'>;
+type BoxStatusMeta = { color: string; key: BoxStatusKey; label: string; tone: 'danger' | 'neutral' | 'success' | 'warning' };
+type BoxStatusSegment = { label: string; value: number };
+
+const bikeBoxStatusMeta: BoxStatusMeta[] = [
+  { color: networkSuccessTextColor, key: 'Available', label: 'Available', tone: 'success' },
+  { color: '#C69214', key: 'Charging', label: 'Charging', tone: 'warning' },
+];
+
+const carBoxStatusMeta: BoxStatusMeta[] = [
+  { color: networkSuccessTextColor, key: 'Available', label: 'Available', tone: 'success' },
+  { color: '#C69214', key: 'Charging', label: 'Charging', tone: 'warning' },
+  { color: '#6B7280', key: 'Preparing', label: 'Preparing', tone: 'neutral' },
+  { color: '#8B5CF6', key: 'Finishing', label: 'Finishing', tone: 'neutral' },
+  { color: '#7C3AED', key: 'Reserved', label: 'Reserved', tone: 'neutral' },
+  { color: '#F59E0B', key: 'SuspendedEV', label: 'Suspended EV', tone: 'warning' },
+  { color: '#D97706', key: 'SuspendedEVSE', label: 'Suspended EVSE', tone: 'warning' },
+  { color: '#F97316', key: 'Unavailable', label: 'Unavailable', tone: 'warning' },
+  { color: networkDangerTextColor, key: 'Faulted', label: 'Faulted', tone: 'danger' },
+  { color: '#98A2B3', key: 'Other', label: 'Other', tone: 'neutral' },
+];
+
+function VehicleNetworkLane({
+  accent,
+  isFirst,
+  query,
+  summary,
+  title,
+  vehicle,
+}: {
+  accent: string;
+  isFirst?: boolean;
+  query: {
+    data?: BoxStatusData;
+    error: Error | null;
+    isLoading: boolean;
+    refetch: () => void;
+  };
+  summary: NetworkSummary;
+  title: string;
+  vehicle: TechnicalVehicle;
+}) {
+  if (query.isLoading) {
+    return (
+      <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two} style={styles.connectorStrip}>
+        <ActivityIndicator color={accent} size='small' />
+        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
+          Loading {title.toLowerCase()}...
+        </ThemedText>
+      </ThemedView>
+    );
+  }
+
+  if (query.error) {
+    return (
+      <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two} style={[styles.connectorStrip, styles.connectorPanelWarning]}>
+        <ThemedText numberOfLines={1} color={Palette.textSecondary} flex={1} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
+          {title} unavailable
+        </ThemedText>
+        <Pressable accessibilityRole='button' onPress={query.refetch} style={({ pressed }) => [styles.connectorRetryButton, pressed && styles.pressed]}>
+          <ThemedText color={Palette.danger} fontFamily={FontFamily.semibold} fontSize={10} lineHeight={14}>
+            Retry
+          </ThemedText>
+        </Pressable>
+      </ThemedView>
+    );
+  }
+
+  const status = query.data || {};
+  const total = Number(status.All || 0);
+  const meta = vehicle === 'bike' ? bikeBoxStatusMeta : carBoxStatusMeta;
+  const visibleItems = getBoxStatusItems(status, meta).filter(item => item.value > 0 || (vehicle === 'car' && (item.key === 'Unavailable' || item.key === 'Faulted')));
+  const assetNoun = vehicle === 'bike' ? 'outlets' : 'connectors';
+  const assetSegments: BoxStatusSegment[] = [{ label: `${assetNoun[0].toUpperCase()}${assetNoun.slice(1)}`, value: total }];
+  visibleItems.forEach(item => {
+    assetSegments.push({ label: item.label, value: item.value });
+  });
+
   return (
-    <ThemedView style={styles.reportPanel}>
-      <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two} justifyContent='space-between'>
-        <ThemedView flex={1} minWidth={0}>
-          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={19}>
+    <ThemedView gap={Spacing.two} style={[styles.vehicleNetworkLane, isFirst && styles.vehicleNetworkLaneFirst]}>
+      <ThemedView alignItems='center' flexDirection='row' gap={16}>
+        <ThemedView alignItems='center' style={styles.vehicleProgressColumn}>
+          <CircularProgress color={accent} percent={summary.percent} />
+        </ThemedView>
+        <ThemedView flex={1} gap={2} minWidth={0}>
+          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
             {title}
           </ThemedText>
-          <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={15}>
-            {caption}
-          </ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.reportBadge}>
-          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
-            {badge}
-          </ThemedText>
+          <ThemedView flexDirection='row' flexWrap='wrap' style={styles.vehicleInlineMeta}>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={16}>
+              {summary.boxes.toLocaleString()} Chargers -{' '}
+            </ThemedText>
+            <ThemedText color={networkSuccessTextColor} fontFamily={FontFamily.regular} fontSize={11} lineHeight={16}>
+              {summary.online.toLocaleString()} Online
+            </ThemedText>
+            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={16}>
+              {' / '}
+            </ThemedText>
+            <ThemedText color={networkDangerTextColor} fontFamily={FontFamily.regular} fontSize={11} lineHeight={16}>
+              {summary.offline.toLocaleString()} Offline
+            </ThemedText>
+          </ThemedView>
+          <StatusMetadataLine segments={assetSegments} />
         </ThemedView>
       </ThemedView>
-      {children}
     </ThemedView>
   );
 }
 
-function NetworkBreakdownRow({ accent, label, summary }: { accent: string; label: string; summary: NetworkSummary }) {
+function StatusMetadataLine({ segments }: { segments: BoxStatusSegment[] }) {
   return (
-    <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two} style={styles.breakdownRow}>
-      <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two} style={styles.breakdownName}>
-        <ThemedView backgroundColor={accent} style={styles.networkMarker} />
-        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={12} lineHeight={17}>
-          {label}
+    <ThemedView flexDirection='row' flexWrap='wrap' style={styles.statusMetadataLine}>
+      {segments.map((segment, index) => (
+        <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={10} key={`${segment.label}-${index}`} lineHeight={14}>
+          {index ? ' · ' : ''}
+          {segment.value.toLocaleString()} {segment.label}
         </ThemedText>
-      </ThemedView>
-      <ThemedView flex={1} gap={Spacing.one}>
-        <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
-          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={10} lineHeight={14}>
-            {summary.online.toLocaleString()} online
-          </ThemedText>
-          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={10} lineHeight={14}>
-            {summary.offline.toLocaleString()} offline
-          </ThemedText>
-        </ThemedView>
-        <ProgressBar color={accent} percent={summary.percent} />
-      </ThemedView>
-      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18} style={styles.breakdownPercent}>
-        {summary.percent}%
-      </ThemedText>
+      ))}
     </ThemedView>
   );
+}
+
+function CircularProgress({ color, percent }: { color: string; percent: number }) {
+  const size = 58;
+  const strokeWidth = 6;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const normalizedPercent = Math.max(0, Math.min(percent, 100));
+  const dash = (normalizedPercent / 100) * circumference;
+
+  return (
+    <ThemedView alignItems='center' justifyContent='center' style={styles.circularProgressWrap}>
+      <Svg height={size} width={size}>
+        <Circle cx={size / 2} cy={size / 2} fill='none' r={radius} stroke='#EEF2F6' strokeWidth={strokeWidth} />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          fill='none'
+          r={radius}
+          rotation='-90'
+          origin={`${size / 2}, ${size / 2}`}
+          stroke={color}
+          strokeDasharray={`${dash} ${circumference - dash}`}
+          strokeLinecap='round'
+          strokeWidth={strokeWidth}
+        />
+      </Svg>
+      <ThemedView alignItems='center' justifyContent='center' style={styles.circularProgressCenter}>
+        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={12} lineHeight={15} style={styles.connectorTotal}>
+          {normalizedPercent}%
+        </ThemedText>
+      </ThemedView>
+    </ThemedView>
+  );
+}
+
+function getBoxStatusItems(status: BoxStatusData, meta: BoxStatusMeta[]) {
+  return meta.map(item => ({
+    ...item,
+    value: Number(status[item.key] || 0),
+  }));
 }
 
 function DomainDonut({ segments, total }: { segments: { color: string; value: number }[]; total: number }) {
@@ -661,16 +877,17 @@ function DomainDonut({ segments, total }: { segments: { color: string; value: nu
   const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  let offset = 0;
+  const donutSegments = segments.reduce<{ color: string; dash: number; offset: number }[]>((acc, segment) => {
+    const previousOffset = acc.reduce((sum, item) => sum + item.dash, 0);
+    const dash = total ? (segment.value / total) * circumference : 0;
+    return [...acc, { color: segment.color, dash, offset: previousOffset }];
+  }, []);
 
   return (
     <ThemedView alignItems='center' justifyContent='center' style={styles.domainDonutWrap}>
       <Svg height={size} width={size}>
         <Circle cx={size / 2} cy={size / 2} fill='none' r={radius} stroke='#EEF2F6' strokeWidth={strokeWidth} />
-        {segments.map(segment => {
-          const dash = total ? (segment.value / total) * circumference : 0;
-          const strokeDashoffset = -offset;
-          offset += dash;
+        {donutSegments.map(segment => {
           return (
             <Circle
               cx={size / 2}
@@ -681,8 +898,8 @@ function DomainDonut({ segments, total }: { segments: { color: string; value: nu
               rotation='-90'
               origin={`${size / 2}, ${size / 2}`}
               stroke={segment.color}
-              strokeDasharray={`${dash} ${circumference - dash}`}
-              strokeDashoffset={strokeDashoffset}
+              strokeDasharray={`${segment.dash} ${circumference - segment.dash}`}
+              strokeDashoffset={-segment.offset}
               strokeLinecap='round'
               strokeWidth={strokeWidth}
             />
@@ -712,7 +929,7 @@ function DomainLegendItem({ color, label, value }: { color: string; label: strin
   );
 }
 
-function DomainApiBarRow({ index, item, percent, relative }: { index: number; item: DomainAnalyzeRecord; percent: number; relative: number }) {
+function DomainApiBarRow({ index, item, percent }: { index: number; item: DomainAnalyzeRecord; percent: number }) {
   const routeStatus = item.working ? (item.is_charging_active ? 'Active' : 'Standby') : 'Silent';
   const color = routeStatus === 'Active' ? Palette.accent : routeStatus === 'Standby' ? '#3867D6' : '#98A2B3';
   const value = Number(item.total_charging || 0);
@@ -734,7 +951,7 @@ function DomainApiBarRow({ index, item, percent, relative }: { index: number; it
       </ThemedView>
       <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two}>
         <ThemedView style={styles.domainApiTrack}>
-          <ThemedView backgroundColor={color} height='100%' width={`${Math.max(2, Math.min(relative, 100))}%`} />
+          <ThemedView backgroundColor={color} height='100%' width={`${Math.max(2, Math.min(percent, 100))}%`} />
         </ThemedView>
         <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={14} style={styles.domainApiMeta}>
           {value.toLocaleString()} • {routeStatus}
@@ -988,12 +1205,7 @@ function formatShortTime(value?: string) {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
-  return new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    month: '2-digit',
-  }).format(date);
+  return shortDateTimeFormatter.format(date);
 }
 
 function formatRelativeTime(value?: string) {
@@ -1079,9 +1291,12 @@ function getNetworkSummary(items: ConnectionLogRecord[]): NetworkSummary {
 }
 
 function getNetworkIssues(items: ConnectionLogRecord[], vehicle: TechnicalVehicle): NetworkIssue[] {
-  return getLatestConnectionLogs(items)
-    .filter(item => normalizeConnectionStatus(item.onlineStatus) !== 'online')
-    .map(item => ({ ...item, vehicle }));
+  return getLatestConnectionLogs(items).reduce<NetworkIssue[]>((issues, item) => {
+    if (normalizeConnectionStatus(item.onlineStatus) !== 'online') {
+      issues.push({ ...item, vehicle });
+    }
+    return issues;
+  }, []);
 }
 
 function chunkItems<T>(items: T[], size: number) {
@@ -1100,19 +1315,44 @@ const styles = StyleSheet.create({
     marginLeft: -6,
     width: 34,
   },
-  breakdownName: {
-    width: 48,
-  },
-  breakdownPercent: {
-    textAlign: 'right',
-    width: 38,
-  },
-  breakdownRow: {
-    minHeight: 40,
-  },
   content: {
     gap: Spacing.three,
     paddingBottom: 180,
+  },
+  connectorStrip: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#EEF2F6',
+    borderRadius: Radius.small,
+    borderWidth: 1,
+    minHeight: 42,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.two,
+  },
+  connectorPanelWarning: {
+    backgroundColor: Palette.dangerSurface,
+    borderColor: '#F5B5AE',
+  },
+  connectorRetryButton: {
+    alignItems: 'center',
+    backgroundColor: Palette.surfaceRaised,
+    borderColor: '#F5B5AE',
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    minHeight: 28,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
+  },
+  connectorTotal: {
+    fontVariant: ['tabular-nums'],
+  },
+  circularProgressCenter: {
+    height: 38,
+    position: 'absolute',
+    width: 38,
+  },
+  circularProgressWrap: {
+    height: 58,
+    width: 58,
   },
   compactStat: {
     backgroundColor: '#F8FAFC',
@@ -1249,6 +1489,13 @@ const styles = StyleSheet.create({
     height: 7,
     width: 7,
   },
+  networkFlatBlock: {
+    gap: Spacing.two,
+  },
+  networkReadyValue: {
+    fontVariant: ['tabular-nums'],
+    textAlign: 'right',
+  },
   overviewButton: {
     alignItems: 'center',
     backgroundColor: '#E8F7EF',
@@ -1263,36 +1510,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     backgroundColor: '#EEF2F6',
     borderRadius: Radius.pill,
-    height: 4,
-  },
-  reportBadge: {
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderColor: '#EEF2F6',
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    justifyContent: 'center',
-    minHeight: 28,
-    paddingHorizontal: Spacing.two,
-  },
-  reportDivider: {
-    backgroundColor: '#EEF2F6',
-    height: 1,
-  },
-  reportHeroLine: {
-    paddingTop: Spacing.one,
-  },
-  reportPanel: {
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: '#E6EAF0',
-    borderRadius: Radius.medium,
-    borderWidth: 1,
-    gap: Spacing.three,
-    padding: Spacing.three,
-    shadowColor: '#0F172A',
-    shadowOffset: { height: 8, width: 0 },
-    shadowOpacity: 0.04,
-    shadowRadius: 16,
+    height: 6,
   },
   safeArea: {
     backgroundColor: Palette.surfaceBase,
@@ -1382,6 +1600,10 @@ const styles = StyleSheet.create({
   statusPillSuccess: {
     backgroundColor: '#E8F7EF',
   },
+  statusMetadataLine: {
+    columnGap: 0,
+    rowGap: 1,
+  },
   vehicleChip: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceMuted,
@@ -1395,5 +1617,23 @@ const styles = StyleSheet.create({
   vehicleChipActive: {
     backgroundColor: Palette.accent,
     borderColor: Palette.accent,
+  },
+  vehicleInlineMeta: {
+    columnGap: 0,
+    rowGap: 1,
+  },
+  vehicleNetworkLane: {
+    backgroundColor: 'transparent',
+    borderTopColor: '#EEF2F6',
+    borderTopWidth: 1,
+    gap: Spacing.two,
+    paddingTop: Spacing.two,
+  },
+  vehicleNetworkLaneFirst: {
+    borderTopWidth: 0,
+    paddingTop: 0,
+  },
+  vehicleProgressColumn: {
+    width: 58,
   },
 });

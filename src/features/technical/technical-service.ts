@@ -2,6 +2,7 @@ import { apiRequest } from 'shared/api/client';
 
 import type {
   ApiListResponse,
+  BoxStatusResponse,
   ChargerRecord,
   ConnectionLogRecord,
   DomainAnalyzeRecord,
@@ -105,6 +106,16 @@ export function fetchNetworkStatus(vehicle: TechnicalVehicle) {
     page: 1,
     params: { limit: 1000 },
   });
+}
+
+export async function fetchBikeBoxStatus() {
+  const response = await apiRequest<BoxStatusResponse>('api/controller/statistic/bike-box-status');
+  return response.data || {};
+}
+
+export async function fetchCarBoxStatus() {
+  const response = await apiRequest<BoxStatusResponse>('api/controller/statistic/car-box-status');
+  return response.data || {};
 }
 
 export async function fetchDomainAnalyze() {
