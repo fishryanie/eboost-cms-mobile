@@ -14,7 +14,7 @@ import { UserCard } from 'features/users/components/user-card';
 import { biometricCredentialStore } from 'features/auth/biometric-credentials';
 import { useInfiniteUsers, userKeys } from 'features/users/hooks';
 import type { UserLevel, UserListItem } from 'features/users/types';
-import { AppButton, EmptyState } from 'shared/ui';
+import { AppButton, AppScreen, EmptyState } from 'shared/ui';
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
 import {
@@ -227,55 +227,48 @@ export function OperationScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <FlatList
-        ListHeaderComponent={
-          <ThemedView gap={Spacing.three} paddingHorizontal={screenHorizontalPadding} paddingTop={Spacing.two}>
-            <ThemedView>
-              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={26} letterSpacing={0} lineHeight={31}>
-                Operation
-              </ThemedText>
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} marginTop={3}>
-                User service, account actions, and operational performance
-              </ThemedText>
+    <>
+      <AppScreen
+        title="Operation"
+        subtitle="User service, account actions, and operational performance"
+        isFlatList
+        flatListProps={{
+          contentContainerStyle: styles.content,
+          data: [],
+          keyExtractor: (_, index) => String(index),
+          ListEmptyComponent: (
+            <ThemedView gap={Spacing.five} paddingHorizontal={screenHorizontalPadding}>
+              <OperationServicesSection onSelectService={openService} tileWidth={tileWidth} />
+              <OperationStatsSection
+                atRiskUsers={getCollectionData(atRiskQuery.data) || emptyAtRiskUsers}
+                growth={getCollectionData(growthChartQuery.data) || emptyGrowth}
+                growthSummary={growthQuery.data?.data}
+                isLoading={
+                  topUsersQuery.isLoading || topStationsQuery.isLoading || atRiskQuery.isLoading || growthQuery.isLoading || growthChartQuery.isLoading
+                }
+                onViewMoreTopStations={() => router.push('/operation/locations')}
+                onViewMoreTopUsers={() => router.push('/operation/users')}
+                topStations={getCollectionData(topStationsQuery.data) || emptyTopStations}
+                topUsers={getCollectionData(topUsersQuery.data) || emptyTopUsers}
+              />
             </ThemedView>
-          </ThemedView>
-        }
-        contentContainerStyle={styles.content}
-        data={[]}
-        keyExtractor={(_, index) => String(index)}
-        ListEmptyComponent={
-          <ThemedView gap={Spacing.five} paddingHorizontal={screenHorizontalPadding}>
-            <OperationServicesSection onSelectService={openService} tileWidth={tileWidth} />
-            <OperationStatsSection
-              atRiskUsers={getCollectionData(atRiskQuery.data) || emptyAtRiskUsers}
-              growth={getCollectionData(growthChartQuery.data) || emptyGrowth}
-              growthSummary={growthQuery.data?.data}
-              isLoading={
-                topUsersQuery.isLoading || topStationsQuery.isLoading || atRiskQuery.isLoading || growthQuery.isLoading || growthChartQuery.isLoading
-              }
-              onViewMoreTopStations={() => router.push('/operation/locations')}
-              onViewMoreTopUsers={() => router.push('/operation/users')}
-              topStations={getCollectionData(topStationsQuery.data) || emptyTopStations}
-              topUsers={getCollectionData(topUsersQuery.data) || emptyTopUsers}
+          ),
+          refreshControl: (
+            <RefreshControl
+              onRefresh={() => {
+                void topUsersQuery.refetch();
+                void topStationsQuery.refetch();
+                void atRiskQuery.refetch();
+                void growthQuery.refetch();
+                void growthChartQuery.refetch();
+              }}
+              refreshing={isRefreshing}
+              tintColor={Palette.accent}
             />
-          </ThemedView>
-        }
-        refreshControl={
-          <RefreshControl
-            onRefresh={() => {
-              void topUsersQuery.refetch();
-              void topStationsQuery.refetch();
-              void atRiskQuery.refetch();
-              void growthQuery.refetch();
-              void growthChartQuery.refetch();
-            }}
-            refreshing={isRefreshing}
-            tintColor={Palette.accent}
-          />
-        }
-        renderItem={null}
-        showsVerticalScrollIndicator={false}
+          ),
+          renderItem: null,
+          showsVerticalScrollIndicator: false,
+        }}
       />
       <UserPickerSheet
         onClose={() => setIsPickerOpen(false)}
@@ -283,7 +276,7 @@ export function OperationScreen() {
         service={selectedService}
         visible={isPickerOpen && Boolean(selectedService)}
       />
-    </SafeAreaView>
+    </>
   );
 }
 

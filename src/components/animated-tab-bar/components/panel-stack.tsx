@@ -1,5 +1,5 @@
 import { type ComponentProps, type FC, type FunctionComponent, type JSX, memo, type ReactElement, type ReactNode } from 'react';
-import { ThemedView } from 'components/base';
+import { View } from 'react-native';
 
 import type { IPanelStackProps } from '../types';
 import { PanelLayer } from './panel-layer';
@@ -15,7 +15,7 @@ const PanelStack: FC<IPanelStackProps> & FunctionComponent<IPanelStackProps> = m
     view,
   }: IPanelStackProps & ComponentProps<typeof PanelStack>): (ReactNode & ReactElement & JSX.Element) | null => {
     return (
-      <ThemedView flex={1} overflow='hidden' width='100%'>
+      <View style={{ flex: 1, overflow: 'hidden', width: '100%' }}>
         {items.map(item => (
           <PanelLayer
             key={item.key}
@@ -29,7 +29,7 @@ const PanelStack: FC<IPanelStackProps> & FunctionComponent<IPanelStackProps> = m
             view={item.key}
           />
         ))}
-      </ThemedView>
+      </View>
     );
   },
 );

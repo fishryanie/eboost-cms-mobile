@@ -27,7 +27,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { quickServiceGroups, type QuickServiceIconName, type QuickServiceItem } from 'features/services/quick-service-catalog';
 import { ReplaceMeterSheet } from 'features/services/replace-meter';
 import { TriggerBoxSheet } from 'features/services/trigger-box';
-import { AppButton, EmptyState } from 'shared/ui';
+import { AppButton, AppScreen, EmptyState } from 'shared/ui';
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
 import { useTechnicalPanel } from './hooks';
@@ -139,86 +139,79 @@ export function TechnicalScreen() {
   const serviceTileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - Spacing.three * 3) / 4));
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <FlatList
-        ListHeaderComponent={
-          <ThemedView gap={Spacing.three} paddingHorizontal={screenHorizontalPadding} paddingTop={Spacing.two}>
-            <ThemedView>
-              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={26} letterSpacing={0} lineHeight={31}>
-                Technical
-              </ThemedText>
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} marginTop={3}>
-                Charger service, network health, and domain load
-              </ThemedText>
+    <>
+      <AppScreen
+        title="Technical"
+        subtitle="Charger service, network health, and domain load"
+        isFlatList
+        flatListProps={{
+          contentContainerStyle: styles.content,
+          data: emptyOverviewData,
+          keyExtractor: (_, index) => String(index),
+          ListEmptyComponent: (
+            <ThemedView gap={Spacing.five} paddingHorizontal={screenHorizontalPadding}>
+              <ChargerServicesSection tileWidth={serviceTileWidth} onBoxAction={setBoxActionMode} onReplaceMeter={() => setReplaceMeterVisible(true)} />
+              <NetworkStatusSection
+                bikeQuery={{
+                  data: bikeNetworkData,
+                  error: bikeNetworkError,
+                  isLoading: bikeNetworkLoading,
+                  refetch: refetchBikeNetwork,
+                }}
+                bikeBoxStatusQuery={{
+                  data: bikeBoxStatusData,
+                  error: bikeBoxStatusError,
+                  isLoading: bikeBoxStatusLoading,
+                  refetch: refetchBikeBoxStatus,
+                }}
+                carBoxStatusQuery={{
+                  data: carBoxStatusData,
+                  error: carBoxStatusError,
+                  isLoading: carBoxStatusLoading,
+                  refetch: refetchCarBoxStatus,
+                }}
+                carQuery={{
+                  data: carNetworkData,
+                  error: carNetworkError,
+                  isLoading: carNetworkLoading,
+                  refetch: refetchCarNetwork,
+                }}
+                onViewIssues={() =>
+                  router.push({
+                    pathname: '/technical/network-issues',
+                  } as never)
+                }
+              />
+              <DomainAnalyzeSection
+                query={{
+                  data: domainData,
+                  error: domainError,
+                  isLoading: domainLoading,
+                  refetch: refetchDomain,
+                }}
+              />
             </ThemedView>
-          </ThemedView>
-        }
-        contentContainerStyle={styles.content}
-        data={emptyOverviewData}
-        keyExtractor={(_, index) => String(index)}
-        ListEmptyComponent={
-          <ThemedView gap={Spacing.five} paddingHorizontal={screenHorizontalPadding}>
-            <ChargerServicesSection tileWidth={serviceTileWidth} onBoxAction={setBoxActionMode} onReplaceMeter={() => setReplaceMeterVisible(true)} />
-            <NetworkStatusSection
-              bikeQuery={{
-                data: bikeNetworkData,
-                error: bikeNetworkError,
-                isLoading: bikeNetworkLoading,
-                refetch: refetchBikeNetwork,
+          ),
+          refreshControl: (
+            <RefreshControl
+              onRefresh={() => {
+                void refetchBikeNetwork();
+                void refetchBikeBoxStatus();
+                void refetchCarBoxStatus();
+                void refetchCarNetwork();
+                void refetchDomain();
               }}
-              bikeBoxStatusQuery={{
-                data: bikeBoxStatusData,
-                error: bikeBoxStatusError,
-                isLoading: bikeBoxStatusLoading,
-                refetch: refetchBikeBoxStatus,
-              }}
-              carBoxStatusQuery={{
-                data: carBoxStatusData,
-                error: carBoxStatusError,
-                isLoading: carBoxStatusLoading,
-                refetch: refetchCarBoxStatus,
-              }}
-              carQuery={{
-                data: carNetworkData,
-                error: carNetworkError,
-                isLoading: carNetworkLoading,
-                refetch: refetchCarNetwork,
-              }}
-              onViewIssues={() =>
-                router.push({
-                  pathname: '/technical/network-issues',
-                } as never)
-              }
+              refreshing={bikeNetworkRefetching || bikeBoxStatusRefetching || carBoxStatusRefetching || carNetworkRefetching || domainRefetching}
+              tintColor={Palette.accent}
             />
-            <DomainAnalyzeSection
-              query={{
-                data: domainData,
-                error: domainError,
-                isLoading: domainLoading,
-                refetch: refetchDomain,
-              }}
-            />
-          </ThemedView>
-        }
-        refreshControl={
-          <RefreshControl
-            onRefresh={() => {
-              void refetchBikeNetwork();
-              void refetchBikeBoxStatus();
-              void refetchCarBoxStatus();
-              void refetchCarNetwork();
-              void refetchDomain();
-            }}
-            refreshing={bikeNetworkRefetching || bikeBoxStatusRefetching || carBoxStatusRefetching || carNetworkRefetching || domainRefetching}
-            tintColor={Palette.accent}
-          />
-        }
-        renderItem={null}
-        showsVerticalScrollIndicator={false}
+          ),
+          renderItem: null,
+          showsVerticalScrollIndicator: false,
+        }}
       />
       {boxActionMode ? <TriggerBoxSheet mode={boxActionMode} onClose={() => setBoxActionMode(null)} visible={Boolean(boxActionMode)} /> : null}
       {replaceMeterVisible ? <ReplaceMeterSheet onClose={() => setReplaceMeterVisible(false)} visible={replaceMeterVisible} /> : null}
-    </SafeAreaView>
+    </>
   );
 }
 
@@ -260,18 +253,19 @@ export function TechnicalPanelScreen({ onBack, panel }: { onBack: () => void; pa
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <FlatList<unknown>
-        ListHeaderComponent={
+    <AppScreen
+      title={title}
+      isFlatList
+      flatListProps={{
+        contentContainerStyle: styles.content,
+        data: isEnergyDiffer ? energyDifferData?.items || [] : listQuery.data?.items || [],
+        keyExtractor: (item, index) => getItemKey(item, index),
+        ListHeaderComponent: (
           <ThemedView gap={Spacing.three} paddingHorizontal={screenHorizontalPadding} paddingTop={Spacing.one}>
             <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
               <Pressable accessibilityLabel='Back' accessibilityRole='button' onPress={onBack} style={({ pressed }) => [styles.issueNavButton, pressed && styles.pressed]}>
                 <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
               </Pressable>
-              <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={21} textAlign='center'>
-                {title}
-              </ThemedText>
-              <ThemedView width={34} />
             </ThemedView>
             <VehicleSwitch vehicle={vehicle} onChange={handleVehicleChange} />
             {!isEnergyDiffer ? (
@@ -290,53 +284,45 @@ export function TechnicalPanelScreen({ onBack, panel }: { onBack: () => void; pa
               </ThemedView>
             ) : null}
           </ThemedView>
-        }
-        contentContainerStyle={styles.content}
-        data={isEnergyDiffer ? energyDifferData?.items || [] : listQuery.data?.items || []}
-        keyExtractor={(item, index) => getItemKey(item, index)}
-        ListEmptyComponent={
-          isEnergyDiffer ? (
-            <EnergyDifferState
-              query={{
-                data: energyDifferData,
-                error: energyDifferError,
-                isLoading: energyDifferLoading,
-                refetch: refetchEnergyDiffer,
-              }}
-              vehicle={vehicle}
-            />
-          ) : (
-            <ListState error={listQuery.error} isLoading={listQuery.isLoading} onRetry={() => listQuery.refetch()} title={title} />
-          )
-        }
-        ListFooterComponent={
-          !isEnergyDiffer && listQuery.data?.total ? (
-            <ListFooter
-              canLoadMore={page * 30 < listQuery.data.total}
-              isFetching={listQuery.isFetching}
-              page={page}
-              total={listQuery.data.total}
-              onLoadMore={() => setListState(current => ({ ...current, page: current.page + 1 }))}
-            />
-          ) : null
-        }
-        refreshControl={
+        ),
+        ListEmptyComponent: isEnergyDiffer ? (
+          <EnergyDifferState
+            query={{
+              data: energyDifferData,
+              error: energyDifferError,
+              isLoading: energyDifferLoading,
+              refetch: refetchEnergyDiffer,
+            }}
+            vehicle={vehicle}
+          />
+        ) : (
+          <ListState error={listQuery.error} isLoading={listQuery.isLoading} onRetry={() => listQuery.refetch()} title={title} />
+        ),
+        ListFooterComponent: !isEnergyDiffer && listQuery.data?.total ? (
+          <ListFooter
+            canLoadMore={page * 30 < listQuery.data.total}
+            isFetching={listQuery.isFetching}
+            page={page}
+            total={listQuery.data.total}
+            onLoadMore={() => setListState(current => ({ ...current, page: current.page + 1 }))}
+          />
+        ) : null,
+        refreshControl: (
           <RefreshControl
             onRefresh={() => (isEnergyDiffer ? refetchEnergyDiffer() : listQuery.refetch())}
             refreshing={(isEnergyDiffer ? energyDifferRefetching : listQuery.isRefetching) || false}
             tintColor={Palette.accent}
           />
-        }
-        renderItem={({ item }) =>
+        ),
+        renderItem: ({ item }) =>
           isEnergyDiffer ? (
             <EnergyDifferCard item={item as EnergyDifferRecord} vehicle={vehicle} />
           ) : (
             <TechnicalListItem item={item} panel={panel} vehicle={vehicle} />
-          )
-        }
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+          ),
+        showsVerticalScrollIndicator: false,
+      }}
+    />
   );
 }
 
@@ -832,8 +818,8 @@ function StatusMetadataLine({ segments }: { segments: BoxStatusSegment[] }) {
 }
 
 function CircularProgress({ color, percent }: { color: string; percent: number }) {
-  const size = 58;
-  const strokeWidth = 6;
+  const size = 64;
+  const strokeWidth = 7;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const normalizedPercent = Math.max(0, Math.min(percent, 100));
@@ -857,7 +843,7 @@ function CircularProgress({ color, percent }: { color: string; percent: number }
         />
       </Svg>
       <ThemedView alignItems='center' justifyContent='center' style={styles.circularProgressCenter}>
-        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={12} lineHeight={15} style={styles.connectorTotal}>
+        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={13} lineHeight={16} style={styles.connectorTotal}>
           {normalizedPercent}%
         </ThemedText>
       </ThemedView>
@@ -1346,13 +1332,13 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   circularProgressCenter: {
-    height: 38,
+    height: 42,
     position: 'absolute',
-    width: 38,
+    width: 42,
   },
   circularProgressWrap: {
-    height: 58,
-    width: 58,
+    height: 64,
+    width: 64,
   },
   compactStat: {
     backgroundColor: '#F8FAFC',
@@ -1634,6 +1620,6 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   vehicleProgressColumn: {
-    width: 58,
+    width: 64,
   },
 });

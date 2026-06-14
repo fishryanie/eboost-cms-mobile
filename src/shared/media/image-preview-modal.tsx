@@ -6,6 +6,9 @@ import Modal from 'react-native-modal';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ThemedText, ThemedView } from 'components/base';
 
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
+
 import { FontFamily, Radius, Spacing } from 'themes';
 
 import { clampZoomOffset } from './zoom-bounds';
@@ -120,9 +123,9 @@ export function ImagePreviewModal({ imageUrl, onClose, title, visible }: { image
 
         {imageUrl ? (
           <GestureDetector gesture={imageGesture}>
-            <Animated.View style={[styles.imageWrap, imageStyle]}>
+            <AnimatedThemedView style={[styles.imageWrap, imageStyle]}>
               <Image contentFit='contain' source={{ uri: imageUrl }} style={styles.image} />
-            </Animated.View>
+            </AnimatedThemedView>
           </GestureDetector>
         ) : null}
       </GestureHandlerRootView>

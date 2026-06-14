@@ -7,6 +7,9 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
 
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
+
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { adminProfile } from 'features/auth/admin-profile';
 import { sessionKeys } from 'shared/session/use-session-token';
@@ -120,8 +123,8 @@ export function AppDrawer({ children }: PropsWithChildren) {
 
   return (
     <ThemedView backgroundColor={colors.backgroundGreen} flex={1}>
-      <Animated.View style={drawerStyle}>
-        <Animated.View
+      <AnimatedThemedView style={drawerStyle}>
+        <AnimatedThemedView
           pointerEvents='none'
           style={[
             styles.hazeLayer,
@@ -189,12 +192,12 @@ export function AppDrawer({ children }: PropsWithChildren) {
         </ThemedView>
 
         <ThemedText style={[styles.version, { bottom: insets.bottom + 12, color: drawerMutedColor }]}>v1.0.0</ThemedText>
-      </Animated.View>
+      </AnimatedThemedView>
 
-      <Animated.View needsOffscreenAlphaCompositing renderToHardwareTextureAndroid style={appStyle}>
+      <AnimatedThemedView needsOffscreenAlphaCompositing renderToHardwareTextureAndroid style={appStyle}>
         {children}
         <AnimatedPressable accessibilityLabel='Close drawer' accessibilityRole='button' onPress={handleClose} style={[StyleSheet.absoluteFill, overlayStyle]} />
-      </Animated.View>
+      </AnimatedThemedView>
     </ThemedView>
   );
 }

@@ -3,6 +3,9 @@ import { Pressable, StyleSheet, TextInput, type TextInputProps, type TextInput a
 import Animated, { interpolate, interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ThemedText, ThemedView } from 'components/base';
 
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
+
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { fs, mhs, rv } from 'themes/scaling';
 
@@ -45,9 +48,9 @@ export default function FloatingTextInput({ error, label, onBlur, onFocus, style
   return (
     <ThemedView style={[styles.container, style]}>
       <Pressable onPress={() => inputRef.current?.focus()} style={[styles.inputFrame, isFocused && styles.focusedFrame, Boolean(error) && styles.errorFrame]}>
-        <Animated.Text pointerEvents='none' style={[styles.label, labelAnimatedStyle]}>
+        <AnimatedThemedText pointerEvents='none' style={[styles.label, labelAnimatedStyle]}>
           {label}
-        </Animated.Text>
+        </AnimatedThemedText>
         <TextInput
           {...inputProps}
           ref={inputRef}

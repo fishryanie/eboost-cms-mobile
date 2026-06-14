@@ -13,7 +13,10 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { ThemedView } from 'components/base';
+import { ThemedView, ThemedText } from 'components/base';
+
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
 const DEFAULT_TRACK_WIDTH_RATIO = 0.8;
 const DEFAULT_SLIDER_SIZE = 50;
@@ -145,7 +148,7 @@ export function SwipeSlider({
   }));
 
   return (
-    <Animated.View
+    <AnimatedThemedView
       accessibilityRole='adjustable'
       style={[
         styles.sliderTrack,
@@ -158,7 +161,7 @@ export function SwipeSlider({
         trackStyle,
       ]}>
       <GestureDetector gesture={pan}>
-        <Animated.View
+        <AnimatedThemedView
           style={[
             styles.sliderHandle,
             sliderHandleStyle,
@@ -170,20 +173,20 @@ export function SwipeSlider({
             },
             handleStyle,
           ]}>
-          <Animated.View style={[styles.iconContainer, initialContentAnimatedStyle]}>{startIcon}</Animated.View>
-          <Animated.View style={[styles.iconContainer, completeContentAnimatedStyle]}>{endIcon}</Animated.View>
-        </Animated.View>
+          <AnimatedThemedView style={[styles.iconContainer, initialContentAnimatedStyle]}>{startIcon}</AnimatedThemedView>
+          <AnimatedThemedView style={[styles.iconContainer, completeContentAnimatedStyle]}>{endIcon}</AnimatedThemedView>
+        </AnimatedThemedView>
       </GestureDetector>
 
       <ThemedView pointerEvents='none' alignItems='center' bottom={0} justifyContent='center' left={0} position='absolute' right={0} top={0}>
-        <Animated.Text numberOfLines={1} style={[styles.sliderTextBase, { color: textColor }, initialContentAnimatedStyle, textStyle]}>
+        <AnimatedThemedText numberOfLines={1} style={[styles.sliderTextBase, { color: textColor }, initialContentAnimatedStyle, textStyle]}>
           {initialText}
-        </Animated.Text>
-        <Animated.Text numberOfLines={1} style={[styles.sliderTextBase, { color: textColor }, completeContentAnimatedStyle, textStyle]}>
+        </AnimatedThemedText>
+        <AnimatedThemedText numberOfLines={1} style={[styles.sliderTextBase, { color: textColor }, completeContentAnimatedStyle, textStyle]}>
           {completeText}
-        </Animated.Text>
+        </AnimatedThemedText>
       </ThemedView>
-    </Animated.View>
+    </AnimatedThemedView>
   );
 }
 

@@ -9,7 +9,7 @@ import { ThemedText, ThemedView } from 'components/base';
 
 import { TabIcon } from 'components/tab-icon';
 import { getCmsMobileSection, type CmsMobilePanel } from 'features/cms-menu/mobile-cms-menu';
-import { EmptyState } from 'shared/ui';
+import { AppScreen, EmptyState } from 'shared/ui';
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
 import {
@@ -80,10 +80,16 @@ export default function MarketingScreen({ focusStats = false, onBack }: { focusS
   const summary = useMemo(() => toSubscriptionStatsSummary(statsQuery.data, shareMetric), [shareMetric, statsQuery.data]);
   const serviceTileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - Spacing.three * 3) / 4));
 
+  const isMainScreen = !onBack;
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <FlatList
-        ListEmptyComponent={
+    <AppScreen
+      title={isMainScreen ? "Marketing" : "Subscription Package Stats"}
+      subtitle={isMainScreen ? "Promotions, notifications, bonus, and subscription performance." : undefined}
+      isFlatList
+      flatListProps={{
+        contentContainerStyle: styles.content,
+        data: [],
+        ListEmptyComponent: (
           <ThemedView gap={focusStats ? Spacing.three : Spacing.five} paddingHorizontal={screenHorizontalPadding}>
             {!focusStats ? <MarketingServicesSection tileWidth={serviceTileWidth} /> : null}
             <SubscriptionStatsCard
@@ -98,47 +104,25 @@ export default function MarketingScreen({ focusStats = false, onBack }: { focusS
             />
             {!focusStats ? <ModuleSection accentColor={section.accentColor} panels={section.panels} /> : null}
           </ThemedView>
-        }
-        ListHeaderComponent={
+        ),
+        ListHeaderComponent: onBack ? (
           <ThemedView gap={Spacing.three} paddingHorizontal={screenHorizontalPadding} paddingTop={Spacing.two}>
-            {onBack ? (
-              <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
-                <Pressable
-                  accessibilityLabel='Back'
-                  accessibilityRole='button'
-                  onPress={onBack}
-                  style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
-                  <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
-                </Pressable>
-                <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={21} textAlign='center'>
-                  Subscription Package Stats
-                </ThemedText>
-                <ThemedView width={34} />
-              </ThemedView>
-            ) : (
-              <ThemedView alignItems='center' flexDirection='row' gap={Spacing.three}>
-                <ThemedView style={[styles.headerIcon, { backgroundColor: `${section.accentColor}18` }]}>
-                  <Megaphone color={section.accentColor} size={23} strokeWidth={2} />
-                </ThemedView>
-                <ThemedView flex={1} minWidth={0}>
-                  <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={26} letterSpacing={0} lineHeight={31}>
-                    Marketing
-                  </ThemedText>
-                  <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={18} marginTop={3}>
-                    Promotions, notifications, bonus, and subscription performance.
-                  </ThemedText>
-                </ThemedView>
-              </ThemedView>
-            )}
+            <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
+              <Pressable
+                accessibilityLabel='Back'
+                accessibilityRole='button'
+                onPress={onBack}
+                style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+                <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
+              </Pressable>
+            </ThemedView>
           </ThemedView>
-        }
-        contentContainerStyle={styles.content}
-        data={[]}
-        refreshControl={<RefreshControl onRefresh={() => statsQuery.refetch()} refreshing={statsQuery.isRefetching} tintColor={Palette.accent} />}
-        renderItem={null}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+        ) : null,
+        refreshControl: <RefreshControl onRefresh={() => statsQuery.refetch()} refreshing={statsQuery.isRefetching} tintColor={Palette.accent} />,
+        renderItem: null,
+        showsVerticalScrollIndicator: false,
+      }}
+    />
   );
 }
 
@@ -494,9 +478,15 @@ export function SubscriptionPackageListScreen({ initialMetric = 'revenue', onBac
   const summary = useMemo(() => toSubscriptionStatsSummary(statsQuery.data, shareMetric), [shareMetric, statsQuery.data]);
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <FlatList
-        ListHeaderComponent={
+    <AppScreen
+      title="Package Performance"
+      subtitle={`${monthRange.start} - ${monthRange.end}`}
+      isFlatList
+      flatListProps={{
+        contentContainerStyle: styles.packageListContent,
+        data: summary.rows,
+        keyExtractor: item => item.id,
+        ListHeaderComponent: (
           <ThemedView gap={Spacing.three} paddingHorizontal={screenHorizontalPadding} paddingTop={Spacing.one}>
             <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
               <Pressable
@@ -506,30 +496,20 @@ export function SubscriptionPackageListScreen({ initialMetric = 'revenue', onBac
                 style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
                 <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
               </Pressable>
-              <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={21} textAlign='center'>
-                Package Performance
-              </ThemedText>
-              <ThemedView width={34} />
             </ThemedView>
-            <SectionTitle subtitle={`${monthRange.start} - ${monthRange.end}`} title='Subscription Packages' />
             <MetricSwitch active={shareMetric} onChange={setShareMetric} />
           </ThemedView>
-        }
-        contentContainerStyle={styles.packageListContent}
-        data={summary.rows}
-        keyExtractor={item => item.id}
-        ListEmptyComponent={
-          statsQuery.isLoading ? (
-            <LoadingBlock label='Loading packages' />
-          ) : (
-            <EmptyState message='No subscription package history was returned for this month.' title='No packages found' />
-          )
-        }
-        refreshControl={<RefreshControl onRefresh={() => statsQuery.refetch()} refreshing={statsQuery.isRefetching} tintColor={Palette.accent} />}
-        renderItem={({ item, index }) => <PackageRow color={chartColors[index % chartColors.length]} row={item} />}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+        ),
+        ListEmptyComponent: statsQuery.isLoading ? (
+          <LoadingBlock label='Loading packages' />
+        ) : (
+          <EmptyState message='No subscription package history was returned for this month.' title='No packages found' />
+        ),
+        refreshControl: <RefreshControl onRefresh={() => statsQuery.refetch()} refreshing={statsQuery.isRefetching} tintColor={Palette.accent} />,
+        renderItem: ({ item, index }: { item: SubscriptionPackageRow; index: number }) => <PackageRow color={chartColors[index % chartColors.length]} row={item} />,
+        showsVerticalScrollIndicator: false,
+      }}
+    />
   );
 }
 

@@ -5,7 +5,8 @@ import type { INavItem, IPalette } from './types';
 const EASING: IEasingFunction = Easing.bezier(0.22, 1, 0.36, 1);
 const DURATION = 600;
 const ICON_BOX = 50;
-const LABEL_PAD = 18;
+const LABEL_PAD = 14;
+const LABEL_MARGIN = -6;
 const PANEL_SLIDE = 65;
 const TAB_HEIGHT = 48;
 
@@ -35,7 +36,7 @@ function palette<T extends 'dark' | 'light'>(scheme: T): IPalette {
 
 function estimateToolbarWidth(items: INavItem[], activeKey: string | undefined) {
   const active = items.find(item => item.key === activeKey);
-  const labelW = active ? Math.ceil(active.label.length * 8.5 + 4) + LABEL_PAD : 0;
+  const labelW = active ? Math.ceil(active.label.length * 8.5 + 4) + LABEL_PAD + LABEL_MARGIN : 0;
   const gaps = Math.max(items.length - 1, 0) * 2;
   return items.length * ICON_BOX + labelW + gaps + 12;
 }
@@ -44,4 +45,4 @@ function viewIndex(items: INavItem[], view: string) {
   return items.findIndex(item => item.key === view);
 }
 
-export { DURATION, EASING, ICON_BOX, LABEL_PAD, PANEL_SLIDE, TAB_HEIGHT, estimateToolbarWidth, palette, viewIndex };
+export { DURATION, EASING, ICON_BOX, LABEL_PAD, LABEL_MARGIN, PANEL_SLIDE, TAB_HEIGHT, estimateToolbarWidth, palette, viewIndex };

@@ -3,7 +3,10 @@ import { useState } from 'react';
 import { Dimensions, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { ThemedView } from 'components/base';
+import { ThemedView, ThemedText } from 'components/base';
+
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
@@ -28,7 +31,7 @@ export function AnimatedSplashOverlay() {
   });
 
   return (
-    <Animated.View
+    <AnimatedThemedView
       entering={splashKeyframe.duration(DURATION).withCallback(finished => {
         'worklet';
         if (finished) {
@@ -37,7 +40,7 @@ export function AnimatedSplashOverlay() {
       })}
       style={styles.backgroundSolidColor}>
       <Image contentFit='cover' source={require('assets/images/cms-splash.png')} style={{ height, width }} />
-    </Animated.View>
+    </AnimatedThemedView>
   );
 }
 
@@ -80,14 +83,14 @@ const glowKeyframe = new Keyframe({
 export function AnimatedIcon() {
   return (
     <ThemedView justifyContent='center' alignItems='center' width={128} height={128} zIndex={100}>
-      <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
+      <AnimatedThemedView entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
         <Image style={styles.glow} source={require('assets/images/logo-glow.png')} />
-      </Animated.View>
+      </AnimatedThemedView>
 
-      <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
-      <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
+      <AnimatedThemedView entering={keyframe.duration(DURATION)} style={styles.background} />
+      <AnimatedThemedView style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
         <Image style={styles.image} source={require('assets/images/icon.png')} />
-      </Animated.View>
+      </AnimatedThemedView>
     </ThemedView>
   );
 }

@@ -3,7 +3,7 @@ import { Extrapolation, interpolate, interpolateColor, useAnimatedStyle, useShar
 
 import { ViewStyle } from 'react-native';
 import type { IPalette } from '../types';
-import { DURATION, EASING, ICON_BOX, LABEL_PAD } from '../motion';
+import { DURATION, EASING, ICON_BOX, LABEL_PAD, LABEL_MARGIN } from '../motion';
 
 function useMorphTabMotion<T extends boolean, C extends IPalette, L extends number>(active: T, colors: C, labelW: L) {
   const progress = useSharedValue<number>(active ? 1 : 0);
@@ -19,7 +19,7 @@ function useMorphTabMotion<T extends boolean, C extends IPalette, L extends numb
   const containerStyle = useAnimatedStyle<Pick<ViewStyle, 'width' | 'backgroundColor'>>(() => {
     const p = progress.value;
     return {
-      width: ICON_BOX + p * (labelW + LABEL_PAD),
+      width: ICON_BOX + p * (labelW + LABEL_PAD + LABEL_MARGIN),
       backgroundColor: interpolateColor(p, [0, 1], ['rgba(0,0,0,0)', colors.accent]),
     };
   });
@@ -30,7 +30,7 @@ function useMorphTabMotion<T extends boolean, C extends IPalette, L extends numb
   }));
 
   const labelStyle = useAnimatedStyle<Pick<ViewStyle, 'width' | 'opacity' | 'transform'>>(() => ({
-    width: progress.value * (labelW + LABEL_PAD),
+    width: progress.value * (labelW + LABEL_PAD + LABEL_MARGIN),
     opacity: interpolate(progress.value, [0, 0.3, 1], [0, 0, 1]),
     transform: [{ translateX: -8 * (1 - progress.value) }],
   }));

@@ -91,14 +91,13 @@ const tabStyles = StyleSheet.create({
     fontWeight: '600',
     includeFontPadding: true,
     lineHeight: 24,
-    paddingBottom: 2,
   },
   tabLabelWrap: {
     height: TAB_HEIGHT,
     justifyContent: 'center',
     overflow: 'visible',
-    paddingBottom: 2,
     paddingRight: LABEL_PAD,
+    marginLeft: -6,
   },
   tabMorph: {
     alignItems: 'center',

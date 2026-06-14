@@ -8,5 +8,12 @@
   "printWidth": 160,
   "bracketSameLine": true,
   "jsxSingleQuote": true,
-  "overrides": [{ "files": ".prettierrc", "options": { "parser": "json" } }]
+  "overrides": [
+    {
+      "files": ".prettierrc",
+      "options": {
+        "parser": "json"
+      }
+    }
+  ]
 }

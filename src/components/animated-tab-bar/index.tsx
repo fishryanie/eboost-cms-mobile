@@ -14,7 +14,10 @@ import { useViewTransition } from './hooks/use-view-transition';
 import { estimateToolbarWidth, palette } from './motion';
 import type { IAnimatedTabBarProps, INavItem, IPalette } from './types';
 import { layoutStyles as styles } from './styles';
-import { ThemedView } from 'components/base';
+import { ThemedView, ThemedText } from 'components/base';
+
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
 const AnimatedTabBar: FC<IAnimatedTabBarProps> & FunctionComponent<IAnimatedTabBarProps> = memo<IAnimatedTabBarProps & ComponentProps<typeof AnimatedTabBar>>(
   (props: IAnimatedTabBarProps & ComponentProps<typeof AnimatedTabBar>): (ReactNode & ReactElement & JSX.Element) | null => {

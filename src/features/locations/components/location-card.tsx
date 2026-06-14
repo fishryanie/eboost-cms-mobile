@@ -6,6 +6,9 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { ThemedText, ThemedView } from 'components/base';
 
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
+
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 import { ImagePreviewModal } from 'shared/media/image-preview-modal';
 import { getDisplayImageUrl } from 'shared/media/image-url';
@@ -97,7 +100,7 @@ export function LocationCard({
 
   return (
     <ThemedView backgroundColor={Palette.surfaceBase} overflow='hidden'>
-      <Animated.View style={[styles.actionsRail, actionStyle]}>
+      <AnimatedThemedView style={[styles.actionsRail, actionStyle]}>
         <Pressable
           onPress={() => {
             closeActions();
@@ -116,10 +119,10 @@ export function LocationCard({
           style={({ pressed }) => [styles.actionButton, styles.editAction, pressed && styles.actionPressed]}>
           <ThemedText style={[styles.actionText, styles.editActionText]}>Edit</ThemedText>
         </Pressable>
-      </Animated.View>
+      </AnimatedThemedView>
 
       <GestureDetector gesture={pan}>
-        <Animated.View style={[styles.foreground, foregroundStyle]}>
+        <AnimatedThemedView style={[styles.foreground, foregroundStyle]}>
           <Pressable
             onPress={() => {
               closeActions();
@@ -188,7 +191,7 @@ export function LocationCard({
             </ThemedView>
             <ImagePreviewModal imageUrl={imageUrl} onClose={() => setPreviewOpen(false)} title={location.name} visible={previewOpen} />
           </Pressable>
-        </Animated.View>
+        </AnimatedThemedView>
       </GestureDetector>
     </ThemedView>
   );

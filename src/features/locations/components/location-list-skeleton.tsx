@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
-import { ThemedView } from 'components/base';
+import { ThemedView, ThemedText } from 'components/base';
+
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
 import { Palette, Radius, Spacing } from 'themes';
 
@@ -29,19 +32,19 @@ export function LocationListSkeleton() {
           minHeight={82}
           paddingHorizontal={Spacing.three}
           paddingVertical={Spacing.two}>
-          <Animated.View style={[styles.thumbnail, shimmerStyle]} />
+          <AnimatedThemedView style={[styles.thumbnail, shimmerStyle]} />
           <ThemedView flex={1} gap={6}>
             <ThemedView flexDirection='row' gap={Spacing.two}>
-              <Animated.View style={[styles.stat, shimmerStyle]} />
-              <Animated.View style={[styles.stat, shimmerStyle]} />
-              <Animated.View style={[styles.stat, shimmerStyle]} />
+              <AnimatedThemedView style={[styles.stat, shimmerStyle]} />
+              <AnimatedThemedView style={[styles.stat, shimmerStyle]} />
+              <AnimatedThemedView style={[styles.stat, shimmerStyle]} />
             </ThemedView>
-            <Animated.View style={[styles.title, shimmerStyle]} />
-            <Animated.View style={[styles.address, shimmerStyle]} />
+            <AnimatedThemedView style={[styles.title, shimmerStyle]} />
+            <AnimatedThemedView style={[styles.address, shimmerStyle]} />
           </ThemedView>
           <ThemedView alignItems='flex-end' alignSelf='stretch' justifyContent='space-between' paddingVertical={3} width={76}>
-            <Animated.View style={[styles.status, shimmerStyle]} />
-            <Animated.View style={[styles.toggle, shimmerStyle]} />
+            <AnimatedThemedView style={[styles.status, shimmerStyle]} />
+            <AnimatedThemedView style={[styles.toggle, shimmerStyle]} />
           </ThemedView>
         </ThemedView>
       ))}

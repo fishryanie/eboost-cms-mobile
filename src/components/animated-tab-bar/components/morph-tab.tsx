@@ -1,7 +1,6 @@
 import { JSX, memo, useState, type ComponentProps, type FC, type FunctionComponent, type ReactElement, type ReactNode } from 'react';
-import { Pressable, Text, type LayoutChangeEvent } from 'react-native';
+import { Pressable, View, Text, type LayoutChangeEvent } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { ThemedView } from 'components/base';
 
 import { useMorphTabMotion } from '../hooks/use-morph-tab-motion';
 import { ICON_BOX, TAB_HEIGHT } from '../motion';
@@ -28,16 +27,16 @@ const MorphTab: FC<IMorphTabProps> & FunctionComponent<IMorphTabProps> = memo<IM
 
         <Animated.View style={[styles.tabMorph, motion.containerStyle]}>
           <Animated.View pointerEvents='none' style={[styles.holdCircle, { backgroundColor: colors.accent }, motion.holdCircleStyle]} />
-          <ThemedView height={TAB_HEIGHT} width={ICON_BOX}>
+          <View style={{ height: TAB_HEIGHT, width: ICON_BOX }}>
             <Animated.View style={[styles.iconLayer, motion.iconInactiveStyle, motion.iconSqueezeStyle]}>{item.icon(false, colors.muted, 22)}</Animated.View>
             <Animated.View style={[styles.iconLayer, motion.iconActiveStyle, motion.iconSqueezeStyle]}>{item.icon(true, colors.foreground, 22)}</Animated.View>
-          </ThemedView>
+          </View>
           <Animated.View style={[styles.tabLabelWrap, motion.labelStyle]}>
-            <Text
+            <Animated.Text
               allowFontScaling={false}
               style={[styles.tabLabel, styles.fixedLabel, { color: colors.foreground, width: labelW }]}>
               {item.label}
-            </Text>
+            </Animated.Text>
           </Animated.View>
         </Animated.View>
       </Pressable>

@@ -1,7 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { PropsWithChildren, type ReactElement } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, type PressableProps, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, type PressableProps, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, { interpolate, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { ThemedView, ThemedText } from 'components/base';
+
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
 
 import { FontFamily, Palette, Radius, Spacing } from 'themes';
 
@@ -135,7 +138,7 @@ export function ScaleAnimatedButton({
         isActive.set(false);
       }}
       style={[hasExplicitWidth ? { width: resolvedStyle.width } : styles.defaultPressable, pressableStyle]}>
-      <Animated.View
+      <AnimatedThemedView
         style={[
           styles.base,
           animatedStyle,
@@ -152,13 +155,13 @@ export function ScaleAnimatedButton({
           <>
             {Icon}
             {renderedTitle ? (
-              <Text numberOfLines={1} style={[styles.label, { color: textColor }, textStyle]}>
+              <ThemedText numberOfLines={1} style={[styles.label, { color: textColor }, textStyle]}>
                 {renderedTitle}
-              </Text>
+              </ThemedText>
             ) : null}
           </>
         )}
-      </Animated.View>
+      </AnimatedThemedView>
     </Pressable>
   );
 }
