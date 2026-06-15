@@ -8,6 +8,7 @@ import type {
   DomainAnalyzeRecord,
   EnergyDifferRecord,
   MeterValueRecord,
+  OngoingSessionRecord,
   StatusLogRecord,
   TechnicalEndpoint,
   TechnicalList,
@@ -26,7 +27,7 @@ function getListItems<T>(response: ApiListResponse<T>): T[] {
 
 function getListTotal<T>(response: ApiListResponse<T>, fallback: number) {
   if (Array.isArray(response)) return response.length;
-  return response['hydra:totalItems'] ?? response.meta?.total_count ?? response.total ?? fallback;
+  return response['hydra:totalItems'] ?? response.meta?.total_count ?? response.pagination?.total_items ?? response.total ?? fallback;
 }
 
 function parseList<T>(response: ApiListResponse<T>): TechnicalList<T> {
@@ -144,4 +145,15 @@ function formatDateParam(date: Date) {
   const month = `${date.getMonth() + 1}`.padStart(2, '0');
   const day = `${date.getDate()}`.padStart(2, '0');
   return `${date.getFullYear()}-${month}-${day}`;
+}
+
+export function fetchOngoingSessions({ page, search, status }: { page: number; search: string; status?: string }) {
+  return fetchTechnicalList<OngoingSessionRecord>({
+    endpoint: { path: 'api/controller/statistic/car-realtime-status' },
+    page,
+    params: {
+      ...(search ? { search } : {}),
+      ...(status ? { status } : {}),
+    },
+  });
 }

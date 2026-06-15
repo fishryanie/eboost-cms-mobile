@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
+import { SearchBar } from 'components/molecules/search-bar';
+import { AnimatedHeaderScrollView } from 'components/organisms/animated-header-scrollview';
 import { useRouter } from 'expo-router';
 import {
   BadgeDollarSign,
@@ -7,6 +9,7 @@ import {
   Cable,
   ChevronLeft,
   ChevronRight,
+  ChevronsRight,
   CircleMinus,
   CirclePlus,
   Gauge,
@@ -14,14 +17,13 @@ import {
   PencilLine,
   QrCode,
   RotateCcw,
-  Search,
   Wrench,
   Zap,
   type LucideIcon,
 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
+
 import Svg, { Circle } from 'react-native-svg';
 
 import { quickServiceGroups, type QuickServiceIconName, type QuickServiceItem } from 'features/services/quick-service-catalog';
@@ -141,8 +143,8 @@ export function TechnicalScreen() {
   return (
     <>
       <AppScreen
-        title="Technical"
-        subtitle="Charger service, network health, and domain load"
+        title='Technical'
+        subtitle='Charger service, network health, and domain load'
         isFlatList
         flatListProps={{
           contentContainerStyle: styles.content,
@@ -189,6 +191,11 @@ export function TechnicalScreen() {
                   isLoading: domainLoading,
                   refetch: refetchDomain,
                 }}
+                onViewMore={() =>
+                  router.push({
+                    pathname: '/technical/ongoing-sessions',
+                  } as never)
+                }
               />
             </ThemedView>
           ),
@@ -263,25 +270,22 @@ export function TechnicalPanelScreen({ onBack, panel }: { onBack: () => void; pa
         ListHeaderComponent: (
           <ThemedView gap={Spacing.three} paddingHorizontal={screenHorizontalPadding} paddingTop={Spacing.one}>
             <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
-              <Pressable accessibilityLabel='Back' accessibilityRole='button' onPress={onBack} style={({ pressed }) => [styles.issueNavButton, pressed && styles.pressed]}>
+              <Pressable
+                accessibilityLabel='Back'
+                accessibilityRole='button'
+                onPress={onBack}
+                style={({ pressed }) => [styles.issueNavButton, pressed && styles.pressed]}>
                 <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
               </Pressable>
             </ThemedView>
             <VehicleSwitch vehicle={vehicle} onChange={handleVehicleChange} />
             {!isEnergyDiffer ? (
-              <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two} style={styles.searchWrap}>
-                <Search color={Palette.textTertiary} size={18} />
-                <TextInput
-                  autoCapitalize='none'
-                  autoCorrect={false}
-                  onChangeText={value => setListState(current => ({ ...current, searchInput: value }))}
-                  placeholder={panel === 'chargers' ? 'Search unique ID' : 'Search charger ID'}
-                  placeholderTextColor='#98A2B3'
-                  returnKeyType='search'
-                  style={styles.searchInput}
-                  value={searchInput}
-                />
-              </ThemedView>
+              <SearchBar
+                placeholder={panel === 'chargers' ? 'Search unique ID' : 'Search charger ID'}
+                onSearch={value => setListState(current => ({ ...current, searchInput: value }))}
+                centerWhenUnfocused={false}
+                enableWidthAnimation={false}
+              />
             ) : null}
           </ThemedView>
         ),
@@ -298,15 +302,16 @@ export function TechnicalPanelScreen({ onBack, panel }: { onBack: () => void; pa
         ) : (
           <ListState error={listQuery.error} isLoading={listQuery.isLoading} onRetry={() => listQuery.refetch()} title={title} />
         ),
-        ListFooterComponent: !isEnergyDiffer && listQuery.data?.total ? (
-          <ListFooter
-            canLoadMore={page * 30 < listQuery.data.total}
-            isFetching={listQuery.isFetching}
-            page={page}
-            total={listQuery.data.total}
-            onLoadMore={() => setListState(current => ({ ...current, page: current.page + 1 }))}
-          />
-        ) : null,
+        ListFooterComponent:
+          !isEnergyDiffer && listQuery.data?.total ? (
+            <ListFooter
+              canLoadMore={page * 30 < listQuery.data.total}
+              isFetching={listQuery.isFetching}
+              page={page}
+              total={listQuery.data.total}
+              onLoadMore={() => setListState(current => ({ ...current, page: current.page + 1 }))}
+            />
+          ) : null,
         refreshControl: (
           <RefreshControl
             onRefresh={() => (isEnergyDiffer ? refetchEnergyDiffer() : listQuery.refetch())}
@@ -503,46 +508,24 @@ export function NetworkIssuesScreen({
   const error = bikeQuery.error || carQuery.error;
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <FlatList<NetworkIssue>
-        ListHeaderComponent={
-          <ThemedView gap={Spacing.three} paddingTop={Spacing.one} style={styles.issueHeader}>
-            <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
-              <Pressable
-                accessibilityLabel='Back'
-                accessibilityRole='button'
-                onPress={onBack}
-                style={({ pressed }) => [styles.issueNavButton, pressed && styles.pressed]}>
-                <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
-              </Pressable>
-              <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={21} textAlign='center'>
-                Network Issues
-              </ThemedText>
-              <ThemedView width={34} />
-            </ThemedView>
-            <ThemedView gap={Spacing.two}>
-              <ThemedView alignItems='center' flexDirection='row' gap={Spacing.two} style={styles.issueSearchWrap}>
-                <Search color={Palette.textTertiary} size={16} />
-                <TextInput
-                  autoCapitalize='none'
-                  autoCorrect={false}
-                  onChangeText={setIssueSearch}
-                  placeholder='Search charger or station'
-                  placeholderTextColor='#98A2B3'
-                  returnKeyType='search'
-                  style={styles.issueSearchInput}
-                  value={issueSearch}
-                />
-              </ThemedView>
+    <ThemedView flex={1}>
+      <AnimatedHeaderScrollView
+        largeTitle='Network Issues'
+        largeTitleContainerStyle={styles.issueLargeTitleContainer}
+        canGoBack
+        onBack={onBack}
+        searchBar={<SearchBar placeholder='Search charger or station' onSearch={setIssueSearch} centerWhenUnfocused={false} />}
+        isFlatList
+        flatListProps={{
+          ListHeaderComponent: (
+            <ThemedView gap={Spacing.two} paddingBottom={Spacing.three}>
               <IssueFilterSwitch bikeCount={bikeIssues.length} carCount={carIssues.length} filter={filter} onChange={setFilter} />
             </ThemedView>
-          </ThemedView>
-        }
-        contentContainerStyle={[styles.content, styles.issueListContent]}
-        data={issues}
-        keyExtractor={(item, index) => `${item.vehicle}-${item.chargePointID || index}`}
-        ListEmptyComponent={
-          loading ? (
+          ),
+          contentContainerStyle: [styles.content, styles.issueListContent],
+          data: issues,
+          keyExtractor: (item: any, index: number) => `${item.vehicle}-${item.chargePointID || index}`,
+          ListEmptyComponent: loading ? (
             <LoadingBlock label='Loading network issues' />
           ) : error ? (
             <RetryBlock
@@ -555,22 +538,22 @@ export function NetworkIssuesScreen({
             />
           ) : (
             <EmptyState message='Try another charger ID, station name, or filter.' title='No matching offline boxes' />
-          )
-        }
-        refreshControl={
-          <RefreshControl
-            onRefresh={() => {
-              bikeQuery.refetch();
-              carQuery.refetch();
-            }}
-            refreshing={bikeQuery.isRefetching || carQuery.isRefetching}
-            tintColor={Palette.accent}
-          />
-        }
-        renderItem={({ item }) => <NetworkIssueCard item={item} />}
-        showsVerticalScrollIndicator={false}
+          ),
+          refreshControl: (
+            <RefreshControl
+              onRefresh={() => {
+                bikeQuery.refetch();
+                carQuery.refetch();
+              }}
+              refreshing={bikeQuery.isRefetching || carQuery.isRefetching}
+              tintColor={Palette.accent}
+            />
+          ),
+          renderItem: ({ item }: { item: any }) => <NetworkIssueCard item={item} />,
+          showsVerticalScrollIndicator: false,
+        }}
       />
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
@@ -632,7 +615,7 @@ function NetworkIssueCard({ item }: { item: NetworkIssue }) {
   );
 }
 
-function DomainAnalyzeSection({ query }: { query: { data?: { items: DomainAnalyzeRecord[] }; error: Error | null; isLoading: boolean; refetch: () => void } }) {
+function DomainAnalyzeSection({ onViewMore, query }: { onViewMore?: () => void; query: { data?: { items: DomainAnalyzeRecord[] }; error: Error | null; isLoading: boolean; refetch: () => void } }) {
   const items = query.data?.items || [];
   const working = items.filter(item => item.working).length;
   const active = items.filter(item => item.is_charging_active).length;
@@ -645,7 +628,12 @@ function DomainAnalyzeSection({ query }: { query: { data?: { items: DomainAnalyz
 
   return (
     <ThemedView gap={Spacing.three} style={styles.dashboardSection}>
-      <SectionTitle subtitle='Load routing across active CMS domains.' title='Domain Analyze' />
+      <SectionTitle 
+        actionLabel='View more' 
+        onAction={onViewMore} 
+        subtitle='Load routing across active CMS domains.' 
+        title='Domain Analyze' 
+      />
       {query.isLoading ? (
         <LoadingBlock label='Loading domain analyze' />
       ) : query.error ? (
@@ -766,7 +754,9 @@ function VehicleNetworkLane({
   const status = query.data || {};
   const total = Number(status.All || 0);
   const meta = vehicle === 'bike' ? bikeBoxStatusMeta : carBoxStatusMeta;
-  const visibleItems = getBoxStatusItems(status, meta).filter(item => item.value > 0 || (vehicle === 'car' && (item.key === 'Unavailable' || item.key === 'Faulted')));
+  const visibleItems = getBoxStatusItems(status, meta).filter(
+    item => item.value > 0 || (vehicle === 'car' && (item.key === 'Unavailable' || item.key === 'Faulted')),
+  );
   const assetNoun = vehicle === 'bike' ? 'outlets' : 'connectors';
   const assetSegments: BoxStatusSegment[] = [{ label: `${assetNoun[0].toUpperCase()}${assetNoun.slice(1)}`, value: total }];
   visibleItems.forEach(item => {
@@ -995,10 +985,10 @@ function SectionTitle({ actionLabel, onAction, subtitle, title }: { actionLabel?
         </ThemedText>
         {actionLabel && onAction ? (
           <Pressable accessibilityRole='button' onPress={onAction} style={({ pressed }) => [styles.sectionAction, pressed && styles.pressed]}>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
+            <ThemedText color={Palette.accent} fontFamily={FontFamily.medium} fontSize={12} lineHeight={16}>
               {actionLabel}
             </ThemedText>
-            <ChevronRight color={Palette.textSecondary} size={14} strokeWidth={2} />
+            <ChevronsRight color={Palette.accent} size={16} strokeWidth={2} />
           </Pressable>
         ) : null}
       </ThemedView>
@@ -1440,6 +1430,9 @@ const styles = StyleSheet.create({
   issueHeader: {
     backgroundColor: Palette.surfaceBase,
   },
+  issueLargeTitleContainer: {
+    marginHorizontal: -screenHorizontalPadding,
+  },
   issueAge: {
     textAlign: 'right',
     width: 54,
@@ -1520,15 +1513,8 @@ const styles = StyleSheet.create({
   },
   sectionAction: {
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderColor: '#EEF2F6',
-    borderRadius: Radius.pill,
-    borderWidth: 1,
     flexDirection: 'row',
-    gap: 1,
-    minHeight: 28,
-    paddingLeft: Spacing.two,
-    paddingRight: Spacing.one,
+    gap: 2,
   },
   serviceGrid: {
     rowGap: Spacing.four,

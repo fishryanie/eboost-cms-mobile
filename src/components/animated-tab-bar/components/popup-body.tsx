@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 20,
     marginLeft: 'auto',
-    textAlign: 'right',
-    width: 18,
+    textAlign: 'center',
+    width: 24,
   },
   label: {
     flex: 1,

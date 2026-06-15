@@ -14,8 +14,10 @@ export function AppScreen({
   rightComponent,
   isFlatList,
   flatListProps,
+  canGoBack,
+  onBack,
   ...props 
-}: PropsWithChildren<ScrollViewProps & { scroll?: boolean; title?: string; subtitle?: string; rightComponent?: React.ReactNode; isFlatList?: boolean; flatListProps?: import('react-native').FlatListProps<any> }>) {
+}: PropsWithChildren<ScrollViewProps & { scroll?: boolean; title?: string; subtitle?: string; rightComponent?: React.ReactNode; isFlatList?: boolean; flatListProps?: import('react-native').FlatListProps<any>; canGoBack?: boolean; onBack?: () => void; }>) {
   if (!scroll) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -33,6 +35,8 @@ export function AppScreen({
           largeTitle={title}
           subtitle={subtitle}
           rightComponent={rightComponent}
+          canGoBack={canGoBack}
+          onBack={onBack}
           contentContainerStyle={[!isFlatList && styles.content, props.contentContainerStyle]}
           isFlatList={isFlatList}
           flatListProps={flatListProps}

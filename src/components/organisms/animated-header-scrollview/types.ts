@@ -6,7 +6,10 @@ export interface AnimatedHeaderProps {
   largeTitle?: string;
   subtitle?: string;
   children?: React.ReactNode;
+  searchBar?: React.ReactNode;
   rightComponent?: React.ReactNode;
+  canGoBack?: boolean;
+  onBack?: () => void;
   showsVerticalScrollIndicator?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
   headerBackgroundGradient?: {
@@ -27,6 +30,7 @@ export interface AnimatedHeaderProps {
     end: string;
   };
   largeTitleBlurIntensity?: number;
+  largeTitleContainerStyle?: StyleProp<ViewStyle>;
   largeHeaderTitleStyle?: StyleProp<TextStyle>;
   largeHeaderSubtitleStyle?: StyleProp<TextStyle>;
   smallHeaderSubtitleStyle?: StyleProp<TextStyle>;

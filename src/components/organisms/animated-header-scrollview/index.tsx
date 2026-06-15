@@ -1,6 +1,6 @@
 import { ThemedText, ThemedView } from 'components/base';
 import React, { memo } from 'react';
-import { StyleSheet, TextStyle, ViewStyle } from 'react-native';
+import { StyleSheet, TextStyle, ViewStyle, Pressable } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -13,6 +13,8 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, HEADER_HEIGHT, spacing } from './conf';
 import type { AnimatedHeaderProps } from './types';
+import { useRouter } from 'expo-router';
+import { ChevronLeft } from 'lucide-react-native';
 
 const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
 const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
@@ -22,9 +24,13 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
     largeTitle,
     subtitle,
     children,
+    searchBar,
     rightComponent,
+    canGoBack,
+    onBack,
     showsVerticalScrollIndicator = false,
     contentContainerStyle,
+    largeTitleContainerStyle,
     largeHeaderTitleStyle: _largeTitleStyle = { fontSize: 34 },
     largeHeaderSubtitleStyle,
     smallHeaderSubtitleStyle: _smallHeaderSubtitleStylez,
@@ -32,9 +38,13 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
     isFlatList,
     flatListProps,
   }: AnimatedHeaderProps): (React.ReactNode & React.JSX.Element & React.ReactElement) | null => {
+    const router = useRouter();
     const scrollY = useSharedValue<number>(0);
     const insets = useSafeAreaInsets();
     const safeTop = Math.max(insets.top, 40); // ensure there's always space for notch
+    const hasHeaderControls = canGoBack || Boolean(rightComponent);
+    const paddingOffset = hasHeaderControls ? HEADER_HEIGHT : 24;
+    const paddingTop = safeTop + paddingOffset;
 
     const onScroll = useAnimatedScrollHandler<Record<string, unknown>>({
       onScroll: event => {
@@ -52,19 +62,21 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
     });
 
     const largeTitleStyle = useAnimatedStyle<Partial<Pick<TextStyle, 'opacity'>>>(() => {
-      const opacity = interpolate(scrollY.value, [0, 60], [1, 0], Extrapolation.CLAMP);
+      const opacity = interpolate(scrollY.value, [0, paddingOffset], [1, 0], Extrapolation.CLAMP);
       return {
         opacity,
       };
     });
 
     const smallHeaderStyle = useAnimatedStyle<Partial<Pick<TextStyle, 'opacity' | 'transform'>>>(() => {
-      const opacity = withTiming<number>(interpolate(scrollY.value, [40, 80], [0, 1], Extrapolation.CLAMP), {
-        duration: 300,
-      });
-      const translateY = withTiming<number>(interpolate(scrollY.value, [40, 80], [20, 0], Extrapolation.CLAMP), {
-        duration: 300,
-      });
+      const opacity = withTiming<number>(
+        interpolate(scrollY.value, [paddingOffset, paddingOffset + 40], [0, 1], Extrapolation.CLAMP),
+        { duration: 300 }
+      );
+      const translateY = withTiming<number>(
+        interpolate(scrollY.value, [paddingOffset, paddingOffset + 40], [20, 0], Extrapolation.CLAMP),
+        { duration: 300 }
+      );
       return {
         opacity,
         transform: [{ translateY }],
@@ -90,11 +102,19 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
     });
 
     const headerBackgroundStylez = useAnimatedStyle<Partial<Pick<ViewStyle, 'opacity'>>>(() => {
-      const opacity = interpolate(scrollY.value, [0, 80], [0, 1], Extrapolation.CLAMP);
+      const opacity = interpolate(scrollY.value, [0, paddingOffset + 40], [0, 1], Extrapolation.CLAMP);
       return {
         opacity,
       };
     });
+
+    const handleBack = () => {
+      if (onBack) {
+        onBack();
+      } else if (router.canGoBack()) {
+        router.back();
+      }
+    };
 
     return (
       <ThemedView flex={1} backgroundColor='transparent'>
@@ -116,19 +136,36 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
             },
             smallHeaderStyle,
           ]}>
-          <ThemedView flexDirection='row' alignItems='center' justifyContent='space-between' paddingHorizontal={spacing.lg} height={HEADER_HEIGHT}>
-            <ThemedView flex={1} alignItems='center' justifyContent='center'>
-              <AnimatedThemedText style={[styles.smallHeaderTitle, smallHeaderTitleStyle]} numberOfLines={1}>
-                {largeTitle}
-              </AnimatedThemedText>
-            </ThemedView>
+          <ThemedView flexDirection='row' alignItems='center' justifyContent='center' paddingHorizontal={spacing.lg} height={HEADER_HEIGHT}>
+            <AnimatedThemedText type="defaultSemiBold" style={[styles.smallHeaderTitle, smallHeaderTitleStyle]} numberOfLines={1}>
+              {largeTitle}
+            </AnimatedThemedText>
+          </ThemedView>
+        </AnimatedThemedView>
+
+        <ThemedView
+          pointerEvents='box-none'
+          style={[
+            styles.fixedHeader,
+            {
+              paddingTop: safeTop,
+              height: HEADER_HEIGHT + safeTop,
+              zIndex: 12,
+            },
+          ]}>
+          <ThemedView pointerEvents='box-none' flexDirection='row' alignItems='center' justifyContent='space-between' paddingHorizontal={spacing.md} height={HEADER_HEIGHT}>
+            {canGoBack ? (
+              <Pressable onPress={handleBack} hitSlop={8} style={{ zIndex: 1 }}>
+                <ChevronLeft color={Colors.black} size={28} />
+              </Pressable>
+            ) : <ThemedView />}
             {rightComponent && (
-              <ThemedView position='absolute' right={spacing.lg}>
+              <ThemedView zIndex={1}>
                 {rightComponent}
               </ThemedView>
             )}
           </ThemedView>
-        </AnimatedThemedView>
+        </ThemedView>
 
         {isFlatList ? (
           <Animated.FlatList
@@ -138,7 +175,7 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
             {...(flatListProps as any)}
             contentContainerStyle={[
               {
-                paddingTop: safeTop + spacing.md,
+                paddingTop: paddingTop,
                 paddingBottom: insets.bottom + spacing.xl,
               },
               contentContainerStyle,
@@ -146,13 +183,18 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
             ]}
             ListHeaderComponent={
               <>
-                <AnimatedThemedView style={[styles.largeTitleContainer, largeTitleStyle]}>
-                  <ThemedView>
-                    <AnimatedThemedText style={[styles.largeTitle, _largeTitleStyle, animatedLargeTitleStylez]}>{largeTitle}</AnimatedThemedText>
+                <AnimatedThemedView style={[styles.largeTitleContainer, largeTitleStyle, largeTitleContainerStyle]}>
+                  <ThemedView width='100%'>
+                    <AnimatedThemedText type="title" style={[styles.largeTitle, _largeTitleStyle, animatedLargeTitleStylez]}>{largeTitle}</AnimatedThemedText>
                     {subtitle && (
                       <ThemedText fontSize={16} color={Colors.gray[400]} marginTop={spacing.xs} paddingTop={5} style={largeHeaderSubtitleStyle}>
                         {subtitle}
                       </ThemedText>
+                    )}
+                    {searchBar && (
+                      <ThemedView marginTop={spacing.sm} width='100%'>
+                        {searchBar}
+                      </ThemedView>
                     )}
                   </ThemedView>
                 </AnimatedThemedView>
@@ -167,18 +209,23 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
             showsVerticalScrollIndicator={showsVerticalScrollIndicator}
             contentContainerStyle={[
               {
-                paddingTop: safeTop + spacing.md,
+                paddingTop: paddingTop,
                 paddingBottom: insets.bottom + spacing.xl,
               },
               contentContainerStyle,
             ]}>
-            <AnimatedThemedView style={[styles.largeTitleContainer, largeTitleStyle]}>
-              <ThemedView>
-                <AnimatedThemedText style={[styles.largeTitle, _largeTitleStyle, animatedLargeTitleStylez]}>{largeTitle}</AnimatedThemedText>
+            <AnimatedThemedView style={[styles.largeTitleContainer, largeTitleStyle, largeTitleContainerStyle]}>
+              <ThemedView width='100%'>
+                <AnimatedThemedText type="title" style={[styles.largeTitle, _largeTitleStyle, animatedLargeTitleStylez]}>{largeTitle}</AnimatedThemedText>
                 {subtitle && (
                   <ThemedText fontSize={16} color={Colors.gray[400]} marginTop={spacing.xs} paddingTop={5} style={largeHeaderSubtitleStyle}>
                     {subtitle}
                   </ThemedText>
+                )}
+                {searchBar && (
+                  <ThemedView marginTop={spacing.sm} width='100%'>
+                    {searchBar}
+                  </ThemedView>
                 )}
               </ThemedView>
             </AnimatedThemedView>

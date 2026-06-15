@@ -54,7 +54,7 @@ export const SearchBar = ({
 
   const animatedContainerStyle = useAnimatedStyle(() => {
     if (!enableWidthAnimation) {
-      return { width: currentWidth.value };
+      return { flex: 1 };
     }
 
     const searchBarWidth = interpolate(focusProgress.value, [0, 1], [currentWidth.value, focusedWidth || currentWidth.value - cancelButtonWidth]);
@@ -79,6 +79,10 @@ export const SearchBar = ({
 
   const animatedSearchContentStyle = useAnimatedStyle(() => {
     const justifyContent = focusProgress.value === 0 && centerWhenUnfocused ? 'center' : 'flex-start';
+    if (!centerWhenUnfocused) {
+      return { justifyContent };
+    }
+
     const paddingLeft = interpolate(focusProgress.value, [0, 1], [0, 12]);
     return { justifyContent, paddingLeft };
   });
@@ -191,75 +195,63 @@ export const SearchBar = ({
   }));
 
   return (
-    <ThemedView width="100%" paddingHorizontal={0} paddingVertical={8} style={style} onLayout={handleLayout}>
-      <ThemedView flexDirection="row" alignItems="center">
+    <ThemedView width="100%" paddingHorizontal={0} style={style} onLayout={handleLayout}>
+      <ThemedView flexDirection="row" alignItems="center" width="100%">
         <AnimatedView style={[animatedContainerStyle, Platform.OS === 'android' && animatedAndroidBlurStylez]}>
-          <BlurView intensity={15} tint='systemChromeMaterialDark' style={styles.blurContainer}>
-            <ThemedView backgroundColor="rgba(118, 118, 128, 0.12)" borderRadius={12} minHeight={35} justifyContent="center">
-              <AnimatedView style={[styles.searchContent, animatedSearchContentStyle]}>
-                <AnimatedView style={[styles.searchIconContainer, animatedIconStyle, props?.iconStyle]}>
-                  {renderLeadingIcons ? (
-                    renderLeadingIcons()
-                  ) : (
-                    <SymbolView name='magnifyingglass' size={18} tintColor='#8E8E93' fallback={<Search size={18} color='#8E8E93' />} />
-                  )}
-                </AnimatedView>
-
-                <AnimatedView style={[{ flex: 1 }, animatedInputWrapperStyle]}>
-                  <AnimatedTextInput
-                    ref={inputRef}
-                    style={[styles.input, animatedInputStyle, props?.inputStyle]}
-                    cursorColor={props?.tint ?? '#007AFF'}
-                    placeholder={placeholder}
-                    placeholderTextColor='#8E8E93'
-                    value={query}
-                    onChangeText={handleChangeText}
-                    onFocus={handleFocus}
-                    onBlur={handleBlur}
-                    returnKeyType='search'
-                    autoCorrect={false}
-                    autoCapitalize='none'
-                    selectionColor={props?.tint ?? '#007AFF'}
-                    {...props}
-                  />
-                </AnimatedView>
-
-                {Platform.OS === 'ios' && (
-                  <AnimatedBlurView
-                    style={[
-                      StyleSheet.absoluteFill,
-                      {
-                        overflow: 'hidden',
-                      },
-                    ]}
-                    animatedProps={animatedBlurViewProps}
-                    pointerEvents={'none'}
-                  />
-                )}
-                {query.length > 0 && (
-                  <AnimatedTouchable
-                    onPress={handleClear}
-                    style={[styles.clearButton, animatedClearButtonStyle]}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    {renderTrailingIcons ? renderTrailingIcons() : <SymbolView name='xmark.circle.fill' size={18} tintColor='#8E8E93' />}
-                  </AnimatedTouchable>
+          <ThemedView backgroundColor="rgba(118, 118, 128, 0.12)" borderRadius={999} minHeight={42} justifyContent="center" style={styles.blurContainer}>
+            <AnimatedView style={[styles.searchContent, animatedSearchContentStyle]}>
+              <AnimatedView style={[styles.searchIconContainer, animatedIconStyle, props?.iconStyle]}>
+                {renderLeadingIcons ? (
+                  renderLeadingIcons()
+                ) : (
+                  <Search size={18} color='#98A2B3' />
                 )}
               </AnimatedView>
-            </ThemedView>
-          </BlurView>
+
+              <AnimatedView style={[{ flex: 1 }, animatedInputWrapperStyle]}>
+                <AnimatedTextInput
+                  ref={inputRef}
+                  style={[styles.input, animatedInputStyle, props?.inputStyle]}
+                  cursorColor={props?.tint ?? '#007AFF'}
+                  placeholder={placeholder}
+                  placeholderTextColor='#98A2B3'
+                  value={query}
+                  onChangeText={handleChangeText}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  returnKeyType='search'
+                  autoCorrect={false}
+                  autoCapitalize='none'
+                  selectionColor={props?.tint ?? '#007AFF'}
+                  {...props}
+                />
+              </AnimatedView>
+
+              {query.length > 0 && (
+                <AnimatedTouchable
+                  onPress={handleClear}
+                  style={[styles.clearButton, animatedClearButtonStyle]}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  {renderTrailingIcons ? renderTrailingIcons() : <SymbolView name='xmark.circle.fill' size={18} tintColor='#98A2B3' fallback={<Search size={18} color='#98A2B3' />} />}
+                </AnimatedTouchable>
+              )}
+            </AnimatedView>
+          </ThemedView>
         </AnimatedView>
 
-        <AnimatedView style={[styles.cancelButtonContainer, animatedCancelStyle]}>
-          <TouchableOpacity onPress={handleCancel} style={styles.cancelButton} activeOpacity={0.6} hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}>
-            <ThemedText
-              fontSize={17}
-              fontFamily="System"
-              fontWeight="400"
-              color={props?.tint ?? '#007AFF'}>
-              Cancel
-            </ThemedText>
-          </TouchableOpacity>
-        </AnimatedView>
+        {enableWidthAnimation && (
+          <AnimatedView style={[styles.cancelButtonContainer, animatedCancelStyle]}>
+            <TouchableOpacity onPress={handleCancel} style={styles.cancelButton} activeOpacity={0.6} hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}>
+              <ThemedText
+                fontSize={17}
+                fontFamily="System"
+                fontWeight="400"
+                color={props?.tint ?? '#007AFF'}>
+                Cancel
+              </ThemedText>
+            </TouchableOpacity>
+          </AnimatedView>
+        )}
       </ThemedView>
     </ThemedView>
   );
@@ -273,7 +265,8 @@ const styles = StyleSheet.create({
   searchContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingLeft: 24,
+    paddingRight: 18,
     paddingVertical: Platform.OS === 'ios' ? 10 : 5,
   },
   searchIconContainer: {
@@ -281,19 +274,18 @@ const styles = StyleSheet.create({
     height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginLeft: 8,
+    marginRight: 12,
   },
   input: {
     width: '100%',
-    color: '#FFFFFF',
-    fontSize: 17,
+    color: '#1F2933',
+    fontSize: 14,
     fontFamily: 'System',
-    fontWeight: '400',
-
+    fontWeight: '500',
     includeFontPadding: false,
     textAlignVertical: 'center',
     minHeight: 24,
-
     textAlign: 'left',
   },
   clearButton: {

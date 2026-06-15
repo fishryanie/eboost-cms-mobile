@@ -1,6 +1,8 @@
 import { Redirect } from 'expo-router';
 
 import AppTabs from 'components/app-tabs';
+import { BiometricOptInPrompt } from 'features/auth/components/biometric-opt-in-prompt';
+import { View } from 'react-native';
 import { useSessionToken } from 'shared/session/use-session-token';
 import { AppScreen } from 'shared/ui';
 
@@ -15,5 +17,10 @@ export default function TabsLayout() {
     return <Redirect href='/login' />;
   }
 
-  return <AppTabs />;
+  return (
+    <View style={{ flex: 1 }}>
+      <AppTabs />
+      <BiometricOptInPrompt />
+    </View>
+  );
 }

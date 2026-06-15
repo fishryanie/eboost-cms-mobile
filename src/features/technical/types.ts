@@ -12,6 +12,9 @@ export type ApiListResponse<T> =
       meta?: {
         total_count?: number;
       };
+      pagination?: {
+        total_items?: number;
+      };
       total?: number;
     };
 
@@ -126,4 +129,47 @@ export type TechnicalQueryParams = {
   page: number;
   search: string;
   vehicle: TechnicalVehicle;
+};
+
+export type OngoingSessionRecord = {
+  boxId?: string;
+  carBoxId?: number;
+  carConnectorId?: number;
+  charging_session?: {
+    activation_fee?: number;
+    charge_type?: string;
+    charge_value?: number | null;
+    charging_fee?: number;
+    discount_amount?: number | null;
+    end_time?: number;
+    invoice_id?: string;
+    latest_detail?: {
+      A?: number;
+      SOC?: number;
+      V?: number;
+      W?: number;
+    };
+    parking_fee?: number;
+    promotion_code?: string | null;
+    promotion_discount?: number;
+    start_time?: number;
+    thrid_party?: any;
+    total_consumed_fee?: number;
+    transaction_id?: string | null;
+    user?: {
+      email?: string;
+      id?: number;
+      name?: string;
+      phone?: string;
+    };
+    wattage_consumed?: number;
+  };
+  connectorId?: number;
+  onlineStatus?: string;
+  phase?: number;
+  power?: number;
+  qrCode?: string;
+  stationName?: string;
+  status?: string;
+  vendorId?: string;
 };
