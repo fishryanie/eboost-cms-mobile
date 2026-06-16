@@ -2,10 +2,12 @@ import { Platform } from 'react-native';
 import { fs } from 'themes/scaling';
 
 export const FontFamily = {
+  thin: 'Inter_100Thin',
   regular: 'Inter_400Regular',
   medium: 'Inter_500Medium',
   semibold: 'Inter_600SemiBold',
   bold: 'Inter_700Bold',
+  black: 'Inter_900Black',
 } as const;
 
 export const Fonts = Platform.select({

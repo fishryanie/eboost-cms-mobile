@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { RefreshControl, ActivityIndicator, Pressable } from 'react-native';
-import { Cable, Copy, Zap, MapPin, User } from 'lucide-react-native';
+import { Cable, Copy, Zap, MapPin, User, Clock, Battery } from 'lucide-react-native';
 import { useState } from 'react';
 
 import { ThemedText, ThemedView } from 'components/base';
@@ -58,123 +58,85 @@ export default function OngoingSessionsRoute() {
         borderColor={Palette.borderSubtle}
         borderRadius={Radius.large}
         borderWidth={1}
-        gap={Spacing.three}
+        elevation={2}
+        gap={Spacing.two}
         marginBottom={Spacing.three}
         padding={Spacing.three}
+        shadowColor="#000"
+        shadowOffset={{ width: 0, height: 2 }}
+        shadowOpacity={0.06}
+        shadowRadius={8}
       >
         {/* Header */}
         <ThemedView alignItems="center" flexDirection="row" justifyContent="space-between">
-          <ThemedView alignItems="center" flexDirection="row" gap={Spacing.two}>
-            <Cable color="#0284c7" size={18} />
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={18}>
+          <ThemedView alignItems="center" flexDirection="row" gap={Spacing.one}>
+            <Cable color="#0284c7" size={16} />
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={16}>
               {item.boxId || item.vendorId}
             </ThemedText>
           </ThemedView>
-          <ThemedView alignItems="center" flexDirection="row" gap={Spacing.two}>
-            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={12} lineHeight={16}>
+          <ThemedView alignItems="center" flexDirection="row" gap={Spacing.one}>
+            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={14}>
               Conn {item.connectorId}
             </ThemedText>
             <ThemedView backgroundColor={Palette.borderSubtle} height={10} width={1} />
-            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={12} lineHeight={16}>
+            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={14}>
               {item.power}kW ‧ {item.phase}P
             </ThemedText>
           </ThemedView>
         </ThemedView>
 
         {/* Location Row */}
-        <ThemedView alignItems="center" flexDirection="row" gap={Spacing.two}>
-          <MapPin color={Palette.textSecondary} size={14} />
-          <ThemedText color={Palette.textSecondary} flex={1} fontFamily={FontFamily.regular} fontSize={12} lineHeight={16} numberOfLines={1}>
+        <ThemedView alignItems="center" flexDirection="row" gap={Spacing.one}>
+          <MapPin color={Palette.textSecondary} size={12} />
+          <ThemedText color={Palette.textSecondary} flex={1} fontFamily={FontFamily.regular} fontSize={11} lineHeight={14} numberOfLines={1}>
             {item.stationName?.toUpperCase()}
           </ThemedText>
         </ThemedView>
 
-        {/* Stats Row 1 */}
-        <ThemedView flexDirection="row" gap={Spacing.two}>
-          {/* Energy */}
-          <ThemedView
-            alignItems="center"
-            backgroundColor="#F0F9FF"
-            borderColor="#B9E6FE"
-            borderRadius={Radius.small}
-            borderWidth={1}
-            flex={1.2}
-            flexDirection="row"
-            gap={4}
-            justifyContent="center"
-            paddingHorizontal={Spacing.two}
-            paddingVertical={Spacing.one}
-          >
-            <Zap color="#0284c7" size={12} />
-            <ThemedText color="#0284c7" fontFamily={FontFamily.bold} fontSize={12} lineHeight={16}>
-              {session?.wattage_consumed?.toFixed(2) || '0.00'} <ThemedText color="#0284c7" fontFamily={FontFamily.semibold} fontSize={10} lineHeight={16}>kWh</ThemedText>
-            </ThemedText>
-          </ThemedView>
-          {/* Current A */}
-          <ThemedView
-            alignItems="center"
-            backgroundColor={Palette.surfaceMuted}
-            borderRadius={Radius.small}
-            flex={1}
-            flexDirection="row"
-            justifyContent="space-between"
-            paddingHorizontal={Spacing.two}
-            paddingVertical={Spacing.one}
-          >
-            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>A</ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
-              {session?.latest_detail?.A?.toFixed(0) || 0}
-            </ThemedText>
-          </ThemedView>
-          {/* Voltage V */}
-          <ThemedView
-            alignItems="center"
-            backgroundColor={Palette.surfaceMuted}
-            borderRadius={Radius.small}
-            flex={1}
-            flexDirection="row"
-            justifyContent="space-between"
-            paddingHorizontal={Spacing.two}
-            paddingVertical={Spacing.one}
-          >
-            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>V</ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
-              {session?.latest_detail?.V?.toFixed(0) || 0}
-            </ThemedText>
-          </ThemedView>
-        </ThemedView>
-
-        {/* Stats Row 2 */}
-        <ThemedView flexDirection="row" gap={Spacing.two}>
-          {/* Time */}
-          <ThemedView
-            alignItems="center"
-            backgroundColor={Palette.surfaceMuted}
-            borderRadius={Radius.small}
-            flex={1.2}
-            flexDirection="row"
-            justifyContent="space-between"
-            paddingHorizontal={Spacing.two}
-            paddingVertical={Spacing.one}
-          >
-            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>Time</ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
+        {/* Unified Stats Bar */}
+        <ThemedView 
+          alignItems="center" 
+          backgroundColor={Palette.surfaceMuted} 
+          borderRadius={Radius.small} 
+          flexDirection="row" 
+          justifyContent="space-between"
+          paddingHorizontal={Spacing.two} 
+          paddingVertical={4}
+        >
+          <ThemedView alignItems="center" flexDirection="row" gap={4}>
+            <Clock color="#15803D" size={12} />
+            <ThemedText color="#15803D" fontFamily={FontFamily.semibold} fontSize={11} lineHeight={14}>
               {formatDuration(session?.start_time, session?.end_time)}
             </ThemedText>
           </ThemedView>
-          {/* SOC */}
-          <ThemedView
-            alignItems="center"
-            backgroundColor={Palette.surfaceMuted}
-            borderRadius={Radius.small}
-            flex={1}
-            flexDirection="row"
-            justifyContent="space-between"
-            paddingHorizontal={Spacing.two}
-            paddingVertical={Spacing.one}
-          >
-            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>SOC</ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+
+          <ThemedView backgroundColor={Palette.borderSubtle} height={12} width={1} />
+
+          <ThemedView alignItems="center" flexDirection="row" gap={4}>
+            <Zap color="#0284c7" size={12} />
+            <ThemedText color="#0284c7" fontFamily={FontFamily.bold} fontSize={11} lineHeight={14}>
+              {session?.wattage_consumed?.toFixed(2) || '0.00'} <ThemedText color="#0284c7" fontFamily={FontFamily.medium} fontSize={9} lineHeight={14}>kWh</ThemedText>
+            </ThemedText>
+          </ThemedView>
+          
+          <ThemedView backgroundColor={Palette.borderSubtle} height={12} width={1} />
+          
+          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={14}>
+            {session?.latest_detail?.A?.toFixed(0) || 0}A
+          </ThemedText>
+          
+          <ThemedView backgroundColor={Palette.borderSubtle} height={12} width={1} />
+          
+          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={14}>
+            {session?.latest_detail?.V?.toFixed(0) || 0}V
+          </ThemedText>
+
+          <ThemedView backgroundColor={Palette.borderSubtle} height={12} width={1} />
+
+          <ThemedView alignItems="center" flexDirection="row" gap={4}>
+            <Battery color={Palette.textSecondary} size={12} />
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={11} lineHeight={14}>
               {session?.latest_detail?.SOC || 0}%
             </ThemedText>
           </ThemedView>
@@ -185,21 +147,21 @@ export default function OngoingSessionsRoute() {
         {/* Status Badges */}
         <ThemedView alignItems="center" flexDirection="row" flexWrap="wrap" gap={Spacing.two}>
           {/* Invoice */}
-          <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={Radius.small} paddingHorizontal={Spacing.two} paddingVertical={2}>
-            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={14}>
+          <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={Radius.small} paddingHorizontal={Spacing.one} paddingVertical={2}>
+            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={9} lineHeight={12}>
               {session?.invoice_id || 'N/A'}
             </ThemedText>
           </ThemedView>
           {/* Charge Type */}
-          <ThemedView backgroundColor="#FDF2F8" borderColor="#FBCFE8" borderRadius={Radius.small} borderWidth={1} paddingHorizontal={Spacing.two} paddingVertical={2}>
-            <ThemedText color="#EC4899" fontFamily={FontFamily.medium} fontSize={10} lineHeight={14}>
+          <ThemedView backgroundColor="#FDF2F8" borderColor="#FBCFE8" borderRadius={Radius.small} borderWidth={1} paddingHorizontal={Spacing.one} paddingVertical={2}>
+            <ThemedText color="#EC4899" fontFamily={FontFamily.medium} fontSize={9} lineHeight={12}>
               {session?.charge_type === 'quick.charge' ? 'Quick Charge' : session?.charge_type}
             </ThemedText>
           </ThemedView>
           {/* Status */}
-          <ThemedView alignItems="center" backgroundColor="#EFF6FF" borderColor="#BFDBFE" borderRadius={Radius.small} borderWidth={1} flexDirection="row" gap={4} paddingHorizontal={Spacing.two} paddingVertical={2}>
-            <Zap color="#3B82F6" size={10} />
-            <ThemedText color="#3B82F6" fontFamily={FontFamily.medium} fontSize={10} lineHeight={14}>
+          <ThemedView alignItems="center" backgroundColor="#EFF6FF" borderColor="#BFDBFE" borderRadius={Radius.small} borderWidth={1} flexDirection="row" gap={2} paddingHorizontal={Spacing.one} paddingVertical={2}>
+            <Zap color="#3B82F6" size={8} />
+            <ThemedText color="#3B82F6" fontFamily={FontFamily.medium} fontSize={9} lineHeight={12}>
               CHARGING
             </ThemedText>
           </ThemedView>
@@ -207,15 +169,15 @@ export default function OngoingSessionsRoute() {
 
         {/* Time Info */}
         <ThemedView gap={2}>
-          <ThemedView flexDirection="row" gap={Spacing.three}>
-            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={15} width={48}>Started</ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
+          <ThemedView flexDirection="row" gap={Spacing.two}>
+            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={10} lineHeight={14} width={50}>Started</ThemedText>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={14}>
               {formatUnixTime(session?.start_time)}
             </ThemedText>
           </ThemedView>
-          <ThemedView flexDirection="row" gap={Spacing.three}>
-            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={15} width={48}>Updated</ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
+          <ThemedView flexDirection="row" gap={Spacing.two}>
+            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={10} lineHeight={14} width={50}>Updated</ThemedText>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={14}>
               {formatUnixTime(session?.end_time)}
             </ThemedText>
           </ThemedView>
@@ -223,70 +185,107 @@ export default function OngoingSessionsRoute() {
 
         <ThemedView backgroundColor={Palette.borderSubtle} height={1} />
 
-        {/* User Info */}
-        <ThemedView alignItems="center" flexDirection="row" gap={Spacing.three}>
-          <ThemedView height={36} position="relative" width={32}>
-            <ThemedView alignItems="center" backgroundColor={Palette.surfaceMuted} borderRadius={16} height={32} justifyContent="center" width={32}>
-              <User color={Palette.textSecondary} size={18} />
-            </ThemedView>
-            <ThemedView alignItems="center" bottom={0} left={-4} position="absolute" right={-4}>
-              <ThemedView backgroundColor={Palette.surfaceBase} borderColor={Palette.borderSubtle} borderRadius={Radius.small} borderWidth={1} paddingHorizontal={4}>
-                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={9} lineHeight={12}>
-                  #{session?.user?.id || 'N/A'}
+        {/* User & Billing Card */}
+        <ThemedView>
+          {/* Header: User Info & Contact */}
+          <ThemedView flexDirection="row" justifyContent="space-between" borderBottomWidth={1} borderBottomColor={Palette.borderSubtle} paddingBottom={Spacing.two} marginBottom={Spacing.two}>
+            {/* Left: Avatar + Name + ID */}
+            <ThemedView flexDirection="row" gap={Spacing.two} flex={1}>
+              <ThemedView alignItems="center" backgroundColor={Palette.surfaceMuted} borderRadius={16} height={32} justifyContent="center" width={32}>
+                <User color={Palette.textSecondary} size={16} />
+              </ThemedView>
+              <ThemedView justifyContent="center" flex={1}>
+                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={13} numberOfLines={1}>
+                  {session?.user?.name || 'Unknown User'}
+                </ThemedText>
+                <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={10}>
+                  ID: #{session?.user?.id || 'N/A'}
                 </ThemedText>
               </ThemedView>
             </ThemedView>
-          </ThemedView>
-          
-          <ThemedView flex={1} gap={2} justifyContent="center" minWidth={0}>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
-              {session?.user?.name || 'Unknown User'}
-            </ThemedText>
-            <ThemedView alignItems="center" flexDirection="row" gap={Spacing.one}>
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={15}>
-                {session?.user?.phone || 'N/A'}
-              </ThemedText>
-              {session?.user?.phone && (
-                <Pressable hitSlop={8} onPress={() => handleCopy(session?.user?.phone)}>
-                  <Copy color={Palette.accent} size={10} />
-                </Pressable>
-              )}
-            </ThemedView>
-            <ThemedView alignItems="center" flexDirection="row" gap={Spacing.one}>
-              <ThemedText color={Palette.textSecondary} flexShrink={1} fontFamily={FontFamily.regular} fontSize={11} lineHeight={15} numberOfLines={1}>
-                {session?.user?.email || 'N/A'}
-              </ThemedText>
-              {session?.user?.email && (
-                <Pressable hitSlop={8} onPress={() => handleCopy(session?.user?.email)}>
-                  <Copy color={Palette.accent} size={10} />
-                </Pressable>
-              )}
+            
+            {/* Right: Phone + Email */}
+            <ThemedView alignItems="flex-end" justifyContent="center" gap={Spacing.one}>
+              <ThemedView alignItems="center" flexDirection="row" gap={Spacing.one}>
+                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11}>
+                  {session?.user?.phone || 'N/A'}
+                </ThemedText>
+                {session?.user?.phone && (
+                  <Pressable hitSlop={8} onPress={() => handleCopy(session?.user?.phone)}>
+                    <Copy color={Palette.accent} size={10} />
+                  </Pressable>
+                )}
+              </ThemedView>
+              <ThemedView alignItems="center" flexDirection="row" gap={Spacing.one}>
+                <ThemedText color={Palette.textSecondary} flexShrink={1} fontFamily={FontFamily.regular} fontSize={11} numberOfLines={1} maxWidth={120}>
+                  {session?.user?.email || 'N/A'}
+                </ThemedText>
+                {session?.user?.email && (
+                  <Pressable hitSlop={8} onPress={() => handleCopy(session?.user?.email)}>
+                    <Copy color={Palette.accent} size={10} />
+                  </Pressable>
+                )}
+              </ThemedView>
             </ThemedView>
           </ThemedView>
-        </ThemedView>
 
-        {/* Fee Summary */}
-        <ThemedView backgroundColor="#F8FAFC" borderRadius={Radius.medium} gap={2} padding={Spacing.three}>
-          <ThemedText color={Palette.accent} fontFamily={FontFamily.regular} fontSize={11} lineHeight={15} marginBottom={2}>
-            {session?.promotion_discount ? `Promotion applied: -${session?.promotion_discount} đ` : 'No promotion code applied.'}
-          </ThemedText>
-          <ThemedView alignItems="center" flexDirection="row" justifyContent="space-between">
-            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={15}>Activation</ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
-              {session?.activation_fee || 0} đ
-            </ThemedText>
-          </ThemedView>
-          <ThemedView alignItems="center" flexDirection="row" justifyContent="space-between">
-            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={15}>Charging</ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
-              {(session?.charging_fee || 0).toLocaleString()} đ
-            </ThemedText>
-          </ThemedView>
-          <ThemedView alignItems="center" flexDirection="row" justifyContent="space-between" marginTop={2}>
-            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>Paid</ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={13} lineHeight={18}>
-              {(session?.total_consumed_fee || 0).toLocaleString()} đ
-            </ThemedText>
+          {/* Details Grid */}
+          <ThemedView flexDirection="row" gap={Spacing.three}>
+            {(() => {
+              const rate = session?.promotion_discount || 0;
+              const activation = Math.round(session?.activation_fee || 0);
+              const consumed = Math.round(session?.total_consumed_fee || 0);
+              const baseAmount = consumed || activation;
+              const discountAmount = Math.round(baseAmount * (rate / 100));
+              const totalFee = Math.round(baseAmount - discountAmount);
+
+              const rawPromo = session?.promotion_code as any;
+              const promoStr = rawPromo && typeof rawPromo === 'object' ? rawPromo.code || rawPromo.name : rawPromo;
+              const percent = session?.promotion_discount || 0;
+
+              return (
+                <>
+                  {/* Left: Paid Total */}
+                  <ThemedView flex={1} gap={Spacing.one} justifyContent="center">
+                    {rate > 0 && (promoStr || percent > 0) && (
+                      <ThemedText color="#15803D" fontFamily={FontFamily.regular} fontSize={10} numberOfLines={1}>
+                        {promoStr && (
+                          <ThemedText color="#15803D" fontFamily={FontFamily.black} fontSize={10}>
+                            {promoStr}{' '}
+                          </ThemedText>
+                        )}
+                        ({percent}%)
+                      </ThemedText>
+                    )}
+                    <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11}>Paid Total</ThemedText>
+                    <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={18}>
+                      {totalFee.toLocaleString()} đ
+                    </ThemedText>
+                  </ThemedView>
+
+                  {/* Divider */}
+                  <ThemedView backgroundColor={Palette.borderSubtle} width={1} />
+
+                  {/* Right: Breakdown */}
+                  <ThemedView flex={1} gap={Spacing.one} justifyContent="center">
+                    <ThemedView flexDirection="row" justifyContent="space-between">
+                      <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={11}>Activation</ThemedText>
+                      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11}>{activation.toLocaleString()} đ</ThemedText>
+                    </ThemedView>
+                    <ThemedView flexDirection="row" justifyContent="space-between">
+                      <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={11}>Charging</ThemedText>
+                      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11}>{consumed.toLocaleString()} đ</ThemedText>
+                    </ThemedView>
+                    {rate > 0 && (
+                      <ThemedView flexDirection="row" justifyContent="space-between">
+                        <ThemedText color="#15803D" fontFamily={FontFamily.regular} fontSize={11}>Discount</ThemedText>
+                        <ThemedText color="#15803D" fontFamily={FontFamily.medium} fontSize={11}>-{discountAmount.toLocaleString()} đ</ThemedText>
+                      </ThemedView>
+                    )}
+                  </ThemedView>
+                </>
+              );
+            })()}
           </ThemedView>
         </ThemedView>
       </ThemedView>
