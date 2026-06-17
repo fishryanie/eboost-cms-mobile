@@ -1,13 +1,13 @@
 import * as React from "react";
 import type { BlurTint } from "expo-blur";
 import type { ReactNode } from "react";
-import type { ViewStyle, PressableProps } from "react-native";
+import type { ViewStyle, PressableProps, DimensionValue } from "react-native";
 
 interface FlipCardContextValue {
   isFlipped: boolean;
   flip: () => void;
-  width: number;
-  height: number;
+  width: number | DimensionValue;
+  height: number | DimensionValue;
   borderRadius: number;
   blurIntensity: number;
   animationDuration: number;
@@ -18,8 +18,8 @@ interface FlipCardContextValue {
 }
 
 interface FlipCardProps extends React.PropsWithChildren {
-  readonly width?: number;
-  readonly height?: number;
+  readonly width?: number | DimensionValue;
+  readonly height?: number | DimensionValue;
   readonly borderRadius?: number;
   readonly blurIntensity?: number;
   readonly containerStyle?: ViewStyle;

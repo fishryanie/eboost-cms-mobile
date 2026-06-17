@@ -37,6 +37,7 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
     smallHeaderTitleStyle,
     isFlatList,
     flatListProps,
+    refreshControl,
   }: AnimatedHeaderProps): (React.ReactNode & React.JSX.Element & React.ReactElement) | null => {
     const router = useRouter();
     const scrollY = useSharedValue<number>(0);
@@ -204,6 +205,7 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
           />
         ) : (
           <Animated.ScrollView
+            refreshControl={refreshControl}
             onScroll={onScroll}
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={showsVerticalScrollIndicator}

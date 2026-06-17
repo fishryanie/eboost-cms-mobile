@@ -37,4 +37,5 @@ export interface AnimatedHeaderProps {
   smallHeaderTitleStyle?: StyleProp<TextStyle>;
   isFlatList?: boolean;
   flatListProps?: import('react-native').FlatListProps<any>;
+  refreshControl?: React.ReactElement;
 }

@@ -88,7 +88,7 @@ export const FlipCard: React.FC<FlipCardProps> & {
         scaleEnabled: scaleOnPress,
       }}
     >
-      <View style={[styles.container, containerStyle, { width, height }]}>
+      <View style={[styles.container, containerStyle, width !== undefined && { width }, height !== undefined && { height }]}>
         {children}
       </View>
     </FlipCardContext.Provider>
@@ -104,6 +104,7 @@ const Front: React.FC<FlipCardFrontProps> &
     | (React.ReactNode & React.JSX.Element & React.ReactElement)
     | null => {
     const {
+      isFlipped,
       rotation,
       scale,
       width,
@@ -171,9 +172,10 @@ const Front: React.FC<FlipCardFrontProps> &
 
     return (
       <Animated.View
+        pointerEvents={isFlipped ? "none" : "auto"}
         style={[
-          styles.card,
-          { width, height, borderRadius },
+          styles.front,
+          { borderRadius },
           frontAnimatedStylez,
           style,
         ]}
@@ -182,6 +184,7 @@ const Front: React.FC<FlipCardFrontProps> &
 
         {Platform.OS === "ios" && (
           <AnimatedBlurView
+            pointerEvents="none"
             tint={tint as any}
             animatedProps={frontBlurPropz}
             style={[
@@ -204,6 +207,7 @@ const Back: React.FC<FlipCardBackProps> &
     | (React.ReactNode & React.JSX.Element & React.ReactElement)
     | null => {
     const {
+      isFlipped,
       rotation,
       scale,
       width,
@@ -269,9 +273,10 @@ const Back: React.FC<FlipCardBackProps> &
 
     return (
       <Animated.View
+        pointerEvents={isFlipped ? "auto" : "none"}
         style={[
-          styles.card,
-          { width, height, borderRadius },
+          styles.back,
+          { borderRadius },
           backAnimatedStylez,
           style,
         ]}
@@ -279,6 +284,7 @@ const Back: React.FC<FlipCardBackProps> &
         {children}
         {Platform.OS === "ios" && (
           <AnimatedBlurView
+            pointerEvents="none"
             tint={tint as any}
             animatedProps={backBlurPropz}
             style={[
@@ -327,7 +333,6 @@ const Trigger: React.FC<FlipCardTriggerProps> &
         onPress={flip}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
-        style={StyleSheet.absoluteFill}
         {...props}
       >
         {children}
@@ -342,30 +347,17 @@ FlipCard.Trigger = Trigger;
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
-    justifyContent: "center",
   },
-  card:
-    Platform.OS === "android"
-      ? {
-          position: "absolute",
-          backgroundColor: "#1a1a1a",
-
-          overflow: "hidden",
-          backfaceVisibility: "hidden",
-        }
-      : {
-          position: "absolute",
-          backgroundColor: "#1a1a1a",
-          shadowColor: "#000",
-          shadowOffset: {
-            width: 0,
-            height: 12,
-          },
-          shadowOpacity: 0.3,
-          shadowRadius: 16,
-          elevation: 12,
-          overflow: "hidden",
-          backfaceVisibility: "hidden",
-        },
+  front: {
+    backfaceVisibility: "hidden",
+    width: "100%",
+  },
+  back: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backfaceVisibility: "hidden",
+  },
 });

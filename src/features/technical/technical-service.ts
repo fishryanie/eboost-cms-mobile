@@ -147,13 +147,17 @@ function formatDateParam(date: Date) {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-export function fetchOngoingSessions({ page, search, status }: { page: number; search: string; status?: string }) {
+export function fetchOngoingSessions({ page, search, status, vehicle = 'car' }: { page: number; search: string; status?: string; vehicle?: 'car' | 'bike' }) {
   return fetchTechnicalList<OngoingSessionRecord>({
-    endpoint: { path: 'api/controller/statistic/car-realtime-status' },
+    endpoint: { path: vehicle === 'car' ? 'api/controller/statistic/car-realtime-status' : 'api/controller/statistic/bike-realtime-status' },
     page,
     params: {
       ...(search ? { search } : {}),
       ...(status ? { status } : {}),
     },
   });
+}
+
+export async function fetchTransactionDetail(id: string) {
+  return apiRequest<any>(`api/transactions/${id}`, { service: 'hub' });
 }
