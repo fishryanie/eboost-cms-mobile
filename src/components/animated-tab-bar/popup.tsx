@@ -3,7 +3,7 @@ import { Pressable } from 'react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
 import { TabIcon, type TabIconName } from 'components/tab-icon';
-import { cmsMobileSections, type CmsSectionKey } from 'constants/mobile-cms-menu';
+import { tabs } from './constants';
 
 type PopupProps = {
   colors: { foreground: string; hover: string; muted: string };
@@ -19,33 +19,18 @@ type Action = {
   section: 'marketing' | 'operation' | 'technical';
 };
 
-const technicalPanels = [
-  ['chargers', 'Chargers'],
-  ['meter-hourly', 'Meter Hourly'],
-  ['status-logs', 'Status Logs'],
-  ['energy-differ', 'Energy Differ'],
-] as const;
-
 export function Popup({ colors, onClose, routeName }: PopupProps) {
   const router = useRouter();
-  const section = routeName.split('/')[0] as CmsSectionKey | 'technical';
+  const section = routeName.split('/')[0] as Action['section'];
   const actions: Action[] =
-    section === 'operation' || section === 'marketing'
-      ? cmsMobileSections[section].panels.map(panel => ({
-          icon: panel.icon,
-          key: `${section}-${panel.key}`,
-          label: panel.title,
-          panel: panel.key,
-          section,
-        }))
-      : section === 'technical'
-        ? technicalPanels.map(([panel, label]) => ({ icon: 'technical', key: `technical-${panel}`, label, panel, section }))
-        : [];
+    tabs
+      .find(tab => tab.key === section)
+      ?.panels.map(panel => ({ icon: panel.icon, key: `${section}-${panel.key}`, label: panel.title, panel: panel.key, section })) ?? [];
 
   if (actions.length === 0) return null;
 
   return (
-    <ThemedView alignSelf='center' minWidth={280} paddingHorizontal={12} width='100%'>
+    <ThemedView alignSelf='center' minWidth={280} paddingHorizontal={12} paddingTop={12} width='100%'>
       <ThemedView gap={3} width='100%'>
         {actions.map(action => (
           <Pressable

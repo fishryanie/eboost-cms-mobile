@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 
-import AppTabs from 'components/app-tabs';
+import { AppTabs } from 'components/animated-tab-bar';
 import { BiometricOptInPrompt } from 'utils/auth/components/biometric-opt-in-prompt';
 import { View } from 'react-native';
 import { useSessionToken } from 'utils/session/use-session-token';

@@ -8,7 +8,7 @@ import { ThemedText, ThemedView } from 'components/base';
 import { TabIcon } from 'components/tab-icon';
 import { FontFamily, Palette } from 'themes';
 
-import type { CmsMobilePanel, CmsMobileSection } from 'constants/mobile-cms-menu';
+import type { CmsMobilePanel, CmsMobileSection } from 'components/animated-tab-bar/constants';
 
 const screenHorizontalPadding = 18;
 

@@ -9,7 +9,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { TabIcon } from 'components/tab-icon';
-import { getCmsMobileSection, type CmsMobilePanel } from 'constants/mobile-cms-menu';
+import { getMenuSection, type CmsMobilePanel } from 'components/animated-tab-bar/constants';
 import { AppScreen, EmptyState } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
 export default function MarketingScreen() {
   const focusStats = false;
   const onBack = undefined;
-  const section = getCmsMobileSection('marketing');
+  const section = getMenuSection('marketing');
   const { width } = useWindowDimensions();
   const [shareMetric, setShareMetric] = useState<ShareMetric>('revenue');
   const monthRange = useMemo(() => getCurrentMonthRange(), []);
