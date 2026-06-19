@@ -1,0 +1,180 @@
+import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { RefreshControl, useWindowDimensions } from 'react-native';
+import { mhs } from 'themes/scaling';
+
+import { ReplaceMeterSheet } from 'app/(tabs)/technical/components/replace-meter-sheet';
+import { SetupLocationSheet } from 'app/(tabs)/technical/components/setup-location-sheet';
+import { TriggerBoxSheet } from 'app/(tabs)/technical/features/trigger-box';
+import { ThemedView } from 'components/base';
+import { AppScreen } from 'components/ui';
+import { Palette } from 'themes';
+import { apiRequest } from 'utils/api/client';
+import { getCollectionResult } from 'utils/api/collection';
+
+import { screenHorizontalPadding } from 'components/technical/common';
+import { styles } from 'components/technical/styles';
+
+import { ChargerServicesSection } from './components/charger-services-section';
+import { DomainAnalyzeSection } from './components/domain-analyze-section';
+import { NetworkStatusSection } from './components/network-status-section';
+
+export const technicalDetailPanels: TechnicalPanel[] = ['chargers', 'meter-hourly', 'status-logs', 'energy-differ'];
+
+const emptyOverviewData: unknown[] = [];
+const serviceTileSize = 64;
+
+async function getNetworkStatus(vehicle: TechnicalVehicle) {
+  const response = await apiRequest<ApiListResponse<ConnectionLogRecord>>(vehicle === 'car' ? 'api/cars/logs/connection' : 'api/bikes/logs/connection', {
+    params: { itemsPerPage: 30, limit: 1000, page: 1 },
+    service: 'hub',
+  });
+  return getCollectionResult(response);
+}
+
+export default function TechnicalScreen() {
+  const router = useRouter();
+  const { width } = useWindowDimensions();
+  const [boxActionMode, setBoxActionMode] = useState<'reset' | 'trigger' | 'unlock' | null>(null);
+  const [replaceMeterVisible, setReplaceMeterVisible] = useState(false);
+  const [setupLocationVisible, setSetupLocationVisible] = useState(false);
+  const {
+    data: bikeNetworkData,
+    error: bikeNetworkError,
+    isLoading: bikeNetworkLoading,
+    isRefetching: bikeNetworkRefetching,
+    refetch: refetchBikeNetwork,
+  } = useQuery({
+    queryFn: () => getNetworkStatus('bike'),
+    queryKey: ['technical', 'overview-network-status', 'bike'],
+  });
+  const {
+    data: bikeBoxStatusData,
+    error: bikeBoxStatusError,
+    isLoading: bikeBoxStatusLoading,
+    isRefetching: bikeBoxStatusRefetching,
+    refetch: refetchBikeBoxStatus,
+  } = useQuery({
+    queryFn: async () => (await apiRequest<BoxStatusResponse>('api/controller/statistic/bike-box-status')).data || {},
+    queryKey: ['technical', 'overview-bike-box-status'],
+  });
+  const {
+    data: carNetworkData,
+    error: carNetworkError,
+    isLoading: carNetworkLoading,
+    isRefetching: carNetworkRefetching,
+    refetch: refetchCarNetwork,
+  } = useQuery({
+    queryFn: () => getNetworkStatus('car'),
+    queryKey: ['technical', 'overview-network-status', 'car'],
+  });
+  const {
+    data: carBoxStatusData,
+    error: carBoxStatusError,
+    isLoading: carBoxStatusLoading,
+    isRefetching: carBoxStatusRefetching,
+    refetch: refetchCarBoxStatus,
+  } = useQuery({
+    queryFn: async () => (await apiRequest<BoxStatusResponse>('api/controller/statistic/car-box-status')).data || {},
+    queryKey: ['technical', 'overview-car-box-status'],
+  });
+  const {
+    data: domainData,
+    error: domainError,
+    isLoading: domainLoading,
+    isRefetching: domainRefetching,
+    refetch: refetchDomain,
+  } = useQuery({
+    queryFn: async () => getCollectionResult(await apiRequest<ApiListResponse<DomainAnalyzeRecord>>('api/controller/domain/analyze')),
+    queryKey: ['technical', 'overview-domain-analyze'],
+  });
+  const serviceTileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - mhs(12) * 3) / 4));
+
+  return (
+    <>
+      <AppScreen
+        title='Technical'
+        subtitle='Charger service, network health, and domain load'
+        isFlatList
+        flatListProps={{
+          contentContainerStyle: styles.content,
+          data: emptyOverviewData,
+          keyExtractor: (_, index) => String(index),
+          ListEmptyComponent: (
+            <ThemedView gap={'five'} paddingHorizontal={screenHorizontalPadding}>
+              <ChargerServicesSection
+                tileWidth={serviceTileWidth}
+                onBoxAction={setBoxActionMode}
+                onReplaceMeter={() => setReplaceMeterVisible(true)}
+                onSetupLocation={() => setSetupLocationVisible(true)}
+              />
+              <NetworkStatusSection
+                bikeQuery={{
+                  data: bikeNetworkData,
+                  error: bikeNetworkError,
+                  isLoading: bikeNetworkLoading,
+                  refetch: refetchBikeNetwork,
+                }}
+                bikeBoxStatusQuery={{
+                  data: bikeBoxStatusData,
+                  error: bikeBoxStatusError,
+                  isLoading: bikeBoxStatusLoading,
+                  refetch: refetchBikeBoxStatus,
+                }}
+                carBoxStatusQuery={{
+                  data: carBoxStatusData,
+                  error: carBoxStatusError,
+                  isLoading: carBoxStatusLoading,
+                  refetch: refetchCarBoxStatus,
+                }}
+                carQuery={{
+                  data: carNetworkData,
+                  error: carNetworkError,
+                  isLoading: carNetworkLoading,
+                  refetch: refetchCarNetwork,
+                }}
+                onViewIssues={() =>
+                  router.push({
+                    pathname: '/technical/network-issues',
+                  } as never)
+                }
+              />
+              <DomainAnalyzeSection
+                query={{
+                  data: domainData,
+                  error: domainError,
+                  isLoading: domainLoading,
+                  refetch: refetchDomain,
+                }}
+                onViewMore={() =>
+                  router.push({
+                    pathname: '/technical/ongoing-sessions',
+                  } as never)
+                }
+              />
+            </ThemedView>
+          ),
+          refreshControl: (
+            <RefreshControl
+              onRefresh={() => {
+                void refetchBikeNetwork();
+                void refetchBikeBoxStatus();
+                void refetchCarBoxStatus();
+                void refetchCarNetwork();
+                void refetchDomain();
+              }}
+              refreshing={bikeNetworkRefetching || bikeBoxStatusRefetching || carBoxStatusRefetching || carNetworkRefetching || domainRefetching}
+              tintColor={Palette.accent}
+            />
+          ),
+          renderItem: null,
+          showsVerticalScrollIndicator: false,
+        }}
+      />
+      {boxActionMode ? <TriggerBoxSheet mode={boxActionMode} onClose={() => setBoxActionMode(null)} visible={Boolean(boxActionMode)} /> : null}
+      {replaceMeterVisible ? <ReplaceMeterSheet onClose={() => setReplaceMeterVisible(false)} visible={replaceMeterVisible} /> : null}
+      {setupLocationVisible ? <SetupLocationSheet onClose={() => setSetupLocationVisible(false)} visible={setupLocationVisible} /> : null}
+    </>
+  );
+}

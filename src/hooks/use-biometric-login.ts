@@ -4,12 +4,12 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { loginAdmin } from 'features/auth/auth-service';
-import { getBiometricButtonLabel, getBiometricSymbolName } from 'features/auth/biometric-auth';
-import { biometricCredentialStore, type BiometricCredentials } from 'features/auth/biometric-credentials';
-import { setPendingBiometricCredentials } from 'features/auth/biometric-prompt';
-import { sessionStore } from 'shared/session/session-store';
-import { sessionKeys } from 'shared/session/use-session-token';
+import { loginAdmin } from 'utils/auth/auth-service';
+import { getBiometricButtonLabel, getBiometricSymbolName } from 'utils/auth/biometric-auth';
+import { biometricCredentialStore, type BiometricCredentials } from 'utils/auth/biometric-credentials';
+import { setPendingBiometricCredentials } from 'utils/auth/biometric-prompt';
+import { sessionStore } from 'utils/session/session-store';
+import { sessionKeys } from 'utils/session/use-session-token';
 
 type UseBiometricLoginOptions = {
   setErrorMessage: (message: string) => void;
@@ -28,7 +28,7 @@ export function useBiometricLogin({ setErrorMessage }: UseBiometricLoginOptions)
       await sessionStore.setToken(token);
       queryClient.setQueryData(sessionKeys.token, token);
       await queryClient.invalidateQueries({ queryKey: ['locations'] });
-      router.replace('/home');
+      router.replace('/technical');
     },
     [queryClient, router],
   );

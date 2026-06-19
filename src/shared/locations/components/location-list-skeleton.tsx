@@ -1,0 +1,86 @@
+import { mhs } from 'themes/scaling';
+import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { ThemedView, ThemedText } from 'components/base';
+
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
+
+import { Palette } from 'themes';
+
+const rows = Array.from({ length: 7 }, (_, index) => index);
+
+export function LocationListSkeleton() {
+  const opacity = useSharedValue(0.42);
+
+  useEffect(() => {
+    opacity.set(withRepeat(withTiming(0.9, { duration: 720 }), -1, true));
+  }, [opacity]);
+
+  const shimmerStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+
+  return (
+    <ThemedView>
+      {rows.map(row => (
+        <ThemedView
+          key={row}
+          alignItems='center'
+          borderBottomColor={Palette.borderSubtle}
+          borderBottomWidth={StyleSheet.hairlineWidth}
+          flexDirection='row'
+          gap={'two'}
+          minHeight={82}
+          paddingHorizontal={'three'}
+          paddingVertical={'two'}>
+          <AnimatedThemedView style={[styles.thumbnail, shimmerStyle]} />
+          <ThemedView flex={1} gap={6}>
+            <ThemedView flexDirection='row' gap={'two'}>
+              <AnimatedThemedView style={[styles.stat, shimmerStyle]} />
+              <AnimatedThemedView style={[styles.stat, shimmerStyle]} />
+              <AnimatedThemedView style={[styles.stat, shimmerStyle]} />
+            </ThemedView>
+            <AnimatedThemedView style={[styles.title, shimmerStyle]} />
+            <AnimatedThemedView style={[styles.address, shimmerStyle]} />
+          </ThemedView>
+          <ThemedView alignItems='flex-end' alignSelf='stretch' justifyContent='space-between' paddingVertical={3} width={76}>
+            <AnimatedThemedView style={[styles.status, shimmerStyle]} />
+            <AnimatedThemedView style={[styles.toggle, shimmerStyle]} />
+          </ThemedView>
+        </ThemedView>
+      ))}
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  address: {
+    backgroundColor: Palette.surfaceMuted,
+    borderRadius: mhs(12),
+    height: 10,
+    width: '78%' },
+  stat: {
+    backgroundColor: Palette.surfaceMuted,
+    borderRadius: mhs(12),
+    height: 9,
+    width: 44 },
+  status: {
+    backgroundColor: Palette.surfaceMuted,
+    borderRadius: mhs(12),
+    height: 17,
+    width: 62 },
+  thumbnail: {
+    backgroundColor: Palette.surfaceMuted,
+    borderRadius: mhs(16),
+    height: 50,
+    width: 50 },
+  title: {
+    backgroundColor: Palette.surfaceMuted,
+    borderRadius: mhs(12),
+    height: 12,
+    width: '58%' },
+  toggle: {
+    backgroundColor: Palette.surfaceMuted,
+    borderRadius: 999,
+    height: 20,
+    width: 38 } });

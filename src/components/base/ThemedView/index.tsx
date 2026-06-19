@@ -3,10 +3,70 @@ import { StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, type ThemeColor } from 'themes';
+import { Radius, Spacing } from 'themes/layout';
 import { handleFlex, handleFlexGrow, handleFlexShrink, handleRound, handleSquare, mhs, mvs } from 'themes/scaling';
 
+type SpacingKey = keyof typeof Spacing;
+type RadiusKey = keyof typeof Radius;
+
+type ViewStyleSpacingKeys =
+  | 'gap'
+  | 'rowGap'
+  | 'columnGap'
+  | 'margin'
+  | 'marginTop'
+  | 'marginBottom'
+  | 'marginLeft'
+  | 'marginRight'
+  | 'marginHorizontal'
+  | 'marginVertical'
+  | 'padding'
+  | 'paddingTop'
+  | 'paddingBottom'
+  | 'paddingLeft'
+  | 'paddingRight'
+  | 'paddingHorizontal'
+  | 'paddingVertical'
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right';
+
+type ViewStyleRadiusKeys = 'borderRadius' | 'borderTopLeftRadius' | 'borderTopRightRadius' | 'borderBottomLeftRadius' | 'borderBottomRightRadius';
+
+type DimensionValueWithSpacing = number | 'auto' | `${number}%` | SpacingKey;
+
 export type ThemedViewProps = ViewProps &
-  Omit<ViewStyle, 'flex' | 'flexGrow' | 'flexShrink'> & {
+  Omit<ViewStyle, "width" | "height"> & { width?: number | string; height?: number | string } &
+  Omit<ViewStyle, 'flex' | 'flexGrow' | 'flexShrink' | ViewStyleSpacingKeys | ViewStyleRadiusKeys> & {
+    gap?: number | SpacingKey;
+    rowGap?: number | SpacingKey;
+    columnGap?: number | SpacingKey;
+    margin?: DimensionValueWithSpacing;
+    marginTop?: DimensionValueWithSpacing;
+    marginBottom?: DimensionValueWithSpacing;
+    marginLeft?: DimensionValueWithSpacing;
+    marginRight?: DimensionValueWithSpacing;
+    marginHorizontal?: DimensionValueWithSpacing;
+    marginVertical?: DimensionValueWithSpacing;
+    padding?: DimensionValueWithSpacing;
+    paddingTop?: DimensionValueWithSpacing;
+    paddingBottom?: DimensionValueWithSpacing;
+    paddingLeft?: DimensionValueWithSpacing;
+    paddingRight?: DimensionValueWithSpacing;
+    paddingHorizontal?: DimensionValueWithSpacing;
+    paddingVertical?: DimensionValueWithSpacing;
+    top?: DimensionValueWithSpacing;
+    bottom?: DimensionValueWithSpacing;
+    left?: DimensionValueWithSpacing;
+    right?: DimensionValueWithSpacing;
+
+    borderRadius?: number | RadiusKey;
+    borderTopLeftRadius?: number | RadiusKey;
+    borderTopRightRadius?: number | RadiusKey;
+    borderBottomLeftRadius?: number | RadiusKey;
+    borderBottomRightRadius?: number | RadiusKey;
+  } & {
     lightColor?: string;
     darkColor?: string;
     type?: ThemeColor;
@@ -17,16 +77,16 @@ export type ThemedViewProps = ViewProps &
     rowCenter?: boolean;
     contentCenter?: boolean;
     wrap?: boolean;
-    radius?: number;
+    radius?: number | RadiusKey;
     round?: number;
     square?: number;
     absoluteFillObject?: boolean;
-    safePaddingTop?: boolean | number;
-    safePaddingBottom?: boolean | number;
-    safeMarginTop?: boolean | number;
-    safeMarginBottom?: boolean | number;
-    safeTop?: boolean | number;
-    safeBottom?: boolean | number;
+    safePaddingTop?: boolean | number | SpacingKey;
+    safePaddingBottom?: boolean | number | SpacingKey;
+    safeMarginTop?: boolean | number | SpacingKey;
+    safeMarginBottom?: boolean | number | SpacingKey;
+    safeTop?: boolean | number | SpacingKey;
+    safeBottom?: boolean | number | SpacingKey;
   };
 
 const HORIZONTAL_VIEW_KEYS = new Set([
@@ -114,6 +174,15 @@ const VIEW_STYLE_KEYS = new Set([
 ]);
 
 const scaleViewValue = (key: string, value: unknown): unknown => {
+  if (typeof value === 'string') {
+    if (key.includes('Radius') && value in Radius) {
+      return Radius[value as RadiusKey];
+    }
+    if (value in Spacing) {
+      return Spacing[value as SpacingKey];
+    }
+  }
+
   if (typeof value !== 'number') return value;
   if (VERTICAL_VIEW_KEYS.has(key)) return mvs(value);
   if (HORIZONTAL_VIEW_KEYS.has(key) || key.includes('Radius') || key.includes('Width')) return mhs(value);
@@ -137,9 +206,23 @@ const scaleStyleProp = (style: StyleProp<ViewStyle>): StyleProp<ViewStyle> => {
   return flattened ? scaleViewStyle(flattened) : style;
 };
 
-const scaleNumericValue = (value: unknown): number | undefined => (typeof value === 'number' ? mvs(value) : undefined);
+const resolveSafeSpacing = (value: boolean | number | string | undefined, fallback: unknown, isVertical: boolean): number | undefined => {
+  if (typeof value === 'string' && value in Spacing) {
+    return Spacing[value as SpacingKey];
+  }
+  if (typeof value === 'number') {
+    return isVertical ? mvs(value) : mhs(value);
+  }
+  if (typeof fallback === 'string' && fallback in Spacing) {
+    return Spacing[fallback as SpacingKey];
+  }
+  if (typeof fallback === 'number') {
+    return isVertical ? mvs(fallback) : mhs(fallback);
+  }
+  return undefined;
+};
 const withSafeInset = (inset: number, value?: number): number => (typeof value === 'number' ? inset + value : inset);
-const hasSafeInsetValue = (value: boolean | number | undefined): boolean => value !== undefined && value !== false;
+const hasSafeInsetValue = (value: boolean | number | string | undefined): boolean => value !== undefined && value !== false;
 
 const splitViewProps = (props: Record<string, unknown>) => {
   const viewProps: Record<string, unknown> = {};
@@ -202,45 +285,31 @@ export const ThemedView = forwardRef<View, ThemedViewProps>(function ThemedView(
         absoluteFillObject && StyleSheet.absoluteFill,
         round !== undefined ? handleRound(round) : undefined,
         square !== undefined ? handleSquare(square) : undefined,
-        radius !== undefined ? { borderRadius: mhs(radius) } : undefined,
+        radius !== undefined
+          ? { borderRadius: typeof radius === 'string' && radius in Radius ? Radius[radius as RadiusKey] : mhs(radius as number) }
+          : undefined,
         hasSafeInsetValue(safePaddingTop)
           ? {
-              paddingTop: withSafeInset(
-                safeInsets.top,
-                typeof safePaddingTop === 'number' ? mvs(safePaddingTop) : scaleNumericValue(rest.paddingTop ?? rest.padding),
-              ),
+              paddingTop: withSafeInset(safeInsets.top, resolveSafeSpacing(safePaddingTop, rest.paddingTop ?? rest.padding, true)),
             }
           : undefined,
         hasSafeInsetValue(safePaddingBottom)
           ? {
-              paddingBottom: withSafeInset(
-                safeInsets.bottom,
-                typeof safePaddingBottom === 'number' ? mvs(safePaddingBottom) : scaleNumericValue(rest.paddingBottom ?? rest.padding),
-              ),
+              paddingBottom: withSafeInset(safeInsets.bottom, resolveSafeSpacing(safePaddingBottom, rest.paddingBottom ?? rest.padding, true)),
             }
           : undefined,
         hasSafeInsetValue(safeMarginTop)
           ? {
-              marginTop: withSafeInset(
-                safeInsets.top,
-                typeof safeMarginTop === 'number' ? mvs(safeMarginTop) : scaleNumericValue(rest.marginTop ?? rest.margin),
-              ),
+              marginTop: withSafeInset(safeInsets.top, resolveSafeSpacing(safeMarginTop, rest.marginTop ?? rest.margin, true)),
             }
           : undefined,
         hasSafeInsetValue(safeMarginBottom)
           ? {
-              marginBottom: withSafeInset(
-                safeInsets.bottom,
-                typeof safeMarginBottom === 'number' ? mvs(safeMarginBottom) : scaleNumericValue(rest.marginBottom ?? rest.margin),
-              ),
+              marginBottom: withSafeInset(safeInsets.bottom, resolveSafeSpacing(safeMarginBottom, rest.marginBottom ?? rest.margin, true)),
             }
           : undefined,
-        hasSafeInsetValue(safeTop)
-          ? { top: withSafeInset(safeInsets.top, typeof safeTop === 'number' ? mvs(safeTop) : scaleNumericValue(rest.top)) }
-          : undefined,
-        hasSafeInsetValue(safeBottom)
-          ? { bottom: withSafeInset(safeInsets.bottom, typeof safeBottom === 'number' ? mvs(safeBottom) : scaleNumericValue(rest.bottom)) }
-          : undefined,
+        hasSafeInsetValue(safeTop) ? { top: withSafeInset(safeInsets.top, resolveSafeSpacing(safeTop, rest.top, true)) } : undefined,
+        hasSafeInsetValue(safeBottom) ? { bottom: withSafeInset(safeInsets.bottom, resolveSafeSpacing(safeBottom, rest.bottom, true)) } : undefined,
         viewStyle,
         scaleStyleProp(style),
       ]}

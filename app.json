@@ -62,7 +62,8 @@
         }
       ],
       "expo-image",
-      "expo-asset"
+      "expo-asset",
+      "./plugins/withGradleProperties"
     ],
     "experiments": {
       "typedRoutes": true,

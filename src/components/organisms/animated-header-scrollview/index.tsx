@@ -141,6 +141,11 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
             <AnimatedThemedText type="defaultSemiBold" style={[styles.smallHeaderTitle, smallHeaderTitleStyle]} numberOfLines={1}>
               {largeTitle}
             </AnimatedThemedText>
+            {subtitle && (
+              <AnimatedThemedText style={[styles.smallHeaderTitle, { color: Colors.gray[500], fontWeight: '500', marginLeft: spacing.xs }, smallHeaderSubtitleStyle]} numberOfLines={1}>
+                - {subtitle}
+              </AnimatedThemedText>
+            )}
           </ThemedView>
         </AnimatedThemedView>
 

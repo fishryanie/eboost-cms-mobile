@@ -1,21 +1,19 @@
 import { Tabs } from 'expo-router';
-import type { ReactElement } from 'react';
 import { Platform } from 'react-native';
 
 import { AnimatedTabBar } from 'components/animated-tab-bar';
 import { TabIcon, type TabIconName } from 'components/tab-icon';
 
 const tabs: { icon: TabIconName; label: string; name: string }[] = [
-  { icon: 'technical', label: 'Technical', name: 'technical' },
-  { icon: 'operation', label: 'Operation', name: 'operation' },
-  { icon: 'marketing', label: 'Marketing', name: 'marketing' },
+  { icon: 'technical', label: 'Technical', name: 'technical/index' },
+  { icon: 'operation', label: 'Operation', name: 'operation/index' },
+  { icon: 'marketing', label: 'Marketing', name: 'marketing/index' },
 ];
 
 export default function AppTabs() {
   return (
     <Tabs
       detachInactiveScreens={Platform.OS !== 'ios'}
-      initialRouteName='technical'
       screenOptions={{
         animation: 'shift',
         headerShown: false,
@@ -27,7 +25,7 @@ export default function AppTabs() {
           height: 0,
         },
       }}
-      tabBar={(props): ReactElement => <AnimatedTabBar {...props} />}>
+      tabBar={props => <AnimatedTabBar {...props} />}>
       {tabs.map(tab => (
         <Tabs.Screen
           key={tab.name}

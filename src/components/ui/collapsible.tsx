@@ -1,3 +1,4 @@
+import { mhs } from 'themes/scaling';
 import { SymbolView } from 'expo-symbols';
 import { PropsWithChildren, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
@@ -7,9 +8,6 @@ import { ThemedView, ThemedText } from 'components/base';
 const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
 const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
-import { ThemedText } from 'components/themed-text';
-import { ThemedView } from 'components/themed-view';
-import { Spacing } from 'themes';
 import { useTheme } from 'hooks/use-theme';
 
 export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
@@ -19,7 +17,7 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
   return (
     <ThemedView>
       <Pressable style={({ pressed }) => [styles.heading, pressed && styles.pressedHeading]} onPress={() => setIsOpen(value => !value)}>
-        <ThemedView type='backgroundElement' width={Spacing.four} height={Spacing.four} borderRadius={12} justifyContent='center' alignItems='center'>
+        <ThemedView type='backgroundElement' width={16} height={16} borderRadius={12} justifyContent='center' alignItems='center'>
           <SymbolView
             name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
             size={14}
@@ -33,7 +31,7 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
       </Pressable>
       {isOpen && (
         <AnimatedThemedView entering={FadeIn.duration(200)}>
-          <ThemedView type='backgroundElement' marginTop={Spacing.three} borderRadius={Spacing.three} marginLeft={Spacing.four} padding={Spacing.four}>
+          <ThemedView type='backgroundElement' marginTop={'three'} borderRadius={12} marginLeft={'four'} padding={'four'}>
             {children}
           </ThemedView>
         </AnimatedThemedView>
@@ -46,9 +44,6 @@ const styles = StyleSheet.create({
   heading: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-  },
+    gap: mhs(8) },
   pressedHeading: {
-    opacity: 0.7,
-  },
-});
+    opacity: 0.7 } });

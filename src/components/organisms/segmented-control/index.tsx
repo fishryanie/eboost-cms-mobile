@@ -22,8 +22,7 @@ import { BlurView, type BlurViewProps } from "expo-blur";
 import { impactAsync, ImpactFeedbackStyle } from "expo-haptics";
 import { scheduleOnRN } from "react-native-worklets";
 
-const AnimatedBlurView =
-  Animated.createAnimatedComponent<Partial<BlurViewProps>>(BlurView);
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 const width = Dimensions.get("screen").width - 32;
 
@@ -214,10 +213,10 @@ const SegmentedControl: React.FC<ISegmentedControl> &
 
         <AnimatedBlurView
           style={[
+            StyleSheet.absoluteFill,
             {
               overflow: "hidden",
               borderRadius,
-              ...StyleSheet.absoluteFillObject,
             },
           ]}
           animatedProps={animatedBlurViewProps}

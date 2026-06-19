@@ -1,4 +1,4 @@
-import { StyleProp, TextStyle, ViewStyle } from 'react-native';
+import { RefreshControlProps, StyleProp, TextStyle, ViewStyle } from 'react-native';
 import { BlurViewProps } from 'expo-blur';
 import React from 'react';
 
@@ -37,5 +37,5 @@ export interface AnimatedHeaderProps {
   smallHeaderTitleStyle?: StyleProp<TextStyle>;
   isFlatList?: boolean;
   flatListProps?: import('react-native').FlatListProps<any>;
-  refreshControl?: React.ReactElement;
+  refreshControl?: React.ReactElement<RefreshControlProps>;
 }

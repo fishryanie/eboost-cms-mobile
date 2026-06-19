@@ -5,9 +5,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from 'components/animated-icon';
-import { AppDrawer } from 'shared/drawer/app-drawer';
-import { AppQueryProvider } from 'shared/query/query-provider';
-import { bootstrapSession } from 'shared/session/bootstrap';
+import { AppDrawer } from 'components/app-drawer';
+import { AppQueryProvider } from 'utils/query-provider';
+import { bootstrapSession } from 'utils/session/bootstrap';
 
 bootstrapSession();
 
@@ -41,7 +41,6 @@ export default function TabLayout() {
                   <Stack.Screen name='marketing/[panel]' />
                   <Stack.Screen name='operation/[panel]' />
                   <Stack.Screen name='technical/network-issues' />
-                  <Stack.Screen name='technical/[panel]' />
                 </Stack>
               </AppDrawer>
             </BottomSheetModalProvider>

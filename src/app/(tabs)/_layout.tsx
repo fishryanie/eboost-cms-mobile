@@ -1,10 +1,10 @@
 import { Redirect } from 'expo-router';
 
 import AppTabs from 'components/app-tabs';
-import { BiometricOptInPrompt } from 'features/auth/components/biometric-opt-in-prompt';
+import { BiometricOptInPrompt } from 'utils/auth/components/biometric-opt-in-prompt';
 import { View } from 'react-native';
-import { useSessionToken } from 'shared/session/use-session-token';
-import { AppScreen } from 'shared/ui';
+import { useSessionToken } from 'utils/session/use-session-token';
+import { AppScreen } from 'components/ui';
 
 export default function TabsLayout() {
   const tokenQuery = useSessionToken();

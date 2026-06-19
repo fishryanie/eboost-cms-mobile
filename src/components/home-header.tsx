@@ -1,15 +1,15 @@
+import { mhs } from 'themes/scaling';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
 
-import { FontFamily, Palette, Radius, Spacing } from 'themes';
-import { adminProfile } from 'features/auth/admin-profile';
-import { useDrawerStore } from 'shared/drawer/drawer-store';
+import { FontFamily, Palette } from 'themes';
+import { adminProfile } from 'utils/auth/admin-profile';
+import { useDrawerStore } from 'utils/drawer-store';
 
 const colors = {
-  primary: '#24294A',
-};
+  primary: '#24294A' };
 
 export function HomeHeader() {
   const { top } = useSafeAreaInsets();
@@ -22,12 +22,12 @@ export function HomeHeader() {
         accessibilityRole='button'
         onPress={openDrawer}
         style={({ pressed }) => [styles.profileButton, pressed && styles.pressed]}>
-        <ThemedView alignItems='center' backgroundColor={colors.primary} borderRadius={Radius.pill} height={44} justifyContent='center' width={44}>
+        <ThemedView alignItems='center' backgroundColor={colors.primary} borderRadius={'pill'} height={44} justifyContent='center' width={44}>
           <ThemedText color={Palette.surfaceBase} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20}>
             {adminProfile.initials}
           </ThemedText>
         </ThemedView>
-        <ThemedView gap={Spacing.one} minWidth={0}>
+        <ThemedView gap={'one'} minWidth={0}>
           <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={14}>
             Wellcome 👋
           </ThemedText>
@@ -37,7 +37,7 @@ export function HomeHeader() {
         </ThemedView>
       </Pressable>
 
-      <ThemedView alignItems='center' flex={1} flexDirection='row' gap={Spacing.four} justifyContent='flex-end'>
+      <ThemedView alignItems='center' flex={1} flexDirection='row' gap={'four'} justifyContent='flex-end'>
         <HeaderIcon accessibilityLabel='Search' name='magnifyingglass' />
         <HeaderIcon accessibilityLabel='Notifications' name='bell' />
         <HeaderIcon accessibilityLabel='Scan QR code' name='qrcode.viewfinder' />
@@ -59,24 +59,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Palette.surfaceBase,
     flexDirection: 'row',
-    gap: Spacing.five,
-    marginBottom: Spacing.five,
-    paddingBottom: Spacing.one,
-    paddingHorizontal: Spacing.three,
-  },
+    gap: mhs(24),
+    marginBottom: mhs(24),
+    paddingBottom: mhs(4),
+    paddingHorizontal: mhs(12) },
   iconButton: {
     alignItems: 'center',
     height: 34,
     justifyContent: 'center',
-    width: 34,
-  },
+    width: 34 },
   pressed: {
-    opacity: 0.7,
-  },
+    opacity: 0.7 },
   profileButton: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: Spacing.three,
-    maxWidth: '62%',
-  },
-});
+    gap: mhs(12),
+    maxWidth: '62%' } });
