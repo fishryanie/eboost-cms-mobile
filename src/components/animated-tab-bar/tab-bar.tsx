@@ -117,7 +117,7 @@ export function AnimatedTabBar({ descriptors, navigation, state }: BottomTabBarP
           <TabBarSurface>
             <ThemedView flex={1} overflow='hidden' width='100%'>
               {items.map(item => (
-                <Panel key={item.key} active={view === item.key} direction={panelDirection} item={item} onClose={close} onMeasure={onMeasure} />
+                <Panel key={item.key} active={view === item.key} direction={panelDirection} item={item} onClose={close} />
               ))}
             </ThemedView>
             <AnimatedThemedView

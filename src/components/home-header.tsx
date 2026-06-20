@@ -1,15 +1,16 @@
-import { mhs } from 'themes/scaling';
+import { ThemedText, ThemedView } from 'components/base';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ThemedText, ThemedView } from 'components/base';
+import { mhs } from 'themes/scaling';
 
 import { FontFamily, Palette } from 'themes';
 import { adminProfile } from 'utils/auth/admin-profile';
 import { useDrawerStore } from 'utils/drawer-store';
 
 const colors = {
-  primary: '#24294A' };
+  primary: '#24294A',
+};
 
 export function HomeHeader() {
   const { top } = useSafeAreaInsets();
@@ -62,16 +63,21 @@ const styles = StyleSheet.create({
     gap: mhs(24),
     marginBottom: mhs(24),
     paddingBottom: mhs(4),
-    paddingHorizontal: mhs(12) },
+    paddingHorizontal: mhs(12),
+  },
   iconButton: {
     alignItems: 'center',
     height: 34,
     justifyContent: 'center',
-    width: 34 },
+    width: 34,
+  },
   pressed: {
-    opacity: 0.7 },
+    opacity: 0.7,
+  },
   profileButton: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: mhs(12),
-    maxWidth: '62%' } });
+    maxWidth: '62%',
+  },
+});

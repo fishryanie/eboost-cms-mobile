@@ -1,5 +1,5 @@
 import { ThemedText, ThemedView } from 'components/base';
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { StyleSheet, TextStyle, ViewStyle, Pressable } from 'react-native';
 import Animated, {
   Extrapolation,
@@ -117,7 +117,30 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
       }
     };
 
+    const listHeaderComponent = useMemo(() => {
     return (
+      <>
+        <AnimatedThemedView style={[styles.largeTitleContainer, largeTitleStyle, largeTitleContainerStyle]}>
+          <ThemedView width='100%'>
+            <AnimatedThemedText type="title" style={[styles.largeTitle, _largeTitleStyle, animatedLargeTitleStylez]}>{largeTitle}</AnimatedThemedText>
+            {subtitle && (
+              <ThemedText fontSize={16} color={Colors.gray[400]} marginTop={spacing.xs} paddingTop={5} style={largeHeaderSubtitleStyle}>
+                {subtitle}
+              </ThemedText>
+            )}
+            {searchBar && (
+              <ThemedView marginTop={spacing.sm} width='100%'>
+                {searchBar}
+              </ThemedView>
+            )}
+          </ThemedView>
+        </AnimatedThemedView>
+        {flatListProps?.ListHeaderComponent}
+      </>
+    );
+  }, [largeTitle, subtitle, searchBar, largeTitleStyle, largeTitleContainerStyle, _largeTitleStyle, animatedLargeTitleStylez, largeHeaderSubtitleStyle, flatListProps?.ListHeaderComponent]);
+
+  return (
       <ThemedView flex={1} backgroundColor='transparent'>
         <AnimatedThemedView
           style={[
@@ -166,7 +189,7 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
               </Pressable>
             ) : <ThemedView />}
             {rightComponent && (
-              <ThemedView zIndex={1}>
+              <ThemedView zIndex={1} pointerEvents="box-none">
                 {rightComponent}
               </ThemedView>
             )}
@@ -187,26 +210,7 @@ export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.Fun
               contentContainerStyle,
               flatListProps?.contentContainerStyle,
             ]}
-            ListHeaderComponent={
-              <>
-                <AnimatedThemedView style={[styles.largeTitleContainer, largeTitleStyle, largeTitleContainerStyle]}>
-                  <ThemedView width='100%'>
-                    <AnimatedThemedText type="title" style={[styles.largeTitle, _largeTitleStyle, animatedLargeTitleStylez]}>{largeTitle}</AnimatedThemedText>
-                    {subtitle && (
-                      <ThemedText fontSize={16} color={Colors.gray[400]} marginTop={spacing.xs} paddingTop={5} style={largeHeaderSubtitleStyle}>
-                        {subtitle}
-                      </ThemedText>
-                    )}
-                    {searchBar && (
-                      <ThemedView marginTop={spacing.sm} width='100%'>
-                        {searchBar}
-                      </ThemedView>
-                    )}
-                  </ThemedView>
-                </AnimatedThemedView>
-                {flatListProps?.ListHeaderComponent}
-              </>
-            }
+            ListHeaderComponent={listHeaderComponent}
           />
         ) : (
           <Animated.ScrollView

@@ -2,9 +2,10 @@ import { Redirect } from 'expo-router';
 
 import { AppTabs } from 'components/animated-tab-bar';
 import { BiometricOptInPrompt } from 'utils/auth/components/biometric-opt-in-prompt';
-import { View } from 'react-native';
 import { useSessionToken } from 'utils/session/use-session-token';
+import { HomeHeader } from 'components/home-header';
 import { AppScreen } from 'components/ui';
+import { ThemedView } from 'components/base';
 
 export default function TabsLayout() {
   const tokenQuery = useSessionToken();
@@ -18,9 +19,12 @@ export default function TabsLayout() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <AppTabs />
+    <ThemedView backgroundColor='#FFFFFF' flex={1}>
+      <HomeHeader />
+      <ThemedView flex={1}>
+        <AppTabs />
+      </ThemedView>
       <BiometricOptInPrompt />
-    </View>
+    </ThemedView>
   );
 }

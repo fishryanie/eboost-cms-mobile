@@ -4,6 +4,7 @@ import { ActionSheet } from 'components/ui';
 
 import { getLocationVisibilityAction } from '../location-actions';
 import { useLocationActionMutations } from '../hooks';
+import { SFSymbol } from 'expo-symbols';
 
 export function LocationActionsSheet({ location, onClose, open }: { location?: LocationRecord; onClose: () => void; open: boolean }) {
   const mutations = useLocationActionMutations(location?.id);
@@ -23,6 +24,7 @@ export function LocationActionsSheet({ location, onClose, open }: { location?: L
       items={[
         {
           disabled: busy,
+          icon: 'arrow.triangle.2.circlepath',
           key: 'sync',
           label: 'Sync partnership location',
           meta: 'Refresh partner location and meter mapping',
@@ -31,6 +33,7 @@ export function LocationActionsSheet({ location, onClose, open }: { location?: L
         {
           danger: !visibility.nextVisible,
           disabled: busy,
+          icon: visibility.nextVisible ? 'eye' : 'eye.slash',
           key: 'visibility',
           label: visibility.title,
           meta: visibility.allowed ? 'Applies to station, chargers, and ports' : visibility.message,
@@ -59,6 +62,7 @@ export function LocationActionsSheet({ location, onClose, open }: { location?: L
               {
                 danger: true,
                 disabled: busy,
+                icon: 'arrow.uturn.left' as SFSymbol,
                 key: 'restore',
                 label: 'Restore location',
                 meta: 'Remove deleted marker and restore the original name',

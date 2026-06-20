@@ -16,7 +16,6 @@ declare global {
     direction: number;
     item: NavItem;
     onClose: () => void;
-    onMeasure: Measure;
   };
 }
 

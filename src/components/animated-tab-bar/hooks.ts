@@ -1,15 +1,7 @@
 import { BlurViewProps } from 'expo-blur';
 import { useEffect } from 'react';
 import { ViewStyle } from 'react-native';
-import {
-  Extrapolation,
-  interpolate,
-  interpolateColor,
-  useAnimatedProps,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import { Extrapolation, interpolate, interpolateColor, useAnimatedProps, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { colors, DURATION, EASING, ICON_BOX, LABEL_MARGIN, LABEL_PAD, PANEL_SLIDE } from './constants';
 
 export function useCardMotion(sizes: SizeMap, toolbar: { h: number; minW: number; w: number }, view: string) {
@@ -28,7 +20,7 @@ export function useCardMotion(sizes: SizeMap, toolbar: { h: number; minW: number
     }
     const target = sizes[view];
     if (target) {
-      const width = Math.max(toolbar.minW, toolbar.w, target.w);
+      const width = toolbar.w;
       cardWidth.value = firstRender ? width : withTiming(width, { duration: DURATION, easing: EASING });
       cardHeight.value = firstRender ? toolbar.h + target.h : withTiming(toolbar.h + target.h, { duration: DURATION, easing: EASING });
     }

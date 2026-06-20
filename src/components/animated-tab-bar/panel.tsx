@@ -14,11 +14,11 @@ function measure(event: LayoutChangeEvent, key: string, onMeasure: Measure) {
   onMeasure(key, Math.ceil(width), Math.ceil(height));
 }
 
-export function Panel({ active, direction, item, onClose, onMeasure }: PanelProps) {
+export function Panel({ active, direction, item, onClose }: PanelProps) {
   const motion = usePanelMotion(active, direction);
   return (
     <AnimatedThemedView left={0} pointerEvents={active ? 'auto' : 'none'} position='absolute' style={motion.style} top={0} width='100%'>
-      <AnimatedThemedView onLayout={event => measure(event, item.key, onMeasure)} style={Platform.OS === 'android' ? motion.androidBlurStyle : undefined}>
+      <AnimatedThemedView style={Platform.OS === 'android' ? motion.androidBlurStyle : undefined}>
         <Popup colors={colors} onClose={onClose} routeName={item.routeName} />
       </AnimatedThemedView>
       {Platform.OS === 'ios' && (

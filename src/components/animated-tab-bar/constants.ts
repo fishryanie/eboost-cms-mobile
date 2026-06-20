@@ -7,7 +7,7 @@ export const LABEL_PAD = 14;
 export const LABEL_MARGIN = -6;
 export const PANEL_SLIDE = 65;
 export const TAB_HEIGHT = 48;
-export const LABEL_CLIP_BUFFER = 0.5;
+export const LABEL_CLIP_BUFFER = 2;
 export const EASING = Easing.bezier(0.22, 1, 0.36, 1);
 export const colors = {
   accent: 'rgba(0,0,0,0.06)',

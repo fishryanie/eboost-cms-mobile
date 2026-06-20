@@ -7,31 +7,31 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
-
-const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
-const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
-
 import { FontFamily, Palette } from 'themes';
 import { adminProfile } from 'utils/auth/admin-profile';
 import { sessionKeys } from 'utils/session/use-session-token';
 import { sessionStore } from 'utils/session/session-store';
 import { useDrawerStore } from 'utils/drawer-store';
 
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+
 const colors = {
   backgroundGreen: Palette.accent,
   contentBackplate: '#1D2733',
   text: '#FFFFFF',
   textMuted: 'rgba(255,255,255,0.68)',
-  itemPressed: 'rgba(255,255,255,0.12)' };
+  itemPressed: 'rgba(255,255,255,0.12)',
+};
 
 const drawerItems: {
   icon: SymbolViewProps['name'];
   name: string;
-  route?: '/drawer/profile' | '/drawer/settings' | '/home' | '/marketing' | '/operation';
+  route?: '/drawer/profile' | '/drawer/settings' | '/drawer/staff-managements' | '/home' | '/marketing' | '/operation';
 }[] = [
   { icon: 'house.fill', name: 'Home', route: '/home' },
   { icon: 'gearshape.2.fill', name: 'Operation', route: '/operation' },
   { icon: 'megaphone.fill', name: 'Marketing', route: '/marketing' },
+  { icon: 'person.2.badge.gearshape.fill', name: 'Staff managements', route: '/drawer/staff-managements' },
   { icon: 'person.crop.circle', name: 'My Profile', route: '/drawer/profile' },
   { icon: 'gearshape.fill', name: 'Settings', route: '/drawer/settings' },
   { icon: 'rectangle.portrait.and.arrow.right', name: 'Logout' },
@@ -56,7 +56,8 @@ export function AppDrawer({ children }: PropsWithChildren) {
 
       progress.value = withTiming(state.isOpen ? 1 : 0, {
         duration: 280,
-        easing: Easing.out(Easing.cubic) });
+        easing: Easing.out(Easing.cubic),
+      });
     });
 
     return unsubscribe;
@@ -72,7 +73,8 @@ export function AppDrawer({ children }: PropsWithChildren) {
       borderRadius,
       flex: 1,
       overflow: 'hidden',
-      transform: [{ scale }, { translateX }] };
+      transform: [{ scale }, { translateX }],
+    };
   });
 
   const drawerStyle = useAnimatedStyle(() => ({
@@ -81,17 +83,20 @@ export function AppDrawer({ children }: PropsWithChildren) {
     left: 0,
     position: 'absolute',
     right: 0,
-    top: 0 }));
+    top: 0,
+  }));
 
   const hazeStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0, 0.35, 1], [0, 0.45, 1], Extrapolation.CLAMP),
     transform: [
       { translateX: interpolate(progress.value, [0, 1], [Math.min(width * 0.12, 48), 0], Extrapolation.CLAMP) },
       { scale: interpolate(progress.value, [0, 1], [0.92, 1], Extrapolation.CLAMP) },
-    ] }));
+    ],
+  }));
 
   const overlayStyle = useAnimatedStyle(() => ({
-    display: progress.value > 0.02 ? 'flex' : 'none' }));
+    display: progress.value > 0.02 ? 'flex' : 'none',
+  }));
 
   const drawerTextColor = colors.text;
   const drawerMutedColor = colors.textMuted;
@@ -127,7 +132,8 @@ export function AppDrawer({ children }: PropsWithChildren) {
               bottom: Math.max(insets.bottom + 76, 86),
               left: width * 0.56,
               top: Math.max(insets.top + 76, 86),
-              width: width * 0.52 },
+              width: width * 0.52,
+            },
             hazeStyle,
           ]}
         />
@@ -167,13 +173,15 @@ export function AppDrawer({ children }: PropsWithChildren) {
                     styles.themePill,
                     {
                       backgroundColor: selected ? drawerTextColor : 'transparent',
-                      borderColor: drawerMutedColor },
+                      borderColor: drawerMutedColor,
+                    },
                   ]}>
                   <ThemedText
                     style={[
                       styles.themeText,
                       {
-                        color: selected ? colors.backgroundGreen : drawerTextColor },
+                        color: selected ? colors.backgroundGreen : drawerTextColor,
+                      },
                     ]}>
                     {option}
                   </ThemedText>
@@ -198,49 +206,61 @@ const styles = StyleSheet.create({
   drawerContent: {
     gap: mhs(4),
     maxWidth: 224,
-    paddingHorizontal: mhs(24) },
+    paddingHorizontal: mhs(24),
+  },
   drawerHeader: {
     alignItems: 'center',
     borderBottomWidth: 1,
     flexDirection: 'row',
     gap: mhs(12),
     marginBottom: mhs(12),
-    paddingBottom: mhs(24) },
+    paddingBottom: mhs(24),
+  },
   drawerItem: {
     alignItems: 'center',
     borderRadius: mhs(16),
     flexDirection: 'row',
     gap: mhs(12),
     paddingHorizontal: mhs(8),
-    paddingVertical: mhs(12) },
+    paddingVertical: mhs(12),
+  },
   drawerItemPressed: {
-    backgroundColor: colors.itemPressed },
+    backgroundColor: colors.itemPressed,
+  },
   drawerItemText: {
     fontFamily: FontFamily.semibold,
-    fontSize: 15 },
+    fontSize: 15,
+  },
   drawerName: {
     fontFamily: FontFamily.bold,
     fontSize: 17,
-    lineHeight: 22 },
+    lineHeight: 22,
+  },
   drawerRole: {
     fontFamily: FontFamily.medium,
     fontSize: 11,
-    lineHeight: 16 },
+    lineHeight: 16,
+  },
   hazeLayer: {
     backgroundColor: 'rgba(255,255,255,0.16)',
     borderRadius: 34,
-    position: 'absolute' },
+    position: 'absolute',
+  },
   themePill: {
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 10,
-    paddingVertical: 6 },
+    paddingVertical: 6,
+  },
   themeText: {
     fontFamily: FontFamily.bold,
     fontSize: 12,
-    textTransform: 'capitalize' },
+    textTransform: 'capitalize',
+  },
   version: {
     fontFamily: FontFamily.regular,
     fontSize: 12,
     position: 'absolute',
-    right: 30 } });
+    right: 30,
+  },
+});

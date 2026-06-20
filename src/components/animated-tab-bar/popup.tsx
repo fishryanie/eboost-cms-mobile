@@ -30,7 +30,7 @@ export function Popup({ colors, onClose, routeName }: PopupProps) {
   if (actions.length === 0) return null;
 
   return (
-    <ThemedView alignSelf='center' minWidth={280} paddingHorizontal={12} marginTop={8} width='100%'>
+    <ThemedView alignSelf='center' marginTop={8} width='100%'>
       <ThemedView gap={3} width='100%'>
         {actions.map(action => (
           <Pressable

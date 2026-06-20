@@ -31,16 +31,17 @@ export default function TabLayout() {
               <AppDrawer>
                 <AnimatedSplashOverlay />
                 <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name='login' />
+                  <Stack.Screen name='login/index' />
                   <Stack.Screen name='(tabs)' />
-                  <Stack.Screen name='menu/[slug]' />
-                  <Stack.Screen name='drawer/profile' />
-                  <Stack.Screen name='drawer/settings' />
-                  <Stack.Screen name='location/[id]' />
-                  <Stack.Screen name='marketing/package-list' />
-                  <Stack.Screen name='marketing/[panel]' />
-                  <Stack.Screen name='operation/[panel]' />
-                  <Stack.Screen name='technical/network-issues' />
+                  <Stack.Screen name='menu/[slug]/index' />
+                  <Stack.Screen name='drawer/profile/index' />
+                  <Stack.Screen name='drawer/staff-managements/index' />
+                  <Stack.Screen name='drawer/settings/index' />
+                  <Stack.Screen name='location/[id]/index' />
+                  <Stack.Screen name='marketing/package-list/index' />
+                  <Stack.Screen name='marketing/[panel]/index' />
+                  <Stack.Screen name='operation/[panel]/index' />
+                  <Stack.Screen name='technical/network-issues/index' />
                 </Stack>
               </AppDrawer>
             </BottomSheetModalProvider>
