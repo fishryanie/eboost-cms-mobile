@@ -551,7 +551,7 @@ export function PackageRow({ color, row }: { color: string; row: SubscriptionPac
 export function SectionTitle({ subtitle, title }: { subtitle?: string; title: string }) {
   return (
     <ThemedView minWidth={0}>
-      <ThemedText color='#91A0B7' fontFamily={FontFamily.bold} fontSize={12} letterSpacing={1.8} lineHeight={17} textTransform='uppercase'>
+      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={12} letterSpacing={1.8} lineHeight={17} textTransform='uppercase'>
         {title}
       </ThemedText>
       {subtitle ? (

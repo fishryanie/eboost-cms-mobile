@@ -7,14 +7,14 @@ import { SymbolView } from 'expo-symbols';
 import { ChevronLeft, ChevronsRight, Mail, ShieldCheck } from 'lucide-react-native';
 import { type ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { TabIcon, type TabIconName } from 'components/tab-icon';
 import { UserCard } from 'shared/users/components/user-card';
 import { biometricCredentialStore } from 'utils/auth/biometric-credentials';
 import { useInfiniteUsers, userKeys } from 'shared/users/hooks';
-import { AppButton, AppScreen, EmptyState } from 'components/ui';
+import { AppButton, EmptyState } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 
 import {
@@ -221,16 +221,17 @@ export default function OperationScreen() {
 
   return (
     <>
-      <AppScreen
-        title="Operation"
-        subtitle="User service, account actions, and operational performance"
-        isFlatList
-        flatListProps={{
-          contentContainerStyle: styles.content,
-          data: [],
-          keyExtractor: (_, index) => String(index),
-          ListEmptyComponent: (
+      <ThemedView safePaddingBottom flex={1} backgroundColor={Palette.surfaceBase}>
+        <FlatList
+          contentContainerStyle={styles.content}
+          data={[]}
+          keyExtractor={(_, index) => String(index)}
+          ListEmptyComponent={
             <ThemedView gap={'five'} paddingHorizontal={screenHorizontalPadding}>
+              <ThemedView>
+                <ThemedText fontFamily="bold" fontSize={34} lineHeight={40} letterSpacing={-0.5}>Operation</ThemedText>
+                <ThemedText fontSize={16} color={Palette.textSecondary} marginTop={mhs(4)}>User service, account actions, and operational performance</ThemedText>
+              </ThemedView>
               <OperationServicesSection onSelectService={openService} tileWidth={tileWidth} />
               <OperationStatsSection
                 atRiskUsers={getCollectionData(atRiskQuery.data) || emptyAtRiskUsers}
@@ -245,8 +246,8 @@ export default function OperationScreen() {
                 topUsers={getCollectionData(topUsersQuery.data) || emptyTopUsers}
               />
             </ThemedView>
-          ),
-          refreshControl: (
+          }
+          refreshControl={
             <RefreshControl
               onRefresh={() => {
                 void topUsersQuery.refetch();
@@ -258,10 +259,11 @@ export default function OperationScreen() {
               refreshing={isRefreshing}
               tintColor={Palette.accent}
             />
-          ),
-          renderItem: null,
-          showsVerticalScrollIndicator: false }}
-      />
+          }
+          renderItem={null}
+          showsVerticalScrollIndicator={false}
+        />
+      </ThemedView>
       <UserPickerSheet
         onClose={() => setIsPickerOpen(false)}
         onNext={handleUserNext}
@@ -302,7 +304,7 @@ function ServiceShortcut({ onPress, service, tileWidth }: { onPress: () => void;
       <ThemedView style={styles.serviceIcon}>
         <TabIcon color={Palette.textTertiary} name={service.icon} size={23} />
       </ThemedView>
-      <ThemedText numberOfLines={2} color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={13} textAlign='center'>
+      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={13} numberOfLines={2} textAlign='center'>
         {service.title}
       </ThemedText>
     </Pressable>
@@ -542,7 +544,7 @@ function OperationUserWizard({
   }, [mutation]);
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <ThemedView safePaddingTop flex={1} backgroundColor={Palette.surfaceBase}>
       <ThemedView style={styles.wizardHeader}>
         <Pressable accessibilityLabel='Back' accessibilityRole='button' onPress={step === 'input' ? onBack : () => setStep('input')} style={styles.backButton}>
           <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
@@ -585,7 +587,7 @@ function OperationUserWizard({
           <ResultStep loading={mutation.isPending} onDone={onDone} result={result} />
         )}
       </ScrollView>
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
@@ -1410,7 +1412,7 @@ function GrowthMetric({ change, label, value }: { change?: number; label: string
 function SectionTitle({ subtitle, title }: { subtitle: string; title: string }) {
   return (
     <ThemedView flex={1} minWidth={0}>
-      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={18} lineHeight={24}>
+      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={12} letterSpacing={1.8} lineHeight={17} textTransform='uppercase'>
         {title}
       </ThemedText>
       <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17} marginTop={2}>
@@ -1428,9 +1430,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 34 },
   content: {
-    gap: mhs(24),
+    gap: mhs(12),
     paddingBottom: 120,
-    paddingTop: mhs(12) },
+    paddingTop: mhs(8) },
   footerLoader: {
     paddingVertical: mhs(16) },
   atRiskMetrics: {
@@ -1547,9 +1549,6 @@ const styles = StyleSheet.create({
     borderRadius: mhs(21),
     borderWidth: 1,
     padding: mhs(24) },
-  safeArea: {
-    backgroundColor: Palette.surfaceBase,
-    flex: 1 },
   search: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.border,
@@ -1597,10 +1596,12 @@ const styles = StyleSheet.create({
   serviceIcon: {
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.06)',
-    borderRadius: mhs(16),
+    borderRadius: mhs(12),
     height: 48,
     justifyContent: 'center',
     width: 48 },
+
+
   serviceRow: {
     width: '100%' },
   serviceTile: {

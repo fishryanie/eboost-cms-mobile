@@ -1,16 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { ThemedView } from 'components/base';
+import { ThemedText, ThemedView } from 'components/base';
 import { Bell, CalendarPlus, ChevronLeft, Gift, TicketPercent, type LucideIcon } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
 import { mhs } from 'themes/scaling';
-import { getMenuSection } from 'components/animated-tab-bar/constants';
-import { AppScreen } from 'components/ui';
 import { Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
 
 import { getCurrentMonthRange, toSubscriptionStatsSummary, type ShareMetric, type SubscriptionStatsResponse } from 'utils/marketing';
 import { MarketingServicesSection, ModuleSection, SubscriptionStatsCard } from './components/marketing-sections';
+import { getMenuSection } from 'components/animated-tab-bar/constants';
 
 const screenHorizontalPadding = 18;
 const serviceTileSize = 64;
@@ -163,10 +162,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 38,
   },
-  safeArea: {
-    backgroundColor: Palette.surfaceBase,
-    flex: 1,
-  },
+
+
   serviceIconSurface: {
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.06)',
@@ -210,46 +207,53 @@ export default function MarketingScreen() {
 
   const isMainScreen = !onBack;
   return (
-    <AppScreen
-      title={isMainScreen ? 'Marketing' : 'Subscription Package Stats'}
-      subtitle={isMainScreen ? 'Promotions, notifications, bonus, and subscription performance.' : undefined}
-      isFlatList
-      flatListProps={{
-        contentContainerStyle: styles.content,
-        data: [],
-        ListEmptyComponent: (
-          <ThemedView gap={focusStats ? 'three' : 'five'} paddingHorizontal={screenHorizontalPadding}>
-            {!focusStats ? <MarketingServicesSection tileWidth={serviceTileWidth} /> : null}
-            <SubscriptionStatsCard
-              isFetching={statsQuery.isFetching}
-              isLoading={statsQuery.isLoading}
-              monthRange={monthRange}
-              onMetricChange={setShareMetric}
-              onRefresh={() => statsQuery.refetch()}
-              shareMetric={shareMetric}
-              summary={summary}
-              width={width}
-            />
-            {!focusStats ? <ModuleSection accentColor={section.accentColor} panels={section.panels} /> : null}
-          </ThemedView>
-        ),
-        ListHeaderComponent: onBack ? (
-          <ThemedView gap={'three'} paddingHorizontal={screenHorizontalPadding} paddingTop={'two'}>
-            <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
-              <Pressable
-                accessibilityLabel='Back'
-                accessibilityRole='button'
-                onPress={onBack}
-                style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
-                <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
-              </Pressable>
+      <ThemedView safePaddingBottom flex={1} backgroundColor={Palette.surfaceBase}>
+        <FlatList
+          contentContainerStyle={styles.content}
+          data={[]}
+          ListEmptyComponent={
+            <ThemedView gap={focusStats ? 'three' : 'five'} paddingHorizontal={screenHorizontalPadding}>
+              <ThemedView>
+                <ThemedText fontFamily="bold" fontSize={34} lineHeight={40} letterSpacing={-0.5}>
+                  {isMainScreen ? 'Marketing' : 'Subscription Package Stats'}
+                </ThemedText>
+                {isMainScreen && (
+                  <ThemedText fontSize={16} color={Palette.textSecondary} marginTop={mhs(4)}>
+                    Promotions, notifications, bonus, and subscription performance.
+                  </ThemedText>
+                )}
+              </ThemedView>
+              {!focusStats ? <MarketingServicesSection tileWidth={serviceTileWidth} /> : null}
+              <SubscriptionStatsCard
+                isFetching={statsQuery.isFetching}
+                isLoading={statsQuery.isLoading}
+                monthRange={monthRange}
+                onMetricChange={setShareMetric}
+                onRefresh={() => statsQuery.refetch()}
+                shareMetric={shareMetric}
+                summary={summary}
+                width={width}
+              />
+              {!focusStats ? <ModuleSection accentColor={section.accentColor} panels={section.panels} /> : null}
             </ThemedView>
-          </ThemedView>
-        ) : null,
-        refreshControl: <RefreshControl onRefresh={() => statsQuery.refetch()} refreshing={statsQuery.isRefetching} tintColor={Palette.accent} />,
-        renderItem: null,
-        showsVerticalScrollIndicator: false,
-      }}
-    />
+          }
+          ListHeaderComponent={onBack ? (
+            <ThemedView gap={'three'} paddingHorizontal={screenHorizontalPadding} paddingTop={'two'}>
+              <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
+                <Pressable
+                  accessibilityLabel='Back'
+                  accessibilityRole='button'
+                  onPress={onBack}
+                  style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+                  <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
+                </Pressable>
+              </ThemedView>
+            </ThemedView>
+          ) : null}
+          refreshControl={<RefreshControl onRefresh={() => statsQuery.refetch()} refreshing={statsQuery.isRefetching} tintColor={Palette.accent} />}
+          renderItem={null}
+          showsVerticalScrollIndicator={false}
+        />
+      </ThemedView>
   );
 }

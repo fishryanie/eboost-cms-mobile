@@ -15,7 +15,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   type View as NativeView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 import { loginAdmin } from 'utils/auth/auth-service';
 import { biometricCredentialStore } from 'utils/auth/biometric-credentials';
@@ -123,7 +123,7 @@ export default function LoginScreen() {
 
   return (
     <BackgroundGradient colors={['#FFFFFF', '#FFFFFF', '#F7FBF9', '#EFF8F4', '#E8F4EF', '#FFFFFF', '#FFFFFF']}>
-      <SafeAreaView style={styles.container}>
+      <ThemedView safePaddingTop safePaddingBottom flex={1}>
         <TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
           <ScrollView
             ref={scrollViewRef}
@@ -261,7 +261,7 @@ export default function LoginScreen() {
             </ThemedView>
           </ScrollView>
         </TouchableWithoutFeedback>
-      </SafeAreaView>
+      </ThemedView>
     </BackgroundGradient>
   );
 }
@@ -302,8 +302,7 @@ const styles = StyleSheet.create({
     height: mvs(34),
     width: mhs(cardLogoWidth),
     objectFit: 'fill' },
-  container: {
-    flex: 1 },
+
   gradientCanvas: {
     flex: 1 },
   scrollContainer: {

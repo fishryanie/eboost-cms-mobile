@@ -1,7 +1,7 @@
 import { mhs } from 'themes/scaling';
 import { PropsWithChildren } from 'react';
-import { ScrollView, ScrollViewProps, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, ScrollViewProps, StyleSheet, FlatList } from 'react-native';
+
 import { ThemedView } from 'components/base';
 import { AnimatedHeaderScrollView } from 'components/organisms/animated-header-scrollview';
 
@@ -18,21 +18,22 @@ export function AppScreen({
   canGoBack,
   onBack,
   searchBar,
+  disableSafeAreaTop,
   ...props 
-}: PropsWithChildren<ScrollViewProps & { scroll?: boolean; title?: string; subtitle?: string; rightComponent?: React.ReactNode; isFlatList?: boolean; flatListProps?: import('react-native').FlatListProps<any>; canGoBack?: boolean; onBack?: () => void; searchBar?: React.ReactNode; }>) {
+}: PropsWithChildren<ScrollViewProps & { scroll?: boolean; title?: string; subtitle?: string; rightComponent?: React.ReactNode; isFlatList?: boolean; flatListProps?: import('react-native').FlatListProps<any>; canGoBack?: boolean; onBack?: () => void; searchBar?: React.ReactNode; disableSafeAreaTop?: boolean; }>) {
   if (!scroll) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <ThemedView flex={1} backgroundColor={Palette.surfaceBase} safePaddingBottom safePaddingTop={!disableSafeAreaTop}>
         <ThemedView flex={1} padding={'four'}>
           {children}
         </ThemedView>
-      </SafeAreaView>
+      </ThemedView>
     );
   }
 
   if (title) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+      <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
         <AnimatedHeaderScrollView
           largeTitle={title}
           subtitle={subtitle}
@@ -46,16 +47,30 @@ export function AppScreen({
         >
           {children}
         </AnimatedHeaderScrollView>
-      </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
+  if (isFlatList) {
+    return (
+      <ThemedView flex={1} backgroundColor={Palette.surfaceBase} safePaddingBottom safePaddingTop={!disableSafeAreaTop}>
+        <FlatList
+          keyboardShouldPersistTaps='handled'
+          contentContainerStyle={styles.content}
+          style={styles.scroll}
+          {...(flatListProps as any)}
+          {...(props as any)}
+        />
+      </ThemedView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView flex={1} backgroundColor={Palette.surfaceBase} safePaddingBottom safePaddingTop={!disableSafeAreaTop}>
       <ScrollView keyboardShouldPersistTaps='handled' contentContainerStyle={styles.content} style={styles.scroll} {...props}>
         {children}
       </ScrollView>
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
@@ -64,8 +79,6 @@ const styles = StyleSheet.create({
     gap: mhs(16),
     padding: mhs(16),
     paddingBottom: 120 },
-  safeArea: {
-    backgroundColor: Palette.surfaceBase,
-    flex: 1 },
+
   scroll: {
     flex: 1 } });

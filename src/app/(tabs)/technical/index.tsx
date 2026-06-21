@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { RefreshControl, useWindowDimensions } from 'react-native';
+import { FlatList, RefreshControl, useWindowDimensions } from 'react-native';
 import { mhs } from 'themes/scaling';
 
 import { ReplaceMeterSheet } from 'app/(tabs)/technical/components/replace-meter-sheet';
 import { SetupLocationSheet } from 'app/(tabs)/technical/components/setup-location-sheet';
 import { TriggerBoxSheet } from 'app/(tabs)/technical/features/trigger-box';
-import { ThemedView } from 'components/base';
-import { AppScreen } from 'components/ui';
+import { ThemedText, ThemedView } from 'components/base';
 import { Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
 import { getCollectionResult } from 'utils/api/collection';
@@ -93,16 +92,21 @@ export default function TechnicalScreen() {
 
   return (
     <>
-      <AppScreen
-        title='Technical'
-        subtitle='Charger service, network health, and domain load'
-        isFlatList
-        flatListProps={{
-          contentContainerStyle: styles.content,
-          data: emptyOverviewData,
-          keyExtractor: (_, index) => String(index),
-          ListEmptyComponent: (
+      <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
+        <FlatList
+          contentContainerStyle={styles.content}
+          data={emptyOverviewData}
+          keyExtractor={(_, index) => String(index)}
+          ListEmptyComponent={
             <ThemedView gap={'five'} paddingHorizontal={screenHorizontalPadding}>
+              <ThemedView>
+                <ThemedText fontWeight='600' fontSize={32} lineHeight={40} letterSpacing={2}>
+                  Technical
+                </ThemedText>
+                <ThemedText fontSize={15} lineHeight={25} color={Palette.textSecondary} marginTop={mhs(4)}>
+                  Manage bike and car chargers, monitor network status, and handle technical operations from one place.
+                </ThemedText>
+              </ThemedView>
               <ChargerServicesSection
                 tileWidth={serviceTileWidth}
                 onBoxAction={setBoxActionMode}
@@ -154,8 +158,8 @@ export default function TechnicalScreen() {
                 }
               />
             </ThemedView>
-          ),
-          refreshControl: (
+          }
+          refreshControl={
             <RefreshControl
               onRefresh={() => {
                 void refetchBikeNetwork();
@@ -167,11 +171,11 @@ export default function TechnicalScreen() {
               refreshing={bikeNetworkRefetching || bikeBoxStatusRefetching || carBoxStatusRefetching || carNetworkRefetching || domainRefetching}
               tintColor={Palette.accent}
             />
-          ),
-          renderItem: null,
-          showsVerticalScrollIndicator: false,
-        }}
-      />
+          }
+          renderItem={null}
+          showsVerticalScrollIndicator={false}
+        />
+      </ThemedView>
       {boxActionMode ? <TriggerBoxSheet mode={boxActionMode} onClose={() => setBoxActionMode(null)} visible={Boolean(boxActionMode)} /> : null}
       {replaceMeterVisible ? <ReplaceMeterSheet onClose={() => setReplaceMeterVisible(false)} visible={replaceMeterVisible} /> : null}
       {setupLocationVisible ? <SetupLocationSheet onClose={() => setSetupLocationVisible(false)} visible={setupLocationVisible} /> : null}

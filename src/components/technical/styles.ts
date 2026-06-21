@@ -12,7 +12,8 @@ export const styles = StyleSheet.create({
     width: 34 },
   content: {
     gap: mhs(12),
-    paddingBottom: 180 },
+    paddingBottom: 120,
+    paddingTop: mhs(8) },
   connectorStrip: {
     backgroundColor: '#F8FAFC',
     borderColor: '#EEF2F6',
@@ -172,9 +173,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#EEF2F6',
     borderRadius: 999,
     height: 6 },
-  safeArea: {
-    backgroundColor: Palette.surfaceBase,
-    flex: 1 },
+
   searchInput: {
     color: Palette.textPrimary,
     flex: 1,

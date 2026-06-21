@@ -6,12 +6,14 @@ import Animated, { Easing, Extrapolation, interpolate, useAnimatedStyle, useShar
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
+import Constants from 'expo-constants';
 import { ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
 import { adminProfile } from 'utils/auth/admin-profile';
 import { sessionKeys } from 'utils/session/use-session-token';
 import { sessionStore } from 'utils/session/session-store';
 import { useDrawerStore } from 'utils/drawer-store';
+import { VERSION_APP } from 'constants/shared';
 
 const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
 
@@ -28,23 +30,18 @@ const drawerItems: {
   name: string;
   route?: '/drawer/profile' | '/drawer/settings' | '/drawer/staff-managements' | '/home' | '/marketing' | '/operation';
 }[] = [
-  { icon: 'house.fill', name: 'Home', route: '/home' },
-  { icon: 'gearshape.2.fill', name: 'Operation', route: '/operation' },
-  { icon: 'megaphone.fill', name: 'Marketing', route: '/marketing' },
-  { icon: 'person.2.badge.gearshape.fill', name: 'Staff managements', route: '/drawer/staff-managements' },
-  { icon: 'person.crop.circle', name: 'My Profile', route: '/drawer/profile' },
-  { icon: 'gearshape.fill', name: 'Settings', route: '/drawer/settings' },
+  { icon: 'person.crop.circle', name: 'My profile', route: '/drawer/profile' },
+  { icon: 'person.2.badge.gearshape.fill', name: 'Staff management', route: '/drawer/staff-managements' },
+  { icon: 'gearshape.fill', name: 'Setting', route: '/drawer/settings' },
   { icon: 'rectangle.portrait.and.arrow.right', name: 'Logout' },
 ];
 
-type ThemeOption = 'dark' | 'light' | 'system';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function AppDrawer({ children }: PropsWithChildren) {
   const progress = useSharedValue(0);
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const [theme, setTheme] = useState<ThemeOption>('system');
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -161,37 +158,11 @@ export function AppDrawer({ children }: PropsWithChildren) {
               <ThemedText style={[styles.drawerItemText, { color: colors.text }]}>{item.name}</ThemedText>
             </Pressable>
           ))}
-
-          <ThemedView flexDirection='row' flexWrap='wrap' gap={'two'} marginTop={'four'}>
-            {(['system', 'light', 'dark'] as const).map(option => {
-              const selected = theme === option;
-              return (
-                <Pressable
-                  key={option}
-                  onPress={() => setTheme(option)}
-                  style={[
-                    styles.themePill,
-                    {
-                      backgroundColor: selected ? drawerTextColor : 'transparent',
-                      borderColor: drawerMutedColor,
-                    },
-                  ]}>
-                  <ThemedText
-                    style={[
-                      styles.themeText,
-                      {
-                        color: selected ? colors.backgroundGreen : drawerTextColor,
-                      },
-                    ]}>
-                    {option}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </ThemedView>
         </ThemedView>
 
-        <ThemedText style={[styles.version, { bottom: insets.bottom + 12, color: drawerMutedColor }]}>v1.0.0</ThemedText>
+        <ThemedText style={[styles.version, { bottom: insets.bottom + 12, color: drawerMutedColor }]}>
+          v{Constants.expoConfig?.version ?? '1.0.0'}EAS{VERSION_APP}
+        </ThemedText>
       </AnimatedThemedView>
 
       <AnimatedThemedView needsOffscreenAlphaCompositing renderToHardwareTextureAndroid style={appStyle}>
@@ -245,17 +216,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.16)',
     borderRadius: 34,
     position: 'absolute',
-  },
-  themePill: {
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  themeText: {
-    fontFamily: FontFamily.bold,
-    fontSize: 12,
-    textTransform: 'capitalize',
   },
   version: {
     fontFamily: FontFamily.regular,

@@ -7,9 +7,9 @@ import { styles } from 'components/technical/styles';
 
 export function SectionTitle({ actionLabel, onAction, subtitle, title }: { actionLabel?: string; onAction?: () => void; subtitle: string; title: string }) {
   return (
-    <ThemedView gap={'one'}>
+    <ThemedView gap={'one'} minWidth={0}>
       <ThemedView alignItems='center' flexDirection='row' gap={'two'} justifyContent='space-between'>
-        <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={21}>
+        <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.bold} fontSize={12} letterSpacing={1.8} lineHeight={17} textTransform='uppercase'>
           {title}
         </ThemedText>
         {actionLabel && onAction ? (
@@ -21,7 +21,7 @@ export function SectionTitle({ actionLabel, onAction, subtitle, title }: { actio
           </Pressable>
         ) : null}
       </ThemedView>
-      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17}>
+      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17} marginTop={2}>
         {subtitle}
       </ThemedText>
     </ThemedView>

@@ -69,7 +69,7 @@
     "ios": "expo start --ios",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "build": "sh ./scripts/ios-build.sh",
+    "build:ios": "sh ./scripts/ios-build.sh",
     "build:android": "sh ./scripts/android-build.sh",
     "build:android:apk": "sh ./scripts/android-build-apk.sh",
     "build:android:aab": "sh ./scripts/android-build-aab.sh",

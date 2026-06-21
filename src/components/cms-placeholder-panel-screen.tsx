@@ -2,7 +2,6 @@ import { mhs } from 'themes/scaling';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { TabIcon } from 'components/tab-icon';
@@ -16,7 +15,7 @@ export function CmsSectionScreen({ section }: { section: CmsMobileSection }) {
   const router = useRouter();
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <ThemedView safePaddingTop flex={1} backgroundColor={Palette.surfaceBase}>
       <FlatList
         contentContainerStyle={styles.content}
         data={section.panels}
@@ -51,13 +50,13 @@ export function CmsSectionScreen({ section }: { section: CmsMobileSection }) {
         )}
         showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
 export function CmsPlaceholderPanelScreen({ accentColor, onBack, panel }: { accentColor: string; onBack: () => void; panel: CmsMobilePanel }) {
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <ThemedView safePaddingTop flex={1} backgroundColor={Palette.surfaceBase}>
       <FlatList
         contentContainerStyle={styles.content}
         data={[panel]}
@@ -92,7 +91,7 @@ export function CmsPlaceholderPanelScreen({ accentColor, onBack, panel }: { acce
         )}
         showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
@@ -160,7 +159,4 @@ const styles = StyleSheet.create({
     padding: mhs(16) },
   pressed: {
     opacity: 0.72,
-    transform: [{ scale: 0.99 }] },
-  safeArea: {
-    backgroundColor: Palette.surfaceBase,
-    flex: 1 } });
+    transform: [{ scale: 0.99 }] } });

@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
@@ -36,7 +35,7 @@ export default function UsersScreen({ onBack }: { onBack?: () => void } = {}) {
   );
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <ThemedView safePaddingTop flex={1} backgroundColor={Palette.surfaceBase}>
       <FlatList
         contentContainerStyle={styles.content}
         data={users}
@@ -118,7 +117,7 @@ export default function UsersScreen({ onBack }: { onBack?: () => void } = {}) {
         renderItem={renderUser}
         showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
@@ -139,9 +138,7 @@ const styles = StyleSheet.create({
   retryMore: {
     alignItems: 'center',
     paddingVertical: 20 },
-  safeArea: {
-    backgroundColor: Palette.surfaceBase,
-    flex: 1 },
+
   search: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.border,

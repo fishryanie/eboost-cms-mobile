@@ -28,11 +28,11 @@ export function HomeHeader() {
             {adminProfile.initials}
           </ThemedText>
         </ThemedView>
-        <ThemedView gap={'one'} minWidth={0}>
-          <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={14}>
-            Wellcome 👋
+        <ThemedView gap={2} minWidth={0}>
+          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={16}>
+            Welcome 👋
           </ThemedText>
-          <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={22}>
+          <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={22}>
             {adminProfile.name}
           </ThemedText>
         </ThemedView>
@@ -61,7 +61,6 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.surfaceBase,
     flexDirection: 'row',
     gap: mhs(24),
-    marginBottom: mhs(24),
     paddingBottom: mhs(4),
     paddingHorizontal: mhs(12),
   },

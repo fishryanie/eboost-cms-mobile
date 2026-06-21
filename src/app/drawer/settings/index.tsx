@@ -4,7 +4,6 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
@@ -120,7 +119,7 @@ export default function DrawerSettingsScreen() {
   const displayUsername = lastUsername || usernameInput;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ThemedView safePaddingTop safePaddingBottom flex={1} backgroundColor={Palette.surfaceBase}>
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior='automatic' keyboardShouldPersistTaps='handled'>
         <ThemedView gap={'one'} paddingTop={'two'}>
           <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={12} lineHeight={18} textTransform='uppercase'>
@@ -231,14 +230,12 @@ export default function DrawerSettingsScreen() {
           ) : null}
         </ThemedView>
       </ScrollView>
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: Palette.surfaceBase,
-    flex: 1 },
+
   content: {
     gap: mhs(24),
     padding: mhs(24) },

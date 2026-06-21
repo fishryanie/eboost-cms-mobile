@@ -5,7 +5,6 @@ import { ChevronLeft } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
 import Modal from 'react-native-modal';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
@@ -107,7 +106,7 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
   );
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <ThemedView safePaddingTop flex={1} backgroundColor={Palette.surfaceBase}>
       <FlatList
         contentContainerStyle={styles.content}
         data={filteredLocations}
@@ -218,7 +217,7 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
           <AppButton block disabled={!newLocationName.trim()} label='Create new location' loading={createLocation.isPending} onPress={submitCreate} />
         </ThemedView>
       </Modal>
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
@@ -279,9 +278,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 54,
     paddingHorizontal: mhs(16) },
-  safeArea: {
-    backgroundColor: Palette.surfaceBase,
-    flex: 1 },
+
   search: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
