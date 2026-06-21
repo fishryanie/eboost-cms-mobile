@@ -1,28 +1,16 @@
-import { mhs } from "themes/scaling";
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
-import { Bell, CalendarPlus, ChevronLeft, ChevronRight, Gift, Megaphone, RefreshCw, TicketPercent, type LucideIcon } from 'lucide-react-native';
+import { ThemedView } from 'components/base';
+import { Bell, CalendarPlus, ChevronLeft, Gift, TicketPercent, type LucideIcon } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle } from 'react-native-svg';
-import { ThemedText, ThemedView } from 'components/base';
-
-import { TabIcon } from 'components/tab-icon';
-import { getMenuSection, type CmsMobilePanel } from 'components/animated-tab-bar/constants';
-import { AppScreen, EmptyState } from 'components/ui';
-import { FontFamily, Palette } from 'themes';
+import { Pressable, RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
+import { mhs } from 'themes/scaling';
+import { getMenuSection } from 'components/animated-tab-bar/constants';
+import { AppScreen } from 'components/ui';
+import { Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
 
-import {
-  getCurrentMonthRange,
-  toSubscriptionStatsSummary,
-  type ShareMetric,
-  type SubscriptionPackageRow,
-  type SubscriptionStatsSummary } from 'utils/marketing';
+import { getCurrentMonthRange, toSubscriptionStatsSummary, type ShareMetric, type SubscriptionStatsResponse } from 'utils/marketing';
 import { MarketingServicesSection, ModuleSection, SubscriptionStatsCard } from './components/marketing-sections';
-
-
 
 const screenHorizontalPadding = 18;
 const serviceTileSize = 64;
@@ -46,25 +34,29 @@ const marketingServices: MarketingServiceItem[] = [
     labelLines: ['Push', 'Noti'],
     label: 'Push Noti',
     panel: 'notifications',
-    serviceKey: 'push-noti' },
+    serviceKey: 'push-noti',
+  },
   {
     icon: CalendarPlus,
     labelLines: ['Schedule', 'Noti'],
     label: 'Add Schedule Noti',
     panel: 'notification-message-templates',
-    serviceKey: 'schedule-noti' },
+    serviceKey: 'schedule-noti',
+  },
   {
     icon: TicketPercent,
     labelLines: ['Promo', 'Code'],
     label: 'New Promo Code',
     panel: 'promotions',
-    serviceKey: 'new-promo-code' },
+    serviceKey: 'new-promo-code',
+  },
   {
     icon: Gift,
     labelLines: ['New', 'Bonus'],
     label: 'New Bonus',
     panel: 'bonus-topup',
-    serviceKey: 'new-bonus' },
+    serviceKey: 'new-bonus',
+  },
 ];
 
 const styles = StyleSheet.create({
@@ -73,46 +65,55 @@ const styles = StyleSheet.create({
     borderRadius: mhs(16),
     height: 34,
     justifyContent: 'center',
-    width: 34 },
+    width: 34,
+  },
   content: {
     gap: mhs(12),
     paddingBottom: 120,
-    paddingTop: mhs(8) },
+    paddingTop: mhs(8),
+  },
   dividedSection: {
     borderTopColor: Palette.borderSubtle,
     borderTopWidth: 1,
-    paddingTop: mhs(16) },
+    paddingTop: mhs(16),
+  },
   energyValue: {
     flexBasis: '47%',
     flexGrow: 1,
-    gap: 2 },
+    gap: 2,
+  },
   headerIcon: {
     alignItems: 'center',
     borderRadius: mhs(21),
     height: 52,
     justifyContent: 'center',
-    width: 52 },
+    width: 52,
+  },
   metricOption: {
     alignItems: 'center',
     borderRadius: mhs(16),
     flex: 1,
     justifyContent: 'center',
-    minHeight: 34 },
+    minHeight: 34,
+  },
   metricOptionActive: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
-    borderWidth: 1 },
+    borderWidth: 1,
+  },
   metricSwitch: {
     backgroundColor: Palette.surfaceMuted,
     borderRadius: mhs(21),
     gap: mhs(4),
-    padding: 4 },
+    padding: 4,
+  },
   moduleIcon: {
     alignItems: 'center',
     borderRadius: mhs(16),
     height: 36,
     justifyContent: 'center',
-    width: 36 },
+    width: 36,
+  },
   moduleRow: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceRaised,
@@ -121,31 +122,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: mhs(12),
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   packageDot: {
     borderRadius: 5,
     height: 10,
-    width: 10 },
+    width: 10,
+  },
   packageRow: {
     backgroundColor: Palette.surfaceMuted,
     borderRadius: mhs(16),
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   packageListContent: {
     gap: mhs(8),
     paddingBottom: 120,
     paddingHorizontal: screenHorizontalPadding,
-    paddingTop: mhs(12) },
+    paddingTop: mhs(12),
+  },
   pressed: {
     opacity: 0.72,
-    transform: [{ scale: 0.99 }] },
+    transform: [{ scale: 0.99 }],
+  },
   progressFill: {
     borderRadius: 5,
-    height: 10 },
+    height: 10,
+  },
   progressTrack: {
     backgroundColor: '#EEF2F7',
     borderRadius: 5,
     height: 10,
-    overflow: 'hidden' },
+    overflow: 'hidden',
+  },
   refreshButton: {
     alignItems: 'center',
     borderColor: Palette.borderSubtle,
@@ -153,31 +161,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     height: 38,
     justifyContent: 'center',
-    width: 38 },
+    width: 38,
+  },
   safeArea: {
     backgroundColor: Palette.surfaceBase,
-    flex: 1 },
+    flex: 1,
+  },
   serviceIconSurface: {
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.06)',
     borderRadius: mhs(12),
     height: 48,
     justifyContent: 'center',
-    width: 48 },
+    width: 48,
+  },
   serviceRow: {
-    width: '100%' },
+    width: '100%',
+  },
   serviceShortcut: {
     alignItems: 'center',
     gap: mhs(4),
-    minHeight: 74 },
+    minHeight: 74,
+  },
   summaryStat: {
     backgroundColor: Palette.surfaceMuted,
     borderRadius: mhs(16),
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   textButton: {
     paddingHorizontal: mhs(4),
-    paddingVertical: mhs(8) } });
-
+    paddingVertical: mhs(8),
+  },
+});
 
 export default function MarketingScreen() {
   const focusStats = false;
@@ -188,15 +203,16 @@ export default function MarketingScreen() {
   const monthRange = useMemo(() => getCurrentMonthRange(), []);
   const statsQuery = useQuery({
     queryFn: () => apiRequest<SubscriptionStatsResponse>('api/controller/statistic/subscription-kw-summary', { params: monthRange }),
-    queryKey: ['marketing', 'subscription-package-stats', monthRange.start, monthRange.end] });
+    queryKey: ['marketing', 'subscription-package-stats', monthRange.start, monthRange.end],
+  });
   const summary = useMemo(() => toSubscriptionStatsSummary(statsQuery.data, shareMetric), [shareMetric, statsQuery.data]);
   const serviceTileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - mhs(12) * 3) / 4));
 
   const isMainScreen = !onBack;
   return (
     <AppScreen
-      title={isMainScreen ? "Marketing" : "Subscription Package Stats"}
-      subtitle={isMainScreen ? "Promotions, notifications, bonus, and subscription performance." : undefined}
+      title={isMainScreen ? 'Marketing' : 'Subscription Package Stats'}
+      subtitle={isMainScreen ? 'Promotions, notifications, bonus, and subscription performance.' : undefined}
       isFlatList
       flatListProps={{
         contentContainerStyle: styles.content,
@@ -232,7 +248,8 @@ export default function MarketingScreen() {
         ) : null,
         refreshControl: <RefreshControl onRefresh={() => statsQuery.refetch()} refreshing={statsQuery.isRefetching} tintColor={Palette.accent} />,
         renderItem: null,
-        showsVerticalScrollIndicator: false }}
+        showsVerticalScrollIndicator: false,
+      }}
     />
   );
 }

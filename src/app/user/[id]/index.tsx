@@ -15,7 +15,7 @@ const currencyFormatter = new Intl.NumberFormat('vi-VN', {
 function formatDate(value?: string | null) {
   if (!value) return 'Not available';
   return new Intl.DateTimeFormat('en-GB', {
-    dateStyle: mhs(16),
+    dateStyle: 'medium',
     timeStyle: 'short' }).format(new Date(value));
 }
 

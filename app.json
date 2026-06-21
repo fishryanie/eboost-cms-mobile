@@ -1,44 +1,61 @@
 {
   "expo": {
+    // Tên hiển thị của ứng dụng trên màn hình chính của điện thoại
     "name": "Eboost CMS",
+    // Tên định danh (slug) dùng trên Expo (URL ví dụ: exp.host/@owner/cms)
     "slug": "cms",
+    // Phiên bản ứng dụng chính (thường hiển thị công khai trên App Store / Play Store)
     "version": "1.0.0",
+    // Khóa hướng màn hình (portrait = chỉ cho phép màn hình hiển thị dọc)
     "orientation": "portrait",
+    // Đường dẫn đến file ảnh icon của ứng dụng
     "icon": "./src/assets/images/icon.png",
+    // Scheme dùng cho deep link (giúp mở app từ trình duyệt bằng link eboostcmsmobile://...)
     "scheme": "eboostcmsmobile",
+    // Buộc ứng dụng luôn hiển thị ở chế độ sáng (light mode), không theo giao diện của điện thoại
     "userInterfaceStyle": "light",
     "ios": {
+      // Icon dành riêng cho iOS
       "icon": "./src/assets/images/icon.png",
+      // Định danh duy nhất của app trên Apple App Store (Bundle ID)
       "bundleIdentifier": "com.evida.eboost.cms",
-      "buildNumber": "2",
+      // Số thứ tự bản build nội bộ (iOS) - dùng để phân biệt các lần đẩy app lên TestFlight/AppStore
+      "buildNumber": "1",
       "infoPlist": {
+        // Tên hiển thị của ứng dụng bên dưới icon trên màn hình iOS
         "CFBundleDisplayName": "Eboost CMS",
+        // Khai báo ứng dụng không dùng mã hóa đặc biệt (giúp bỏ qua bước xác nhận phiền phức khi đẩy app lên App Store)
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
+      // Icon dành riêng cho Android
       "icon": "./src/assets/images/icon.png",
+      // Tắt tính năng vuốt để quay lại có preview trước của Android 14+
       "predictiveBackGestureEnabled": false,
+      // Danh sách các quyền mà ứng dụng yêu cầu khi cài đặt trên Android
       "permissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
+        "android.permission.RECORD_AUDIO", // Quyền ghi âm thanh
+        "android.permission.USE_BIOMETRIC", // Quyền sử dụng sinh trắc học (Khuôn mặt, mống mắt...)
+        "android.permission.USE_FINGERPRINT", // Quyền sử dụng vân tay
         "android.permission.RECORD_AUDIO",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
       ],
+      // Định danh duy nhất của app trên Google Play Store (Package Name)
       "package": "com.evida.eboost.cms"
     },
+    // Danh sách các plugin của Expo để cài đặt tự động các đoạn code Native (Swift/Kotlin)
     "plugins": [
-      "expo-router",
+      "expo-router", // Plugin để dùng hệ thống định tuyến (chuyển trang) của Expo
       [
-        "expo-splash-screen",
+        "expo-splash-screen", // Plugin tạo màn hình chờ (Splash Screen) lúc vừa mở app
         {
-          "backgroundColor": "#FFFFFF",
-          "image": "./src/assets/images/cms-splash.png",
-          "resizeMode": "cover",
+          "backgroundColor": "#FFFFFF", // Màu nền màn hình chờ
+          "image": "./src/assets/images/cms-splash.png", // Ảnh logo giữa màn hình chờ
+          "resizeMode": "cover", // Cách hiển thị ảnh (cover là phủ kín)
           "ios": {
-            "enableFullScreenImage_legacy": true
+            "enableFullScreenImage_legacy": true // Hỗ trợ hiển thị full màn hình cho các máy iOS cũ
           },
           "android": {
             "image": "./src/assets/images/cms-splash.png",
@@ -47,40 +64,48 @@
           }
         }
       ],
-      "expo-secure-store",
+      "expo-secure-store", // Plugin để lưu trữ dữ liệu cục bộ một cách an toàn (có mã hóa)
       [
-        "expo-local-authentication",
+        "expo-local-authentication", // Plugin dùng xác thực bằng sinh trắc học
         {
-          "faceIDPermission": "Allow Eboost CMS to use Face ID for secure admin sign in."
+          "faceIDPermission": "Allow Eboost CMS to use Face ID for secure admin sign in." // Lời nhắc hiển thị khi xin quyền Face ID trên iOS
         }
       ],
-      "expo-sharing",
+      "expo-sharing", // Plugin cho phép mở tính năng chia sẻ (Share) file/ảnh cho app khác
       [
-        "expo-image-picker",
+        "expo-image-picker", // Plugin cho phép mở thư viện ảnh hoặc camera để chụp hình
         {
-          "photosPermission": "Allow Eboost CMS to access your photos so you can upload location images."
+          "photosPermission": "Allow Eboost CMS to access your photos so you can upload location images." // Lời nhắc hiển thị xin quyền vào thư viện ảnh
         }
       ],
-      "expo-image",
-      "expo-asset",
-      "./plugins/withGradleProperties"
+      "expo-image", // Plugin giúp hiển thị và tối ưu hóa việc load ảnh mượt mà hơn
+      "expo-asset", // Plugin quản lý các file tĩnh (assets) như ảnh, font chữ
+      "./plugins/withGradleProperties" // Plugin tùy chỉnh nội bộ để tự động thêm/sửa file Gradle của Android
     ],
+    // Bật các tính năng đang thử nghiệm của Expo
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true, // Bật tính năng kiểm tra lỗi chính tả và tự động gợi ý code cho đường dẫn chuyển trang
+      "reactCompiler": true // Bật trình biên dịch React Compiler mới giúp tăng hiệu năng app
     },
+    // Nơi chứa các thông tin biến môi trường/cấu hình mở rộng
     "extra": {
       "router": {},
       "eas": {
+        // ID dự án trên hệ thống Expo Application Services (EAS) để build/update app
         "projectId": "26625cb7-5cd2-42c2-97d4-5aecd7e83ffb"
       }
     },
+    // Tên tài khoản hoặc team (organization) đang sở hữu dự án này trên web Expo
     "owner": "eboost-cms",
+    // Cấu hình quy tắc liên kết giữa App Native và các bản OTA Updates (cập nhật từ xa)
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "appVersion" // Bản cập nhật từ xa chỉ áp dụng được trên app đang có "version" tương ứng (vd: bản vá cho 1.0.0 sẽ chỉ tải về trên app 1.0.0)
     },
+    // Cấu hình cho Expo Updates (cập nhật app không cần tải lại trên Store)
     "updates": {
+      // Đường dẫn API để ứng dụng gọi lên server của Expo tải bản cập nhật mới
       "url": "https://u.expo.dev/26625cb7-5cd2-42c2-97d4-5aecd7e83ffb",
+      // "NEVER" = Tắt tự động kiểm tra cập nhật lúc khởi động app (bạn sẽ gọi hàm kiểm tra trong mã nguồn)
       "checkAutomatically": "NEVER"
     }
   }

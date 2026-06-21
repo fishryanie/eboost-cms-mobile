@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from 'components/animated-icon';
 import { AppDrawer } from 'components/app-drawer';
+import { AutoUpdateModal } from 'components/auto-update-modal';
 import { AppQueryProvider } from 'utils/query-provider';
 import { bootstrapSession } from 'utils/session/bootstrap';
 
@@ -43,6 +44,7 @@ export default function TabLayout() {
                   <Stack.Screen name='operation/[panel]/index' />
                   <Stack.Screen name='technical/network-issues/index' />
                 </Stack>
+                <AutoUpdateModal />
               </AppDrawer>
             </BottomSheetModalProvider>
           </AppQueryProvider>

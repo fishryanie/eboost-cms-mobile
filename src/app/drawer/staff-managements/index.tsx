@@ -144,7 +144,7 @@ function FilterStrip({
   setFilters: (update: (prev: StaffListFilters) => StaffListFilters) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [enabledStatus, setEnabledStatus] = useState<string | undefined>();
+  const [enabledStatus, setEnabledStatus] = useState<"0" | "1" | undefined>();
 
   useEffect(() => {
     const timeout = setTimeout(() => {

@@ -1,43 +1,55 @@
 {
   "cli": {
+    // Yêu cầu phiên bản lệnh EAS CLI thấp nhất phải từ 18.7.0 trở lên
     "version": ">= 18.7.0",
-    "appVersionSource": "remote"
+    // "local" = Hệ thống sẽ đọc số buildNumber (iOS) và versionCode (Android) từ file app.json
+    "appVersionSource": "local"
   },
+  // Nơi định nghĩa các Profile (kịch bản) khi bạn chạy lệnh build app
   "build": {
+    // Profile dành cho lập trình viên lúc đang code
     "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "channel": "development"
+      "developmentClient": true, // Cho biết bản build này là một Dev Client (chứa công cụ debug) chứ không phải app thường
+      "distribution": "internal", // Đánh dấu đây là bản build chia sẻ nội bộ
+      "channel": "development" // Gắn nhãn "development" cho bản build này (sau này để phân biệt khi gửi update)
     },
+    // Profile dùng cho nhóm Tester/QA dùng thử
     "preview": {
-      "distribution": "internal",
-      "channel": "preview"
+      "distribution": "internal", // Đánh dấu bản build nội bộ không public
+      "channel": "preview" // Gắn nhãn "preview"
     },
+    // Profile build ứng dụng Android ra đuôi file .apk
     "android-apk": {
       "android": {
-        "buildType": "apk"
+        "buildType": "apk" // Ép buộc hệ thống trả về file .apk (cài trực tiếp trên điện thoại)
       },
       "env": {
+        // Tăng dung lượng RAM cho tiến trình build (tránh lỗi cạn kiệt bộ nhớ OutOfMemoryError)
         "GRADLE_OPTS": "-Dorg.gradle.jvmargs=\"-Xmx4096m -XX:MaxMetaspaceSize=1024m\""
       },
       "channel": "android-apk"
     },
+    // Profile build ứng dụng Android ra đuôi file .aab
     "android-aab": {
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle" // Đuôi .aab (Bắt buộc phải có định dạng này nếu muốn đẩy lên Google Play Store)
       },
       "env": {
+        // Tăng dung lượng RAM cho tiến trình build
         "GRADLE_OPTS": "-Dorg.gradle.jvmargs=\"-Xmx4096m -XX:MaxMetaspaceSize=1024m\""
       },
       "channel": "android-aab"
     },
+    // Profile dùng để xuất bản ứng dụng chính thức lên App Store và Google Play
     "production": {
+      // Tự động tăng buildNumber sau mỗi lần build thành công (vì bạn có cấu hình appVersionSource: remote ở trên)
       "autoIncrement": true,
-      "environment": "production",
-      "channel": "production"
+      "environment": "production", // Biến môi trường báo hiệu app đang chạy ở production
+      "channel": "production" // Gắn nhãn "production"
     }
   },
+  // Nơi cấu hình cho lệnh tự động nộp ứng dụng lên kho tải (Submit to App Store / Google Play)
   "submit": {
-    "production": {}
+    "production": {} // Sử dụng các thông số submit mặc định cho profile "production"
   }
 }
