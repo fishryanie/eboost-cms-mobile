@@ -1,25 +1,26 @@
-import { mhs } from "themes/scaling";
-import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ThemedText, ThemedView } from 'components/base';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { ChevronLeft, ChevronsRight, Mail, ShieldCheck } from 'lucide-react-native';
-import { type ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowRightLeft, ChevronLeft, ChevronsRight, CreditCard, Lock, Mail, ShieldCheck, Star, Wallet } from 'lucide-react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ThemedText, ThemedView } from 'components/base';
-
-import { TabIcon, type TabIconName } from 'components/tab-icon';
-import { UserCard } from 'shared/users/components/user-card';
-import { biometricCredentialStore } from 'utils/auth/biometric-credentials';
-import { useInfiniteUsers, userKeys } from 'shared/users/hooks';
+import { mhs } from 'themes/scaling';
 import { AppButton, EmptyState } from 'components/ui';
+import { PaymentCheckoutSheet } from 'shared/operation/components/payment-checkout/payment-checkout-sheet';
+import { PaymentResultSheet } from 'shared/operation/components/payment-checkout/payment-result-sheet';
+import { UserCard } from 'shared/users/components/user-card';
+import { useInfiniteUsers, userKeys } from 'shared/users/hooks';
 import { FontFamily, Palette } from 'themes';
+import { biometricCredentialStore } from 'utils/auth/biometric-credentials';
 
 import {
   adjustUserBalance,
   confirmAdminPassword,
+  fetchAlePayHistory,
   fetchAtRiskUsers,
   fetchTopStations,
   fetchTopUsers,
@@ -36,9 +37,10 @@ import {
   type TopStationPerformanceItem,
   type TopUserPerformanceItem,
   type UserGrowthChartItem,
-  type UserGrowthSummary } from 'shared/operation/operation-user-service';
+  type UserGrowthSummary,
+} from 'shared/operation/operation-user-service';
 
-type OperationServiceKey = 'adjust-balance' | 'transfer-money' | 'modify-ranking' | 'change-email' | 'change-password';
+type OperationServiceKey = 'adjust-balance' | 'transfer-money' | 'modify-ranking' | 'change-email' | 'change-password' | 'payment-checkout';
 type WizardStep = 'auth' | 'input' | 'result';
 type ResultState = { message: string; status: 'error' | 'success'; title: string };
 type SymbolName = ComponentProps<typeof SymbolView>['name'];
@@ -46,7 +48,7 @@ type SymbolName = ComponentProps<typeof SymbolView>['name'];
 type OperationService = {
   accentColor: string;
   description: string;
-  icon: TabIconName;
+  icon: React.ElementType;
   key: OperationServiceKey;
   title: string;
 };
@@ -62,35 +64,47 @@ const emptyGrowth: UserGrowthChartItem[] = [];
 
 const operationServices: OperationService[] = [
   {
-    accentColor: '#0F9F6E',
+    accentColor: '#05C75A',
     description: 'Add or deduct user wallet balance.',
-    icon: 'balance',
+    icon: Wallet,
     key: 'adjust-balance',
-    title: 'Adjust Balance' },
+    title: 'Adjust Balance',
+  },
   {
     accentColor: '#2563EB',
     description: 'Move balance from one user to another.',
-    icon: 'transfer',
+    icon: ArrowRightLeft,
     key: 'transfer-money',
-    title: 'Transfer Money' },
+    title: 'Transfer Money',
+  },
   {
     accentColor: '#B45309',
     description: 'Update membership ranking.',
-    icon: 'users',
+    icon: Star,
     key: 'modify-ranking',
-    title: 'Modify Ranking' },
+    title: 'Modify Ranking',
+  },
   {
     accentColor: '#C026D3',
     description: 'Replace account email.',
-    icon: 'notification',
+    icon: Mail,
     key: 'change-email',
-    title: 'Change Email' },
+    title: 'Change Email',
+  },
   {
     accentColor: '#DC2626',
     description: 'Set a new user password.',
-    icon: 'technical',
+    icon: Lock,
     key: 'change-password',
-    title: 'Change Password' },
+    title: 'Change Password',
+  },
+  {
+    accentColor: '#F59E0B',
+    description: 'Process user Alepay checkout.',
+    icon: CreditCard,
+    key: 'payment-checkout',
+    title: 'Alepay Checkout',
+  },
 ];
 
 const currencyFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
@@ -152,7 +166,8 @@ function getLastMonthsRange(months = 12) {
   const start = new Date(end.getFullYear(), end.getMonth() - months + 1, 1);
   return {
     endDate: end.toISOString().slice(0, 10),
-    startDate: start.toISOString().slice(0, 10) };
+    startDate: start.toISOString().slice(0, 10),
+  };
 }
 
 function chunkItems<T>(items: T[], size: number) {
@@ -178,6 +193,9 @@ export default function OperationScreen() {
   const [selectedService, setSelectedService] = useState<OperationService | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isPaymentCheckoutOpen, setIsPaymentCheckoutOpen] = useState(false);
+  const [isPaymentResultOpen, setIsPaymentResultOpen] = useState(false);
+  const [paymentRecord, setPaymentRecord] = useState<any>(null);
   const topUsersQuery = useQuery({ queryFn: () => fetchTopUsers(), queryKey: ['operation', 'top-users'] });
   const topStationsQuery = useQuery({ queryFn: () => fetchTopStations(), queryKey: ['operation', 'top-stations'] });
   const atRiskQuery = useQuery({ queryFn: () => fetchAtRiskUsers(), queryKey: ['operation', 'at-risk-users'] });
@@ -189,6 +207,10 @@ export default function OperationScreen() {
     topUsersQuery.isRefetching || topStationsQuery.isRefetching || atRiskQuery.isRefetching || growthQuery.isRefetching || growthChartQuery.isRefetching;
 
   const openService = useCallback((service: OperationService) => {
+    if (service.key === 'payment-checkout') {
+      setIsPaymentCheckoutOpen(true);
+      return;
+    }
     setSelectedService(service);
     setSelectedUser(null);
     setIsPickerOpen(true);
@@ -229,8 +251,12 @@ export default function OperationScreen() {
           ListEmptyComponent={
             <ThemedView gap={'five'} paddingHorizontal={screenHorizontalPadding}>
               <ThemedView>
-                <ThemedText fontFamily="bold" fontSize={34} lineHeight={40} letterSpacing={-0.5}>Operation</ThemedText>
-                <ThemedText fontSize={16} color={Palette.textSecondary} marginTop={mhs(4)}>User service, account actions, and operational performance</ThemedText>
+                <ThemedText fontFamily='bold' fontSize={34} lineHeight={40} letterSpacing={-0.5}>
+                  Operation
+                </ThemedText>
+                <ThemedText fontSize={16} color={Palette.textSecondary} marginTop={mhs(4)}>
+                  User service, account actions, and operational performance
+                </ThemedText>
               </ThemedView>
               <OperationServicesSection onSelectService={openService} tileWidth={tileWidth} />
               <OperationStatsSection
@@ -270,6 +296,15 @@ export default function OperationScreen() {
         service={selectedService}
         visible={isPickerOpen && Boolean(selectedService)}
       />
+      <PaymentCheckoutSheet
+        onClose={() => setIsPaymentCheckoutOpen(false)}
+        visible={isPaymentCheckoutOpen}
+        onSuccess={record => {
+          setPaymentRecord(record);
+          setIsPaymentResultOpen(true);
+        }}
+      />
+      <PaymentResultSheet onClose={() => setIsPaymentResultOpen(false)} visible={isPaymentResultOpen} record={paymentRecord} />
     </>
   );
 }
@@ -297,12 +332,11 @@ function OperationServicesSection({ onSelectService, tileWidth }: { onSelectServ
 }
 
 function ServiceShortcut({ onPress, service, tileWidth }: { onPress: () => void; service: OperationService; tileWidth: number }) {
+  const IconComponent = service.icon;
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.serviceTile, { width: tileWidth }, pressed && styles.pressed]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.serviceTile, { width: tileWidth }, pressed && styles.pressed]}>
       <ThemedView style={styles.serviceIcon}>
-        <TabIcon color={Palette.textTertiary} name={service.icon} size={23} />
+        <IconComponent color={Palette.textTertiary} size={23} />
       </ThemedView>
       <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={13} numberOfLines={2} textAlign='center'>
         {service.title}
@@ -311,11 +345,14 @@ function ServiceShortcut({ onPress, service, tileWidth }: { onPress: () => void;
   );
 }
 
+
+
 function UserPickerSheet({
   onClose,
   onNext,
   service,
-  visible }: {
+  visible,
+}: {
   onClose: () => void;
   onNext: (user: UserListItem) => void;
   service: OperationService | null;
@@ -409,16 +446,7 @@ function UserPickerSheet({
   );
 }
 
-function OperationUserWizard({
-  onBack,
-  onDone,
-  service,
-  user }: {
-  onBack: () => void;
-  onDone: () => void;
-  service: OperationService;
-  user: UserListItem;
-}) {
+function OperationUserWizard({ onBack, onDone, service, user }: { onBack: () => void; onDone: () => void; service: OperationService; user: UserListItem }) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<WizardStep>('input');
   const [result, setResult] = useState<ResultState | null>(null);
@@ -440,14 +468,16 @@ function OperationUserWizard({
           amount: Number(pendingPayload?.amount),
           reason: String(pendingPayload?.reason || ''),
           type: pendingPayload?.type as BalanceAdjustmentType,
-          userId: user.id });
+          userId: user.id,
+        });
       }
 
       if (service.key === 'transfer-money') {
         return transferMoneyUsers({
           amount: pendingPayload?.amount ? Number(pendingPayload.amount) : undefined,
           from: user.id,
-          to: Number(pendingPayload?.to) });
+          to: Number(pendingPayload?.to),
+        });
       }
 
       if (service.key === 'modify-ranking') {
@@ -458,13 +488,18 @@ function OperationUserWizard({
         return updateUserEmail({ email: String(pendingPayload?.email || '').trim(), userId: user.id });
       }
 
-      return updateUserPassword({ password: String(pendingPayload?.password || ''), userId: user.id });
+      if (service.key === 'change-password') {
+        return updateUserPassword({ password: String(pendingPayload?.password || ''), userId: user.id });
+      }
+
+      throw new Error('Service not implemented yet');
     },
     onError: error => {
       setResult({
         message: parseApiError(error),
         status: 'error',
-        title: `${service.title} failed` });
+        title: `${service.title} failed`,
+      });
       setStep('result');
     },
     onSuccess: response => {
@@ -473,7 +508,8 @@ function OperationUserWizard({
         setResult({
           message: apiResponse.message || 'Operation failed.',
           status: 'error',
-          title: `${service.title} failed` });
+          title: `${service.title} failed`,
+        });
         setStep('result');
         return;
       }
@@ -481,11 +517,14 @@ function OperationUserWizard({
       void queryClient.invalidateQueries({ queryKey: userKeys.all });
       void queryClient.invalidateQueries({ queryKey: userKeys.detail(user.id) });
       setResult({
-        message: service.key === 'change-password' ? `New password: ${pendingPayload?.password || '--'}` : `${service.title} completed for ${getUserName(user)}.`,
+        message:
+          service.key === 'change-password' ? `New password: ${pendingPayload?.password || '--'}` : `${service.title} completed for ${getUserName(user)}.`,
         status: 'success',
-        title: 'Operation successful' });
+        title: 'Operation successful',
+      });
       setStep('result');
-    } });
+    },
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -598,7 +637,8 @@ function InputStep({
   onNext,
   onValueChange,
   serviceKey,
-  user }: {
+  user,
+}: {
   canLoadLevels: boolean;
   formValues: Record<string, string>;
   levels: UserLevel[];
@@ -612,10 +652,10 @@ function InputStep({
   const [receiverSearch, setReceiverSearch] = useState('');
   const [receiverQuery, setReceiverQuery] = useState('');
   const receiverUsersQuery = useInfiniteUsers(receiverQuery);
-  const receiverUsers = useMemo(() => receiverUsersQuery.data?.pages.flatMap(page => page.items).filter(item => item.id !== user.id) || [], [
-    receiverUsersQuery.data,
-    user.id,
-  ]);
+  const receiverUsers = useMemo(
+    () => receiverUsersQuery.data?.pages.flatMap(page => page.items).filter(item => item.id !== user.id) || [],
+    [receiverUsersQuery.data, user.id],
+  );
 
   useEffect(() => {
     const timeout = setTimeout(() => setReceiverQuery(receiverSearch.trim()), 350);
@@ -672,13 +712,21 @@ function InputStep({
       return;
     }
 
-    const password = formValues.password || '';
-    const confirmPassword = formValues.confirmPassword || '';
-    if (password.length < 8 || password.length > 40 || password !== confirmPassword) {
-      Alert.alert('Invalid password', 'Password must be 8-40 characters and match confirmation.');
+    if (serviceKey === 'change-password') {
+      const password = formValues.password || '';
+      const confirmPassword = formValues.confirmPassword || '';
+      if (password.length < 8 || password.length > 40 || password !== confirmPassword) {
+        Alert.alert('Invalid password', 'Password must be 8-40 characters and match confirmation.');
+        return;
+      }
+      onNext({ password });
       return;
     }
-    onNext({ password });
+
+    if (serviceKey === 'payment-checkout') {
+      onNext({});
+      return;
+    }
   }, [formValues, onNext, receiver, serviceKey, user.email]);
 
   return (
@@ -693,7 +741,13 @@ function InputStep({
             ]}
             value={formValues.type || 'plus_wallet'}
           />
-          <LabeledInput keyboardType='numeric' label='Transfer amount' onChangeText={value => onValueChange('amount', value)} placeholder='Enter amount' value={formValues.amount || ''} />
+          <LabeledInput
+            keyboardType='numeric'
+            label='Transfer amount'
+            onChangeText={value => onValueChange('amount', value)}
+            placeholder='Enter amount'
+            value={formValues.amount || ''}
+          />
           <LabeledInput
             label='Reason'
             multiline
@@ -842,7 +896,8 @@ function AuthStep({
   onBiometric,
   onPasswordChange,
   onSubmit,
-  password }: {
+  password,
+}: {
   canUseBiometric: boolean;
   loading: boolean;
   onBack: () => void;
@@ -859,13 +914,7 @@ function AuthStep({
           Review the details carefully. The operation will be submitted immediately after this step.
         </ThemedText>
       </ThemedView>
-      <LabeledInput
-        label='Admin password'
-        onChangeText={onPasswordChange}
-        placeholder='Enter password to confirm'
-        secureTextEntry
-        value={password}
-      />
+      <LabeledInput label='Admin password' onChangeText={onPasswordChange} placeholder='Enter password to confirm' secureTextEntry value={password} />
       <ThemedView flexDirection='row' gap={'three'}>
         <AppButton block label='Back' onPress={onBack} variant='ghost' />
         <AppButton block label='Submit' loading={loading} onPress={onSubmit} />
@@ -883,7 +932,12 @@ function ResultStep({ loading, onDone, result }: { loading: boolean; onDone: () 
       {loading ? (
         <ActivityIndicator color={Palette.accent} size='large' />
       ) : (
-        <SymbolView name={success ? 'checkmark.circle.fill' : 'xmark.circle.fill'} resizeMode='scaleAspectFit' size={58} tintColor={success ? Palette.accent : Palette.danger} />
+        <SymbolView
+          name={success ? 'checkmark.circle.fill' : 'xmark.circle.fill'}
+          resizeMode='scaleAspectFit'
+          size={58}
+          tintColor={success ? Palette.accent : Palette.danger}
+        />
       )}
       <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={21} lineHeight={27} textAlign='center'>
         {loading ? 'Processing...' : result?.title || 'Operation result'}
@@ -965,14 +1019,7 @@ function LabeledInput({
   );
 }
 
-function SegmentedInput({
-  onChange,
-  options,
-  value }: {
-  onChange: (value: string) => void;
-  options: { label: string; value: string }[];
-  value: string;
-}) {
+function SegmentedInput({ onChange, options, value }: { onChange: (value: string) => void; options: { label: string; value: string }[]; value: string }) {
   return (
     <ThemedView flexDirection='row' gap={'two'} style={styles.segmented}>
       {options.map(option => {
@@ -997,7 +1044,8 @@ function OperationStatsSection({
   onViewMoreTopStations,
   onViewMoreTopUsers,
   topStations,
-  topUsers }: {
+  topUsers,
+}: {
   atRiskUsers: AtRiskUserItem[];
   growth: UserGrowthChartItem[];
   growthSummary?: UserGrowthSummary;
@@ -1030,7 +1078,8 @@ function OperationStatsSection({
           label: item.user_name || item.user_email || `User #${item.user_id}`,
           meta: `${formatNumber(item.total_orders)} sessions • ${decimalFormatter.format(Number(item.total_energy) || 0)} kWh`,
           rank: index + 1,
-          value: formatCurrency(item.total_paid) }))}
+          value: formatCurrency(item.total_paid),
+        }))}
         screenWidth={width}
         title='Top User Performance'
         onViewMore={onViewMoreTopUsers}
@@ -1042,7 +1091,8 @@ function OperationStatsSection({
           label: item.station_name || `Station #${item.station_id}`,
           meta: `${formatNumber(item.total_orders)} sessions • ${formatCurrency(item.total_paid)}`,
           rank: index + 1,
-          value: `${decimalFormatter.format(Number(item.total_energy ?? item.total_energy_kwh) || 0)} kWh` }))}
+          value: `${decimalFormatter.format(Number(item.total_energy ?? item.total_energy_kwh) || 0)} kWh`,
+        }))}
         screenWidth={width}
         title='Top Performing Stations'
         onViewMore={onViewMoreTopStations}
@@ -1064,7 +1114,8 @@ function PerformanceHorizontalSection({
   items,
   onViewMore,
   screenWidth,
-  title }: {
+  title,
+}: {
   accentColor: string;
   description: string;
   items: { label: string; meta: string; rank: number; value: string }[];
@@ -1094,11 +1145,7 @@ function PerformanceHorizontalSection({
         </Pressable>
       </ThemedView>
       {items.length ? (
-        <ScrollView
-          contentContainerStyle={styles.topUsersScrollerContent}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.topUsersScroller}>
+        <ScrollView contentContainerStyle={styles.topUsersScrollerContent} horizontal showsHorizontalScrollIndicator={false} style={styles.topUsersScroller}>
           {items.map((item, index) => (
             <TopUserPerformanceCard accentColor={accentColor} index={index} item={item} key={`${title}-${item.label}-${item.rank}`} width={cardWidth} />
           ))}
@@ -1114,7 +1161,8 @@ function TopUserPerformanceCard({
   accentColor,
   index,
   item,
-  width }: {
+  width,
+}: {
   accentColor: string;
   index: number;
   item: { label: string; meta: string; rank: number; value: string };
@@ -1151,34 +1199,39 @@ function getTopUserRankTone(index: number) {
     return {
       badgeBackground: '#F1F5F9',
       badgeText: '#A16207',
-      label: '1st' };
+      label: '1st',
+    };
   }
 
   if (index === 1) {
     return {
       badgeBackground: '#F1F5F9',
       badgeText: '#4B5563',
-      label: '2nd' };
+      label: '2nd',
+    };
   }
 
   if (index === 2) {
     return {
       badgeBackground: '#F1F5F9',
       badgeText: '#C2410C',
-      label: '3rd' };
+      label: '3rd',
+    };
   }
 
   return {
     badgeBackground: '#F1F5F9',
     badgeText: '#0F9F6E',
-    label: `${index + 1}th` };
+    label: `${index + 1}th`,
+  };
 }
 
 function AtRiskSubscriptionSection({
   accentColor,
   items,
   onToggleList,
-  showList }: {
+  showList,
+}: {
   accentColor: string;
   items: AtRiskUserItem[];
   onToggleList: () => void;
@@ -1228,7 +1281,8 @@ function AtRiskSubscriptionSection({
                   label: item.user?.name || item.user?.email || `User #${item.user?.id || '--'}`,
                   meta: `${item.days_left ?? '--'} days left • ${(item.risk_types || []).join(', ') || 'subscription expiry'}`,
                   rank: item.subscription_id,
-                  value: item.auto_renew ? 'Auto' : 'Manual' }}
+                  value: item.auto_renew ? 'Auto' : 'Manual',
+                }}
                 key={`at-risk-${item.subscription_id}`}
               />
             ))}
@@ -1258,7 +1312,8 @@ function StatsListSection({
   accentColor,
   items,
   symbol,
-  title }: {
+  title,
+}: {
   accentColor: string;
   items: { label: string; meta: string; rank: number; value: string }[];
   symbol: SymbolName;
@@ -1291,14 +1346,7 @@ function StatsListSection({
   );
 }
 
-function TopRankRow({
-  accentColor,
-  index,
-  item }: {
-  accentColor: string;
-  index: number;
-  item: { label: string; meta: string; rank: number; value: string };
-}) {
+function TopRankRow({ accentColor, index, item }: { accentColor: string; index: number; item: { label: string; meta: string; rank: number; value: string } }) {
   return (
     <ThemedView style={styles.topRankRow}>
       <ThemedView alignItems='center' flexDirection='row' gap={'three'}>
@@ -1340,16 +1388,8 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
         <SymbolView name='chart.line.uptrend.xyaxis' resizeMode='scaleAspectFit' size={18} tintColor={operationAccent} />
       </ThemedView>
       <ThemedView flexDirection='row' gap={'three'} style={styles.growthSummaryLine}>
-        <GrowthMetric
-          change={summary?.today_vs_yesterday_growth_percent}
-          label='Total users'
-          value={formatFullNumber(summary?.total_users)}
-        />
-        <GrowthMetric
-          change={summary?.charged_today_vs_yesterday_percent}
-          label='Active today'
-          value={formatFullNumber(summary?.users_charged_today)}
-        />
+        <GrowthMetric change={summary?.today_vs_yesterday_growth_percent} label='Total users' value={formatFullNumber(summary?.total_users)} />
+        <GrowthMetric change={summary?.charged_today_vs_yesterday_percent} label='Active today' value={formatFullNumber(summary?.users_charged_today)} />
         <GrowthMetric
           change={summary?.avg_charge_duration_change_percent}
           label='Avg duration'
@@ -1428,36 +1468,45 @@ const styles = StyleSheet.create({
     borderRadius: mhs(16),
     height: 34,
     justifyContent: 'center',
-    width: 34 },
+    width: 34,
+  },
   content: {
     gap: mhs(12),
     paddingBottom: 120,
-    paddingTop: mhs(8) },
+    paddingTop: mhs(8),
+  },
   footerLoader: {
-    paddingVertical: mhs(16) },
+    paddingVertical: mhs(16),
+  },
   atRiskMetrics: {
-    marginTop: mhs(12) },
+    marginTop: mhs(12),
+  },
   growthBar: {
     alignSelf: 'stretch',
     backgroundColor: '#05C75A',
     borderTopLeftRadius: mhs(16),
-    borderTopRightRadius: mhs(16) },
+    borderTopRightRadius: mhs(16),
+  },
   growthBarColumn: {
-    width: 58 },
+    width: 58,
+  },
   growthBarTrack: {
     height: 126,
-    width: '100%' },
+    width: '100%',
+  },
   growthChartLabel: {
     backgroundColor: Palette.surfaceMuted,
     borderRadius: 999,
     marginTop: mhs(16),
     paddingHorizontal: mhs(12),
-    paddingVertical: mhs(8) },
+    paddingVertical: mhs(8),
+  },
   growthChartScroller: {
     alignItems: 'flex-end',
     gap: mhs(12),
     paddingTop: mhs(12),
-    paddingRight: screenHorizontalPadding },
+    paddingRight: screenHorizontalPadding,
+  },
   growthMetric: {
     backgroundColor: Palette.surfaceMuted,
     borderColor: Palette.borderSubtle,
@@ -1465,22 +1514,27 @@ const styles = StyleSheet.create({
     borderRadius: mhs(21),
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: mhs(8),
-    paddingVertical: mhs(12) },
+    paddingVertical: mhs(12),
+  },
   growthSummaryLine: {
-    marginTop: mhs(16) },
+    marginTop: mhs(16),
+  },
   iconButton: {
     alignItems: 'center',
     backgroundColor: '#FFF4ED',
     borderRadius: mhs(16),
     height: 38,
     justifyContent: 'center',
-    width: 38 },
+    width: 38,
+  },
   inlineMetric: {
     borderBottomColor: Palette.borderSubtle,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingBottom: mhs(8) },
+    paddingBottom: mhs(8),
+  },
   inlineMetricValue: {
-    fontVariant: ['tabular-nums'] },
+    fontVariant: ['tabular-nums'],
+  },
   infoCard: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceMuted,
@@ -1489,13 +1543,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: mhs(12),
-    padding: mhs(16) },
+    padding: mhs(16),
+  },
   inlineList: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
     borderRadius: mhs(21),
     borderWidth: 1,
-    overflow: 'hidden' },
+    overflow: 'hidden',
+  },
   inlineUserRow: {
     alignItems: 'center',
     borderBottomColor: Palette.borderSubtle,
@@ -1503,7 +1559,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: mhs(8),
     minHeight: 46,
-    paddingHorizontal: mhs(12) },
+    paddingHorizontal: mhs(12),
+  },
   input: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.border,
@@ -1514,11 +1571,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     minHeight: 48,
     paddingHorizontal: mhs(16),
-    paddingVertical: mhs(12) },
+    paddingVertical: mhs(12),
+  },
   levelDot: {
     borderRadius: 999,
     height: 14,
-    width: 14 },
+    width: 14,
+  },
   levelOption: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceRaised,
@@ -1527,10 +1586,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: mhs(12),
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   levelOptionSelected: {
     borderColor: Palette.accent,
-    borderWidth: 1.5 },
+    borderWidth: 1.5,
+  },
   loadingCard: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceRaised,
@@ -1538,17 +1599,20 @@ const styles = StyleSheet.create({
     borderRadius: mhs(21),
     borderWidth: 1,
     minHeight: 120,
-    justifyContent: 'center' },
+    justifyContent: 'center',
+  },
   pressed: {
     opacity: 0.72,
-    transform: [{ scale: 0.99 }] },
+    transform: [{ scale: 0.99 }],
+  },
   resultCard: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
     borderRadius: mhs(21),
     borderWidth: 1,
-    padding: mhs(24) },
+    padding: mhs(24),
+  },
   search: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.border,
@@ -1558,26 +1622,31 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.medium,
     fontSize: 15,
     height: 48,
-    paddingHorizontal: mhs(16) },
+    paddingHorizontal: mhs(16),
+  },
   segmentButton: {
     alignItems: 'center',
     borderRadius: mhs(16),
     flex: 1,
     height: 42,
-    justifyContent: 'center' },
+    justifyContent: 'center',
+  },
   segmentButtonSelected: {
-    backgroundColor: operationAccent },
+    backgroundColor: operationAccent,
+  },
   segmented: {
     backgroundColor: Palette.surfaceMuted,
     borderRadius: mhs(21),
-    padding: mhs(4) },
+    padding: mhs(4),
+  },
   selectedAvatar: {
     alignItems: 'center',
     backgroundColor: operationAccent,
     borderRadius: 999,
     height: 42,
     justifyContent: 'center',
-    width: 42 },
+    width: 42,
+  },
   selectedSummary: {
     alignItems: 'center',
     backgroundColor: '#FFF7ED',
@@ -1586,54 +1655,65 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: mhs(12),
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   selectedUserRow: {
     borderColor: Palette.accent,
     borderRadius: mhs(21),
     borderWidth: 1.5,
     marginHorizontal: mhs(8),
-    overflow: 'hidden' },
+    overflow: 'hidden',
+  },
   serviceIcon: {
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.06)',
     borderRadius: mhs(12),
     height: 48,
     justifyContent: 'center',
-    width: 48 },
-
+    width: 48,
+  },
 
   serviceRow: {
-    width: '100%' },
+    width: '100%',
+  },
   serviceTile: {
     alignItems: 'center',
     gap: mhs(4),
     minHeight: 74,
     justifyContent: 'center',
-    paddingHorizontal: mhs(4) },
+    paddingHorizontal: mhs(4),
+  },
   sheetHeader: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: mhs(12),
     paddingHorizontal: mhs(16),
-    paddingTop: mhs(12) },
+    paddingTop: mhs(12),
+  },
   sheetList: {
-    paddingHorizontal: mhs(8) },
+    paddingHorizontal: mhs(8),
+  },
   sheetNextButton: {
     height: 42,
-    minWidth: 88 },
+    minWidth: 88,
+  },
   analyticsMark: {
     borderRadius: 999,
     height: 24,
-    width: 3 },
+    width: 3,
+  },
   analyticsRows: {
-    marginTop: mhs(12) },
+    marginTop: mhs(12),
+  },
   analyticsSection: {
     borderBottomColor: Palette.borderSubtle,
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingBottom: mhs(24),
-    paddingTop: mhs(4) },
+    paddingTop: mhs(4),
+  },
   rankNumber: {
-    width: 24 },
+    width: 24,
+  },
   topUserCard: {
     backgroundColor: Palette.surfaceMuted,
     borderColor: Palette.borderSubtle,
@@ -1642,11 +1722,14 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     gap: mhs(8),
     justifyContent: 'flex-start',
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   topUserMeta: {
-    lineHeight: 13 },
+    lineHeight: 13,
+  },
   topUserName: {
-    lineHeight: 16 },
+    lineHeight: 16,
+  },
   topUserRankBadge: {
     alignItems: 'center',
     borderCurve: 'continuous',
@@ -1654,45 +1737,57 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 24,
     minWidth: 34,
-    paddingHorizontal: mhs(8) },
+    paddingHorizontal: mhs(8),
+  },
   topUserRankText: {
-    fontVariant: ['tabular-nums'] },
+    fontVariant: ['tabular-nums'],
+  },
   topUserValue: {
     flex: 1,
     marginLeft: mhs(8),
-    textAlign: 'right' },
+    textAlign: 'right',
+  },
   topUsersScroller: {
-    marginTop: mhs(12) },
+    marginTop: mhs(12),
+  },
   topUsersScrollerContent: {
     gap: mhs(12),
-    paddingRight: screenHorizontalPadding },
+    paddingRight: screenHorizontalPadding,
+  },
   topUsersAnalyticsMark: {
-    marginTop: 2 },
+    marginTop: 2,
+  },
   viewMoreButton: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 2,
     minHeight: 32,
     justifyContent: 'center',
-    paddingLeft: mhs(8) },
+    paddingLeft: mhs(8),
+  },
   viewMoreIconOpen: {
-    transform: [{ rotate: '90deg' }] },
+    transform: [{ rotate: '90deg' }],
+  },
   topRankRow: {
     borderTopColor: Palette.borderSubtle,
     borderTopWidth: StyleSheet.hairlineWidth,
     minHeight: 58,
     justifyContent: 'center',
-    paddingVertical: mhs(12) },
+    paddingVertical: mhs(12),
+  },
   stepPill: {
     backgroundColor: Palette.surfaceMuted,
     borderRadius: 999,
     paddingHorizontal: mhs(8),
-    paddingVertical: mhs(8) },
+    paddingVertical: mhs(8),
+  },
   stepPillActive: {
-    backgroundColor: operationAccent },
+    backgroundColor: operationAccent,
+  },
   textArea: {
     minHeight: 106,
-    textAlignVertical: 'top' },
+    textAlignVertical: 'top',
+  },
   warningCard: {
     alignItems: 'flex-start',
     backgroundColor: '#FFF7ED',
@@ -1701,11 +1796,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: mhs(12),
-    padding: mhs(16) },
+    padding: mhs(16),
+  },
   wizardContent: {
     gap: mhs(16),
     padding: screenHorizontalPadding,
-    paddingBottom: 120 },
+    paddingBottom: 120,
+  },
   wizardHeader: {
     alignItems: 'center',
     borderBottomColor: Palette.borderSubtle,
@@ -1713,4 +1810,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: mhs(12),
     minHeight: 58,
-    paddingHorizontal: screenHorizontalPadding } });
+    paddingHorizontal: screenHorizontalPadding,
+  },
+});

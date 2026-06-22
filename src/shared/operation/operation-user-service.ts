@@ -193,3 +193,11 @@ export function getCollectionData<T>(response?: DashboardApiData<T[]> | T[]) {
   if (Array.isArray(response['hydra:member'])) return response['hydra:member'];
   return [];
 }
+
+export function fetchAlePayHistory(params: { orderCode?: string; transactionCode?: string }) {
+  return apiRequest<any>('api/ale_pay_histories', {
+    params,
+    method: 'GET',
+  });
+}
+
