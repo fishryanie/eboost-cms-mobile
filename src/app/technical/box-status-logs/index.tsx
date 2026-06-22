@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
-import { AnimatedHeaderScrollView } from 'components/organisms/animated-header-scrollview';
+import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 import { EmptyState } from 'components/ui';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, RefreshControl, StyleSheet } from 'react-native';
@@ -32,18 +32,17 @@ export default function BoxStatusLogsScreen() {
 
   return (
     <ThemedView backgroundColor={Palette.surfaceBase} flex={1}>
-      <AnimatedHeaderScrollView
+      <AnimatedHeaderFlatList
         canGoBack
-        isFlatList
         subtitle={id}
         largeTitle='Status Logs'
         onBack={() => router.back()}
         largeTitleContainerStyle={styles.largeTitleContainer}
-        flatListProps={{
-          contentContainerStyle: styles.content,
-          data: items,
-          keyExtractor: (item: StatusLogRecord, index: number) => `${item.chargePointID || id}-${item.timestamp}-${index}`,
-          ListEmptyComponent: loading ? (
+        contentContainerStyle={styles.content}
+        data={items}
+        keyExtractor={(item: StatusLogRecord, index: number) => `${item.chargePointID || id}-${item.timestamp}-${index}`}
+        ListEmptyComponent={
+          loading ? (
             <ThemedView alignItems='center' gap={'three'} paddingVertical={'eight'}>
               <ActivityIndicator color={Palette.accent} size='large' />
               <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={13} lineHeight={18}>
@@ -63,13 +62,13 @@ export default function BoxStatusLogsScreen() {
             </ThemedView>
           ) : (
             <EmptyState message='No status logs found for this charger.' title='No data' />
-          ),
-          refreshControl: <RefreshControl onRefresh={query.refetch} refreshing={query.isRefetching} tintColor={Palette.accent} />,
-          renderItem: ({ item, index }: { item: StatusLogRecord; index: number }) => (
-            <StatusLogCard item={item} vehicle={vehicle} isTimeline isLast={index === items.length - 1} />
-          ),
-          showsVerticalScrollIndicator: false,
-        }}
+          )
+        }
+        refreshControl={<RefreshControl onRefresh={query.refetch} refreshing={query.isRefetching} tintColor={Palette.accent} />}
+        renderItem={({ item, index }: { item: StatusLogRecord; index: number }) => (
+          <StatusLogCard item={item} vehicle={vehicle} isTimeline isLast={index === items.length - 1} />
+        )}
+        showsVerticalScrollIndicator={false}
       />
     </ThemedView>
   );

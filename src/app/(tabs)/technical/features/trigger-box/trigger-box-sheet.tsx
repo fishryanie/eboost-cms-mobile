@@ -456,7 +456,7 @@ export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerB
   }
 
   function renderFooter(props: BottomSheetFooterProps) {
-    const footerPadding = { paddingBottom: bottom + 'three' };
+    const footerPadding = { paddingBottom: Math.max(bottom, mhs(16)) };
 
     return (
       <BottomSheetFooter {...props} bottomInset={0}>

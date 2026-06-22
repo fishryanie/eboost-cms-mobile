@@ -5,7 +5,7 @@ import { RefreshControl } from 'react-native';
 
 import { ThemedView } from 'components/base';
 import { SearchBar } from 'components/molecules/search-bar';
-import { AnimatedHeaderScrollView } from 'components/organisms/animated-header-scrollview';
+import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 import { getNetworkIssues, LoadingBlock, RetryBlock } from 'components/technical/list-ui';
 import { styles } from 'components/technical/styles';
 import { EmptyState } from 'components/ui';
@@ -19,10 +19,10 @@ type NetworkIssue = ConnectionLogRecord & { vehicle: TechnicalVehicle };
 type NetworkIssueFilter = 'all' | TechnicalVehicle;
 
 async function getNetworkLogs(vehicle: TechnicalVehicle) {
-  const response = await apiRequest<ApiListResponse<ConnectionLogRecord>>(
-    vehicle === 'car' ? 'api/cars/logs/connection' : 'api/bikes/logs/connection',
-    { params: { itemsPerPage: 30, limit: 1000, page: 1 }, service: 'hub' },
-  );
+  const response = await apiRequest<ApiListResponse<ConnectionLogRecord>>(vehicle === 'car' ? 'api/cars/logs/connection' : 'api/bikes/logs/connection', {
+    params: { itemsPerPage: 30, limit: 1000, page: 1 },
+    service: 'hub',
+  });
   return getCollectionResult(response);
 }
 
@@ -45,23 +45,22 @@ export default function NetworkIssuesScreen() {
 
   return (
     <ThemedView flex={1}>
-      <AnimatedHeaderScrollView
+      <AnimatedHeaderFlatList
         largeTitle='Network Issues'
         largeTitleContainerStyle={styles.issueLargeTitleContainer}
         canGoBack
         onBack={() => router.back()}
         searchBar={<SearchBar placeholder='Search charger or station' onSearch={setIssueSearch} centerWhenUnfocused={false} />}
-        isFlatList
-        flatListProps={{
-          ListHeaderComponent: (
-            <ThemedView gap={'two'} paddingBottom={'three'}>
-              <IssueFilterSwitch bikeCount={bikeIssues.length} carCount={carIssues.length} filter={filter} onChange={setFilter} />
-            </ThemedView>
-          ),
-          contentContainerStyle: [styles.content, styles.issueListContent],
-          data: issues,
-          keyExtractor: (item: NetworkIssue, index: number) => `${item.vehicle}-${item.chargePointID || index}`,
-          ListEmptyComponent: loading ? (
+        ListHeaderComponent={
+          <ThemedView gap={'two'} paddingBottom={'three'}>
+            <IssueFilterSwitch bikeCount={bikeIssues.length} carCount={carIssues.length} filter={filter} onChange={setFilter} />
+          </ThemedView>
+        }
+        contentContainerStyle={[styles.content, styles.issueListContent]}
+        data={issues}
+        keyExtractor={(item: NetworkIssue, index: number) => `${item.vehicle}-${item.chargePointID || index}`}
+        ListEmptyComponent={
+          loading ? (
             <LoadingBlock label='Loading network issues' />
           ) : error ? (
             <RetryBlock
@@ -74,19 +73,20 @@ export default function NetworkIssuesScreen() {
             />
           ) : (
             <EmptyState message='Try another charger ID, station name, or filter.' title='No matching offline boxes' />
-          ),
-          refreshControl: (
-            <RefreshControl
-              onRefresh={() => {
-                bikeQuery.refetch();
-                carQuery.refetch();
-              }}
-              refreshing={bikeQuery.isRefetching || carQuery.isRefetching}
-              tintColor={Palette.accent}
-            />
-          ),
-          renderItem: ({ item }: { item: NetworkIssue }) => <NetworkIssueCard item={item} />,
-          showsVerticalScrollIndicator: false }}
+          )
+        }
+        refreshControl={
+          <RefreshControl
+            onRefresh={() => {
+              bikeQuery.refetch();
+              carQuery.refetch();
+            }}
+            refreshing={bikeQuery.isRefetching || carQuery.isRefetching}
+            tintColor={Palette.accent}
+          />
+        }
+        renderItem={({ item }: { item: NetworkIssue }) => <NetworkIssueCard item={item} />}
+        showsVerticalScrollIndicator={false}
       />
     </ThemedView>
   );

@@ -98,9 +98,9 @@ export default function TechnicalScreen() {
           data={emptyOverviewData}
           keyExtractor={(_, index) => String(index)}
           ListEmptyComponent={
-            <ThemedView gap={'five'} paddingHorizontal={screenHorizontalPadding}>
+            <ThemedView gap={'five'} marginTop={12} paddingHorizontal={screenHorizontalPadding}>
               <ThemedView>
-                <ThemedText fontWeight='600' fontSize={32} lineHeight={40} letterSpacing={2}>
+                <ThemedText fontFamily='bold' fontSize={34} lineHeight={40} letterSpacing={-0.5}>
                   Technical
                 </ThemedText>
                 <ThemedText fontSize={15} lineHeight={25} color={Palette.textSecondary} marginTop={mhs(4)}>

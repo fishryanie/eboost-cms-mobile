@@ -1,6 +1,6 @@
-import { mhs } from 'themes/scaling';
 import { StyleSheet } from 'react-native';
 import { FontFamily, Palette } from 'themes';
+import { mhs } from 'themes/scaling';
 import { screenHorizontalPadding } from './common';
 
 export const styles = StyleSheet.create({
@@ -9,11 +9,13 @@ export const styles = StyleSheet.create({
     height: 34,
     justifyContent: 'center',
     marginLeft: -6,
-    width: 34 },
+    width: 34,
+  },
   content: {
     gap: mhs(12),
     paddingBottom: 120,
-    paddingTop: mhs(8) },
+    paddingTop: mhs(8),
+  },
   connectorStrip: {
     backgroundColor: '#F8FAFC',
     borderColor: '#EEF2F6',
@@ -21,10 +23,12 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     minHeight: 42,
     paddingHorizontal: mhs(8),
-    paddingVertical: mhs(8) },
+    paddingVertical: mhs(8),
+  },
   connectorPanelWarning: {
     backgroundColor: Palette.dangerSurface,
-    borderColor: '#F5B5AE' },
+    borderColor: '#F5B5AE',
+  },
   connectorRetryButton: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceRaised,
@@ -33,16 +37,20 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     minHeight: 28,
     justifyContent: 'center',
-    paddingHorizontal: mhs(8) },
+    paddingHorizontal: mhs(8),
+  },
   connectorTotal: {
-    fontVariant: ['tabular-nums'] },
+    fontVariant: ['tabular-nums'],
+  },
   circularProgressCenter: {
     height: 42,
     position: 'absolute',
-    width: 42 },
+    width: 42,
+  },
   circularProgressWrap: {
     height: 64,
-    width: 64 },
+    width: 64,
+  },
   compactStat: {
     backgroundColor: '#F8FAFC',
     borderColor: '#EEF2F6',
@@ -51,42 +59,54 @@ export const styles = StyleSheet.create({
     gap: 2,
     minHeight: 44,
     paddingHorizontal: mhs(8),
-    paddingVertical: mhs(4) },
+    paddingVertical: mhs(4),
+  },
   dashboardSection: {
-    marginTop: mhs(4) },
+    marginTop: mhs(4),
+  },
   domainApiMeta: {
     textAlign: 'right',
-    width: 76 },
+    width: 76,
+  },
   domainApiRow: {
-    minHeight: 42 },
+    minHeight: 42,
+  },
   domainApiTrack: {
     backgroundColor: '#EEF2F6',
     borderRadius: 999,
     flex: 1,
     height: 6,
-    overflow: 'hidden' },
+    overflow: 'hidden',
+  },
   domainDivider: {
     backgroundColor: '#EEF2F6',
-    height: 1 },
+    height: 1,
+  },
   domainDot: {
     borderRadius: 999,
     height: 7,
-    width: 7 },
+    width: 7,
+  },
   domainDonutCenter: {
     height: 48,
     position: 'absolute',
-    width: 48 },
+    width: 48,
+  },
   domainDonutWrap: {
     height: 82,
-    width: 82 },
+    width: 82,
+  },
   domainReadiness: {
-    fontVariant: ['tabular-nums'] },
+    fontVariant: ['tabular-nums'],
+  },
   domainRouteIndex: {
     textAlign: 'center',
-    width: 14 },
+    width: 14,
+  },
   domainRoutePercent: {
     textAlign: 'right',
-    width: 38 },
+    width: 38,
+  },
   itemCard: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceRaised,
@@ -98,10 +118,12 @@ export const styles = StyleSheet.create({
     marginHorizontal: screenHorizontalPadding,
     minHeight: 64,
     paddingHorizontal: mhs(12),
-    paddingVertical: mhs(8) },
+    paddingVertical: mhs(8),
+  },
   itemCardWarning: {
     backgroundColor: Palette.dangerSurface,
-    borderColor: '#F5B5AE' },
+    borderColor: '#F5B5AE',
+  },
   issueCard: {
     alignItems: 'center',
     backgroundColor: 'transparent',
@@ -110,7 +132,8 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: mhs(12),
     minHeight: 58,
-    paddingVertical: mhs(8) },
+    paddingVertical: mhs(8),
+  },
   issueFilterChip: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceRaised,
@@ -119,60 +142,76 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     minHeight: 30,
     justifyContent: 'center',
-    paddingHorizontal: mhs(12) },
+    paddingHorizontal: mhs(12),
+  },
   issueFilterChipActive: {
     backgroundColor: '#E8F7EF',
-    borderColor: '#D8F0E3' },
+    borderColor: '#D8F0E3',
+  },
   issueHeader: {
-    backgroundColor: Palette.surfaceBase },
+    backgroundColor: Palette.surfaceBase,
+  },
   issueLargeTitleContainer: {
-    marginHorizontal: -screenHorizontalPadding },
+    marginHorizontal: -screenHorizontalPadding,
+  },
   issueAge: {
     textAlign: 'right',
-    width: 54 },
+    width: 54,
+  },
   issueListContent: {
     paddingBottom: 40,
-    paddingHorizontal: screenHorizontalPadding },
+    paddingHorizontal: screenHorizontalPadding,
+  },
   issueSearchInput: {
     color: Palette.textPrimary,
     flex: 1,
     fontFamily: FontFamily.medium,
     fontSize: 13,
     minHeight: 40,
-    paddingVertical: 0 },
+    paddingVertical: 0,
+  },
   issueSearchWrap: {
     backgroundColor: '#F6F8FA',
     borderRadius: 999,
     minHeight: 42,
-    paddingHorizontal: mhs(12) },
+    paddingHorizontal: mhs(12),
+  },
   issueSegmentedControl: {
-    gap: mhs(8) },
+    gap: mhs(8),
+  },
   issueVehicleRail: {
     borderRadius: 999,
     height: 34,
-    width: 3 },
+    width: 3,
+  },
   networkMarker: {
     borderRadius: 999,
     height: 7,
-    width: 7 },
+    width: 7,
+  },
   networkFlatBlock: {
-    gap: mhs(8) },
+    gap: mhs(8),
+  },
   networkReadyValue: {
     fontVariant: ['tabular-nums'],
-    textAlign: 'right' },
+    textAlign: 'right',
+  },
   overviewButton: {
     alignItems: 'center',
     backgroundColor: '#E8F7EF',
     borderRadius: 999,
     minHeight: 32,
     justifyContent: 'center',
-    paddingHorizontal: mhs(12) },
+    paddingHorizontal: mhs(12),
+  },
   pressed: {
-    opacity: 0.72 },
+    opacity: 0.72,
+  },
   progressTrack: {
     backgroundColor: '#EEF2F6',
     borderRadius: 999,
-    height: 6 },
+    height: 6,
+  },
 
   searchInput: {
     color: Palette.textPrimary,
@@ -180,34 +219,41 @@ export const styles = StyleSheet.create({
     fontFamily: FontFamily.medium,
     fontSize: 14,
     minHeight: 42,
-    paddingVertical: 0 },
+    paddingVertical: 0,
+  },
   searchWrap: {
     backgroundColor: Palette.surfaceMuted,
     borderColor: Palette.borderSubtle,
     borderRadius: mhs(21),
     borderWidth: 1,
     minHeight: 44,
-    paddingHorizontal: mhs(12) },
+    paddingHorizontal: mhs(12),
+  },
   sectionAction: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 2 },
+    gap: 2,
+  },
   serviceGrid: {
     rowGap: mhs(16),
-    width: '100%' },
+    width: '100%',
+  },
   serviceIconSurface: {
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.06)',
     borderRadius: mhs(12),
     height: 48,
     justifyContent: 'center',
-    width: 48 },
+    width: 48,
+  },
   serviceShortcut: {
     alignItems: 'center',
     gap: mhs(4),
-    minHeight: 74 },
+    minHeight: 74,
+  },
   serviceRow: {
-    width: '100%' },
+    width: '100%',
+  },
   signalChip: {
     backgroundColor: Palette.surfaceMuted,
     borderRadius: mhs(12),
@@ -216,19 +262,23 @@ export const styles = StyleSheet.create({
     minHeight: 44,
     paddingHorizontal: mhs(8),
     paddingVertical: mhs(4),
-    width: 108 },
+    width: 108,
+  },
   signalRow: {
-    gap: mhs(8) },
+    gap: mhs(8),
+  },
   signalStrip: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
     borderRadius: mhs(16),
     borderWidth: 1,
     minHeight: 86,
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   statusMetadataLine: {
     columnGap: 0,
-    rowGap: 1 },
+    rowGap: 1,
+  },
   vehicleChip: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceMuted,
@@ -237,21 +287,28 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     flex: 1,
     minHeight: 36,
-    justifyContent: 'center' },
+    justifyContent: 'center',
+  },
   vehicleChipActive: {
     backgroundColor: Palette.accent,
-    borderColor: Palette.accent },
+    borderColor: Palette.accent,
+  },
   vehicleInlineMeta: {
     columnGap: 0,
-    rowGap: 1 },
+    rowGap: 1,
+  },
   vehicleNetworkLane: {
     backgroundColor: 'transparent',
     borderTopColor: '#EEF2F6',
     borderTopWidth: 1,
     gap: mhs(8),
-    paddingTop: mhs(8) },
+    paddingTop: mhs(8),
+  },
   vehicleNetworkLaneFirst: {
     borderTopWidth: 0,
-    paddingTop: 0 },
+    paddingTop: 0,
+  },
   vehicleProgressColumn: {
-    width: 64 } });
+    width: 64,
+  },
+});

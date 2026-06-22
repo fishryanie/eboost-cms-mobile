@@ -212,7 +212,7 @@ export default function MarketingScreen() {
           contentContainerStyle={styles.content}
           data={[]}
           ListEmptyComponent={
-            <ThemedView gap={focusStats ? 'three' : 'five'} paddingHorizontal={screenHorizontalPadding}>
+            <ThemedView marginTop={12} gap={focusStats ? 'three' : 'five'} paddingHorizontal={screenHorizontalPadding}>
               <ThemedView>
                 <ThemedText fontFamily="bold" fontSize={34} lineHeight={40} letterSpacing={-0.5}>
                   {isMainScreen ? 'Marketing' : 'Subscription Package Stats'}

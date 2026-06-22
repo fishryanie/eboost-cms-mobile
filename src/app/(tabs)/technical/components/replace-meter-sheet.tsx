@@ -123,7 +123,7 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
             styles.footer,
             {
               gap: metrics.footerGap,
-              paddingBottom: bottom + 'three',
+              paddingBottom: Math.max(bottom, mhs(16)),
               paddingHorizontal: metrics.footerPaddingHorizontal,
               paddingTop: metrics.footerPaddingTop },
           ]}>

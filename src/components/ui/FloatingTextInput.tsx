@@ -90,14 +90,10 @@ const styles = StyleSheet.create({
     shadowRadius: 18 },
   input: {
     color: Palette.textPrimary,
-    flex: 1,
     fontFamily: FontFamily.medium,
     fontSize: inputFontSize,
     lineHeight: inputLineHeight,
-    paddingBottom: 0,
-    paddingHorizontal: inputHorizontalPadding,
-    paddingTop: 0,
-    textAlignVertical: 'center' },
+    paddingHorizontal: inputHorizontalPadding },
   inputFrame: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.border,

@@ -75,7 +75,7 @@ export function SetupLocationSheet({ onClose, visible }: SetupLocationSheetProps
             styles.footer,
             {
               gap: metrics.footerGap,
-              paddingBottom: bottom + 'three',
+              paddingBottom: Math.max(bottom, mhs(16)),
               paddingHorizontal: metrics.footerPaddingHorizontal,
               paddingTop: metrics.footerPaddingTop },
           ]}>

@@ -211,10 +211,14 @@ export default function OperationScreen() {
       setIsPaymentCheckoutOpen(true);
       return;
     }
+    if (service.key === 'adjust-balance') {
+      router.push('/operation/adjust-balance');
+      return;
+    }
     setSelectedService(service);
     setSelectedUser(null);
     setIsPickerOpen(true);
-  }, []);
+  }, [router]);
 
   const closeWizard = useCallback(() => {
     setSelectedService(null);
@@ -249,7 +253,7 @@ export default function OperationScreen() {
           data={[]}
           keyExtractor={(_, index) => String(index)}
           ListEmptyComponent={
-            <ThemedView gap={'five'} paddingHorizontal={screenHorizontalPadding}>
+            <ThemedView gap={'five'} marginTop={12} paddingHorizontal={screenHorizontalPadding}>
               <ThemedView>
                 <ThemedText fontFamily='bold' fontSize={34} lineHeight={40} letterSpacing={-0.5}>
                   Operation
