@@ -1,28 +1,28 @@
-import { Stack, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
-
+import { useMutation } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
 import { BottomButton } from 'components/base/BottomButton';
-import { AppScreen } from 'components/ui';
+import { HeaderTitle } from 'components/base/HeaderTitle';
+import SegmentedControl from 'components/organisms/segmented-control';
+import { AppButton } from 'components/ui';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
+import { useRouter } from 'expo-router';
+import { Info } from 'lucide-react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Dimensions, ScrollView, StyleSheet } from 'react-native';
+import Modal from 'react-native-modal';
+import Toast from 'react-native-toast-message';
 import { UserCard } from 'shared/users/components/user-card';
 import { useInfiniteUsers } from 'shared/users/hooks';
 import { FontFamily, Palette } from 'themes';
 import { mhs } from 'themes/scaling';
-
-import { HeaderTitle } from 'components/base/HeaderTitle';
-
-import SegmentedControl from 'components/organisms/segmented-control';
+import { apiRequest } from 'utils/api/client';
 
 export default function AdjustBalanceScreen() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
 
   // User search state
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const usersQuery = useInfiniteUsers(query);
   const users = useMemo(() => usersQuery.data?.pages.flatMap(page => page.items) || [], [usersQuery.data]);
@@ -30,9 +30,6 @@ export default function AdjustBalanceScreen() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       setQuery(queryInput.trim());
-      if (queryInput.trim() === '') {
-        setSelectedUser(null);
-      }
     }, 350);
     return () => clearTimeout(timeout);
   }, [queryInput]);
@@ -42,114 +39,157 @@ export default function AdjustBalanceScreen() {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
 
-  const onNext = () => {
-    // Proceed to next step
+  // Modal state
+  const [password, setPassword] = useState('');
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const onSubmit = () => {
+    setIsModalVisible(true);
   };
 
+  const { isPending, mutate } = useMutation({
+    mutationFn: async () => {
+      const selectedUserId = users[0]?.id;
+      if (!selectedUserId) throw new Error('User not selected');
+
+      // 1. Check admin password
+      await apiRequest('api/controller/password/admin/confirm-password', {
+        method: 'POST',
+        data: { password },
+      });
+
+      // 2. Adjust balance
+      const parsedAmount = Number(amount.replace(/[^0-9]/g, ''));
+      const endpoint = type === 'plus' ? 'api/controller/balance/plus_wallet' : 'api/controller/balance/deduct_wallet';
+
+      return apiRequest(endpoint, {
+        method: 'PUT',
+        data: {
+          amount: parsedAmount,
+          reason,
+          userId: selectedUserId,
+        },
+      });
+    },
+    onSuccess: () => {
+      setIsModalVisible(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Transaction Successful',
+        text2: 'Balance has been adjusted successfully.',
+      });
+      router.back();
+    },
+    onError: (error: any) => {
+      Toast.show({
+        type: 'error',
+        text1: 'Transaction Failed',
+        text2: error?.message || 'Failed to process transaction',
+      });
+    },
+  });
+
   return (
-    <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
+    <ThemedView flex={1} backgroundColor={Palette.surfaceRaised}>
       <HeaderTitle title='Adjust Balance' />
 
-      {/* Stepper Header */}
-      <ThemedView style={styles.stepperContainer}>
-        <ThemedView style={styles.stepWrapper}>
-          <ThemedView style={[styles.stepCircle, step >= 1 ? styles.stepCircleActive : undefined]}>
-            <ThemedText style={[styles.stepCircleText, step >= 1 ? styles.stepCircleTextActive : undefined]}>1</ThemedText>
-          </ThemedView>
-          <ThemedText style={[styles.stepLabel, step >= 1 ? styles.stepLabelActive : undefined]}>Adjustment Details</ThemedText>
-        </ThemedView>
-        <ThemedView style={[styles.stepLine, step >= 2 ? styles.stepLineActive : undefined]} />
-        <ThemedView style={styles.stepWrapper}>
-          <ThemedView style={[styles.stepCircle, step >= 2 ? styles.stepCircleActive : undefined]}>
-            <ThemedText style={[styles.stepCircleText, step >= 2 ? styles.stepCircleTextActive : undefined]}>2</ThemedText>
-          </ThemedView>
-          <ThemedText style={[styles.stepLabel, step >= 2 ? styles.stepLabelActive : undefined]}>Confirmation</ThemedText>
-        </ThemedView>
-        <ThemedView style={[styles.stepLine, step >= 3 ? styles.stepLineActive : undefined]} />
-        <ThemedView style={styles.stepWrapper}>
-          <ThemedView style={[styles.stepCircle, step >= 3 ? styles.stepCircleActive : undefined]}>
-            <ThemedText style={[styles.stepCircleText, step >= 3 ? styles.stepCircleTextActive : undefined]}>3</ThemedText>
-          </ThemedView>
-          <ThemedText style={[styles.stepLabel, step >= 3 ? styles.stepLabelActive : undefined]}>Finish</ThemedText>
-        </ThemedView>
-      </ThemedView>
-
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled'>
-        {step === 1 && (
-          <ThemedView gap={'six'}>
-            {/* User Search */}
-            <ThemedView gap={'two'}>
-              <FloatingTextInput
-                label='* User'
-                autoCapitalize='none'
-                autoCorrect={false}
-                onChangeText={setQueryInput}
-                placeholder='Search user id, name, email, phone'
-                value={queryInput}
-              />
+        <ThemedView gap={'six'}>
+          {/* Transaction Type */}
+          <SegmentedControl
+            segmentedControlBackgroundColor={Palette.antiFlashWhite}
+            activeSegmentBackgroundColor={Palette.accent}
+            borderRadius={mhs(16)}
+            currentIndex={type === 'plus' ? 0 : 1}
+            onChange={index => setType(index === 0 ? 'plus' : 'deduct')}
+            width={Dimensions.get('window').width - mhs(40)}>
+            <ThemedText color={type === 'plus' ? '#FFF' : Palette.textPrimary} fontFamily={FontFamily.medium} textAlign='center'>
+              Plus
+            </ThemedText>
+            <ThemedText color={type === 'deduct' ? '#FFF' : Palette.textPrimary} fontFamily={FontFamily.medium} textAlign='center'>
+              Deduct
+            </ThemedText>
+          </SegmentedControl>
 
-              {usersQuery.isLoading && query !== '' ? <ActivityIndicator color={Palette.accent} style={{ marginTop: mhs(8) }} /> : null}
+          {/* User Search Input & Results */}
+          <ThemedView>
+            <FloatingTextInput
+              label='* User'
+              autoCapitalize='none'
+              autoCorrect={false}
+              onChangeText={setQueryInput}
+              onClear={() => setQueryInput('')}
+              placeholder='Search user id, name, email, phone'
+              returnKeyType='search'
+              value={queryInput}
+            />
 
-              {/* Show selected user, or results to pick from */}
-              {selectedUser ? (
-                <ThemedView style={styles.selectedUserContainer}>
-                  <UserCard user={selectedUser} onPress={() => {}} />
-                  <Pressable onPress={() => setSelectedUser(null)} style={styles.clearUserBtn}>
-                    <ThemedText color={Palette.accent} fontFamily={FontFamily.medium} fontSize={12}>
-                      Change
-                    </ThemedText>
-                  </Pressable>
-                </ThemedView>
-              ) : query !== '' && users.length > 0 ? (
-                <ThemedView gap={'two'}>
-                  {users.slice(0, 3).map((u: any) => (
-                    <Pressable
-                      key={u.id}
-                      onPress={() => {
-                        setSelectedUser(u);
-                        setQueryInput(u.email || u.name || String(u.id));
-                      }}>
-                      <UserCard user={u} onPress={() => {}} />
-                    </Pressable>
-                  ))}
-                </ThemedView>
-              ) : query !== '' && !usersQuery.isLoading && users.length === 0 ? (
-                <ThemedText color={Palette.textSecondary} fontSize={13}>
-                  No user found.
-                </ThemedText>
-              ) : null}
-            </ThemedView>
-
-            {/* Transaction Type */}
-            <ThemedView gap={'two'}>
-              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.regular} fontSize={14}>
-                <ThemedText color={Palette.danger} fontFamily={FontFamily.regular} fontSize={14}>
-                  *{' '}
-                </ThemedText>
-                Transaction type
-              </ThemedText>
-              <SegmentedControl
-                activeSegmentBackgroundColor={Palette.accent}
-                currentIndex={type === 'plus' ? 0 : 1}
-                onChange={index => setType(index === 0 ? 'plus' : 'deduct')}>
-                <ThemedText color={type === 'plus' ? '#FFF' : Palette.textPrimary} fontFamily={FontFamily.medium} textAlign='center'>
-                  Plus
-                </ThemedText>
-                <ThemedText color={type === 'deduct' ? '#FFF' : Palette.textPrimary} fontFamily={FontFamily.medium} textAlign='center'>
-                  Deduct
-                </ThemedText>
-              </SegmentedControl>
-            </ThemedView>
-
-            {/* Transfer Amount */}
-            <FloatingTextInput label='* Transfer amount' keyboardType='numeric' onChangeText={setAmount} placeholder='Enter amount' value={amount} />
-
-            {/* Reason */}
-            <FloatingTextInput label='* Reason' onChangeText={setReason} placeholder='Enter reason for this transaction' value={reason} />
+            {query !== '' && (
+              <ThemedView gap={'two'} marginTop={12}>
+                {usersQuery.isLoading ? (
+                  <ActivityIndicator color={Palette.accent} style={{ alignSelf: 'center' }} />
+                ) : users.length > 0 ? (
+                  <UserCard
+                    user={users[0]}
+                    onPress={() => {}}
+                    style={{
+                      backgroundColor: Palette.antiFlashWhite,
+                      borderRadius: mhs(16),
+                      overflow: 'hidden',
+                    }}
+                  />
+                ) : (
+                  <ThemedText color={Palette.textSecondary} fontSize={13}>
+                    No user found.
+                  </ThemedText>
+                )}
+              </ThemedView>
+            )}
           </ThemedView>
-        )}
+
+          {/* Transfer Amount */}
+          <FloatingTextInput label='* Transfer amount' isMoney onChangeText={setAmount} placeholder='Enter amount' value={amount} />
+
+          {/* Reason */}
+          <FloatingTextInput label='* Reason' onChangeText={setReason} placeholder='Enter reason for this transaction' value={reason} />
+        </ThemedView>
       </ScrollView>
-      {step === 1 && <BottomButton disabled={!selectedUser || !amount || !reason} onPress={onNext} title='Next' />}
+      <BottomButton disabled={!(query !== '' && users.length > 0) || !amount || !reason} onPress={onSubmit} title='Submit' />
+
+      <Modal
+        avoidKeyboard
+        isVisible={isModalVisible}
+        onBackButtonPress={() => setIsModalVisible(false)}
+        onBackdropPress={() => setIsModalVisible(false)}
+        style={{ margin: mhs(20), justifyContent: 'center' }}>
+        <ThemedView backgroundColor={Palette.surfaceBase} borderRadius={16} gap={'six'} padding={20}>
+          {/* Warning Banner */}
+          <ThemedView alignItems='flex-start' backgroundColor='#FFF8E1' borderColor='#FFD54F' borderRadius={8} borderWidth={1} flexDirection='row' padding={12}>
+            <Info color='#F59E0B' size={mhs(20)} style={{ marginTop: mhs(2) }} />
+            <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.regular} fontSize={14} marginLeft={8}>
+              Once the transfer is confirmed, the funds will be directly deposited into the recipient's account and cannot be refunded.
+            </ThemedText>
+          </ThemedView>
+
+          {/* Prominent Transfer Amount */}
+          <ThemedView alignItems='center' paddingVertical={16}>
+            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={14} marginBottom={8}>
+              Transfer amount
+            </ThemedText>
+            <ThemedText color={type === 'plus' ? Palette.accent : Palette.danger} fontFamily={FontFamily.bold} fontSize={36}>
+              {type === 'plus' ? '+' : '-'}
+              {amount} đ
+            </ThemedText>
+          </ThemedView>
+
+          {/* Admin Password Input */}
+          <FloatingTextInput isPassword label='* Admin Password' onChangeText={setPassword} placeholder='Please enter password' value={password} />
+
+          <AppButton disabled={!password || isPending} loading={isPending} onPress={() => mutate()}>
+            Confirm
+          </AppButton>
+        </ThemedView>
+      </Modal>
     </ThemedView>
   );
 }
@@ -161,7 +201,7 @@ const styles = StyleSheet.create({
     paddingBottom: mhs(40),
   },
   input: {
-    borderColor: '#D0D5DD',
+    // borderColor: '#D0D5DD',
     borderRadius: mhs(8),
     borderWidth: 1,
     color: Palette.textPrimary,
@@ -202,49 +242,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: mhs(20),
     paddingVertical: mhs(20),
   },
-  stepWrapper: {
-    alignItems: 'center',
-    gap: mhs(8),
-  },
-  stepCircle: {
-    alignItems: 'center',
-    backgroundColor: '#F2F4F7',
-    borderRadius: mhs(14),
-    height: mhs(28),
-    justifyContent: 'center',
-    width: mhs(28),
-  },
-  stepCircleActive: {
-    backgroundColor: '#0F9F6E',
-  },
-  stepCircleText: {
-    color: '#98A2B3',
-    fontFamily: FontFamily.medium,
-    fontSize: 14,
-  },
-  stepCircleTextActive: {
-    color: '#FFFFFF',
-  },
-  stepLabel: {
-    color: '#98A2B3',
-    fontFamily: FontFamily.regular,
-    fontSize: 12,
-  },
-  stepLabelActive: {
-    color: '#101828',
-  },
-  stepLine: {
-    backgroundColor: '#E4E7EC',
-    flex: 1,
-    height: 1,
-    marginHorizontal: mhs(8),
-    marginTop: -mhs(20),
-  },
-  stepLineActive: {
-    backgroundColor: '#0F9F6E',
-  },
   selectedUserContainer: {
     position: 'relative',
+    borderRadius: mhs(16),
+    overflow: 'hidden',
+  },
+  selectedUserCard: {
+    backgroundColor: '#F0F9FF', // Light blue tint
+    borderColor: Palette.accent,
+    borderWidth: 1.5,
+    borderRadius: mhs(16),
+    borderBottomWidth: 1.5,
+    overflow: 'hidden',
   },
   clearUserBtn: {
     position: 'absolute',

@@ -7,8 +7,6 @@ import { usePanelMotion } from './hooks';
 import { Popup } from './popup';
 
 const AnimatedBlurView = Animated.createAnimatedComponent<typeof BlurView>(BlurView);
-const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
-
 function measure(event: LayoutChangeEvent, key: string, onMeasure: Measure) {
   const { height, width } = event.nativeEvent.layout;
   onMeasure(key, Math.ceil(width), Math.ceil(height));
@@ -17,22 +15,22 @@ function measure(event: LayoutChangeEvent, key: string, onMeasure: Measure) {
 export function Panel({ active, direction, item, onClose }: PanelProps) {
   const motion = usePanelMotion(active, direction);
   return (
-    <AnimatedThemedView left={0} pointerEvents={active ? 'auto' : 'none'} position='absolute' style={motion.style} top={0} width='100%'>
-      <AnimatedThemedView style={Platform.OS === 'android' ? motion.androidBlurStyle : undefined}>
+    <Animated.View pointerEvents={active ? 'auto' : 'none'} style={[{ left: 0, position: 'absolute', top: 0, width: '100%' }, motion.style]}>
+      <Animated.View style={Platform.OS === 'android' ? motion.androidBlurStyle : undefined}>
         <Popup colors={colors} onClose={onClose} routeName={item.routeName} />
-      </AnimatedThemedView>
+      </Animated.View>
       {Platform.OS === 'ios' && (
         <AnimatedBlurView animatedProps={motion.blurProps} pointerEvents='none' style={StyleSheet.absoluteFill} tint='systemUltraThinMaterialDark' />
       )}
-    </AnimatedThemedView>
+    </Animated.View>
   );
 }
 
-export function MeasurementLayer({ items, onMeasure }: { items: NavItem[]; onMeasure: Measure }) {
+export function MeasurementLayer({ items, onMeasure, width }: { items: NavItem[]; onMeasure: Measure; width: number }) {
   return (
-    <ThemedView left={-10000} opacity={0} pointerEvents='none' position='absolute' top={-10000}>
+    <ThemedView left={-10000} opacity={0} pointerEvents='none' position='absolute' top={-10000} width={width}>
       {items.map(item => (
-        <ThemedView key={item.key} onLayout={event => measure(event, item.key, onMeasure)}>
+        <ThemedView key={item.key} onLayout={event => measure(event, item.key, onMeasure)} width={width}>
           <Popup colors={colors} onClose={() => undefined} routeName={item.routeName} />
         </ThemedView>
       ))}

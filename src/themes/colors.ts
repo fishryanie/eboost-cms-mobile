@@ -8,6 +8,7 @@ export const Palette = {
   surfaceBase: '#FFFFFF',
   surfaceMuted: '#F7F9FB',
   surfaceRaised: '#FFFFFF',
+  antiFlashWhite: '#F1F1F1',
   textPrimary: '#1F2933',
   textSecondary: '#667085',
   textTertiary: '#8A97A6',

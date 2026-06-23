@@ -1,51 +1,33 @@
-import React, { memo, useCallback, useEffect, useRef } from "react";
-import {
-  Dimensions,
-  StyleSheet,
-  TouchableOpacity,
-  ViewStyle,
-} from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  useAnimatedProps,
-  withSequence,
-  Easing,
-  runOnJS,
-} from "react-native-reanimated";
-import { SegmentedControlPresets, SHADOW } from "./presets";
-import type { ISegmentedControl } from "./types";
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
-import { BlurView, type BlurViewProps } from "expo-blur";
-import { impactAsync, ImpactFeedbackStyle } from "expo-haptics";
-import { scheduleOnRN } from "react-native-worklets";
+import { BlurView, type BlurViewProps } from 'expo-blur';
+import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
+import React, { memo, useCallback, useEffect, useRef } from 'react';
+import { Dimensions, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { Easing, useAnimatedProps, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
+import { SegmentedControlPresets, SHADOW } from './presets';
+import type { ISegmentedControl } from './types';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
-const width = Dimensions.get("screen").width - 32;
+const DEFAULT_WIDTH = Dimensions.get('screen').width - 32;
 
-const SegmentedControl: React.FC<ISegmentedControl> &
-  React.FunctionComponent<ISegmentedControl> = ({
+const SegmentedControl: React.FC<ISegmentedControl> & React.FunctionComponent<ISegmentedControl> = ({
   children,
   onChange,
   currentIndex,
-  preset = "ios",
+  preset = 'ios',
   segmentedControlBackgroundColor,
   activeSegmentBackgroundColor,
   paddingVertical = 12,
   dividerColor,
   borderRadius = 8,
   disableScaleEffect = false,
-}: ISegmentedControl):
-  | (React.ReactNode & React.JSX.Element & React.ReactElement)
-  | null => {
+  width = DEFAULT_WIDTH,
+}: ISegmentedControl): (React.ReactNode & React.JSX.Element & React.ReactElement) | null => {
   const theme = SegmentedControlPresets[preset];
-  const finalSegmentedControlBackgroundColor =
-    segmentedControlBackgroundColor ?? theme.segmentedControlBackgroundColor;
-  const finalActiveSegmentBackgroundColor =
-    activeSegmentBackgroundColor ?? theme.activeSegmentBackgroundColor;
+  const finalSegmentedControlBackgroundColor = segmentedControlBackgroundColor ?? theme.segmentedControlBackgroundColor;
+  const finalActiveSegmentBackgroundColor = activeSegmentBackgroundColor ?? theme.activeSegmentBackgroundColor;
   const finalDividerColor = dividerColor ?? theme.dividerColor;
 
   const childrenArray = React.Children.toArray(children);
@@ -63,11 +45,11 @@ const SegmentedControl: React.FC<ISegmentedControl> &
   const triggerBlur = useCallback(() => {
     blurAmount.value = withSequence<number>(
       withTiming<number>(10, {
-        duration: 400,
+        duration: 200,
         easing: Easing.inOut(Easing.ease),
       }),
       withTiming<number>(0, {
-        duration: 400,
+        duration: 200,
         easing: Easing.inOut(Easing.ease),
       }),
     );
@@ -75,10 +57,7 @@ const SegmentedControl: React.FC<ISegmentedControl> &
 
   const triggerTapScale = useCallback(() => {
     if (disableScaleEffect) return;
-    activeScale.value = withSequence<number>(
-      withTiming<number>(1.3, { duration: 350 }),
-      withSpring<number>(1, { stiffness: 10, damping: 5, mass: 0.8 }),
-    );
+    activeScale.value = withSequence<number>(withTiming<number>(1.3, { duration: 250 }), withSpring<number>(1, { stiffness: 10, damping: 5, mass: 0.8 }));
   }, [disableScaleEffect]);
   const memoizedTabPressCallback = useCallback(
     (index: number) => {
@@ -94,26 +73,19 @@ const SegmentedControl: React.FC<ISegmentedControl> &
 
   useEffect(() => {
     tabTranslate.value = withSpring<number>(currentIndex * translateValue, {
-      stiffness: 80,
-      damping: 90,
-      mass: 1,
+      stiffness: 250,
+      damping: 25,
+      mass: 0.8,
     });
   }, [currentIndex, translateValue]);
 
-  const animatedTabStyle = useAnimatedStyle<
-    Partial<Pick<ViewStyle, "transform">>
-  >(() => {
+  const animatedTabStyle = useAnimatedStyle<Partial<Pick<ViewStyle, 'transform'>>>(() => {
     return {
-      transform: [
-        { translateX: tabTranslate.value },
-        { scale: activeScale.value },
-      ],
+      transform: [{ translateX: tabTranslate.value }, { scale: activeScale.value }],
     };
   });
 
-  const animatedBlurViewProps = useAnimatedProps<
-    Required<Pick<BlurViewProps, "intensity">>
-  >(() => {
+  const animatedBlurViewProps = useAnimatedProps<Required<Pick<BlurViewProps, 'intensity'>>>(() => {
     return {
       intensity: blurAmount.value,
     };
@@ -132,7 +104,7 @@ const SegmentedControl: React.FC<ISegmentedControl> &
       });
       scheduleOnRN(impactAsync, ImpactFeedbackStyle.Medium);
     })
-    .onUpdate((event) => {
+    .onUpdate(event => {
       const tabWidth = (width - 4) / tabsCount;
       const rawIndex = Math.floor(event.x / tabWidth);
       const newIndex = Math.max(0, Math.min(tabsCount - 1, rawIndex));
@@ -167,13 +139,13 @@ const SegmentedControl: React.FC<ISegmentedControl> &
             backgroundColor: finalSegmentedControlBackgroundColor,
             paddingVertical: paddingVertical,
             borderRadius,
+            width,
           },
-        ]}
-      >
+        ]}>
         <Animated.View
           style={[
             {
-              position: "absolute",
+              position: 'absolute',
               width: (width - 4) / tabsCount,
               top: 2,
               bottom: 2,
@@ -184,7 +156,7 @@ const SegmentedControl: React.FC<ISegmentedControl> &
             },
             animatedTabStyle,
           ]}
-          pointerEvents="none"
+          pointerEvents='none'
         />
 
         {childrenArray.map<React.ReactNode>((child, index) => {
@@ -192,21 +164,11 @@ const SegmentedControl: React.FC<ISegmentedControl> &
 
           return (
             <React.Fragment key={index}>
-              <TouchableOpacity
-                style={[styles.textWrapper]}
-                onPress={() => memoizedTabPressCallback(index)}
-                activeOpacity={0.7}
-              >
+              <TouchableOpacity style={[styles.textWrapper]} onPress={() => memoizedTabPressCallback(index)} activeOpacity={0.7}>
                 {child}
               </TouchableOpacity>
 
-              {showDivider && (
-                <AnimatedDivider
-                  currentIndex={currentIndex}
-                  dividerIndex={index}
-                  color={finalDividerColor}
-                />
-              )}
+              {showDivider && <AnimatedDivider currentIndex={currentIndex} dividerIndex={index} color={finalDividerColor} />}
             </React.Fragment>
           );
         })}
@@ -215,13 +177,13 @@ const SegmentedControl: React.FC<ISegmentedControl> &
           style={[
             StyleSheet.absoluteFill,
             {
-              overflow: "hidden",
+              overflow: 'hidden',
               borderRadius,
             },
           ]}
           animatedProps={animatedBlurViewProps}
-          tint="default"
-          pointerEvents="none"
+          tint='default'
+          pointerEvents='none'
         />
       </Animated.View>
     </GestureDetector>
@@ -236,11 +198,10 @@ const AnimatedDivider: React.FC<{
   const opacity = useSharedValue(1);
 
   useEffect(() => {
-    const shouldFadeOut =
-      dividerIndex === currentIndex || dividerIndex === currentIndex - 1;
+    const shouldFadeOut = dividerIndex === currentIndex || dividerIndex === currentIndex - 1;
 
     opacity.value = withTiming(shouldFadeOut ? 0 : 1, {
-      duration: 200,
+      duration: 100,
     });
   }, [currentIndex, dividerIndex]);
 
@@ -250,19 +211,14 @@ const AnimatedDivider: React.FC<{
     };
   });
 
-  return (
-    <Animated.View
-      style={[styles.divider, { backgroundColor: color }, animatedDividerStyle]}
-    />
-  );
+  return <Animated.View style={[styles.divider, { backgroundColor: color }, animatedDividerStyle]} />;
 };
 
 const styles = StyleSheet.create({
   segmentedControlWrapper: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    width: width,
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: 20,
   },
   textWrapper: {
@@ -272,8 +228,8 @@ const styles = StyleSheet.create({
   },
   divider: {
     width: 1,
-    height: "60%",
-    alignSelf: "center",
+    height: '60%',
+    alignSelf: 'center',
   },
 });
 

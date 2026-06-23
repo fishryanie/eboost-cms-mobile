@@ -1,15 +1,12 @@
 import { ThemedText, ThemedView } from 'components/base';
 import { useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { colors, ICON_BOX, LABEL_CLIP_BUFFER, LABEL_MARGIN, LABEL_PAD, TAB_HEIGHT } from './constants';
 import { useMorphMotion } from './hooks';
 
-const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
-const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
-
 export function MorphTab({ active, item, onPress }: { active: boolean; item: NavItem; onPress: () => void }) {
-  const [labelWidth, setLabelWidth] = useState(0);
+  const [labelWidth, setLabelWidth] = useState(Math.ceil(item.label.length * 8.5 + 4) + LABEL_CLIP_BUFFER);
   const motion = useMorphMotion(active, labelWidth);
 
   return (
@@ -31,52 +28,66 @@ export function MorphTab({ active, item, onPress }: { active: boolean; item: Nav
         top={-10000}>
         {item.label}
       </ThemedText>
-      <AnimatedThemedView
-        alignItems='center'
-        borderRadius={TAB_HEIGHT / 2}
-        flexDirection='row'
-        height={TAB_HEIGHT}
-        overflow='visible'
-        style={motion.containerStyle}>
-        <AnimatedThemedView
-          backgroundColor={colors.accent}
-          borderRadius={18}
-          height={36}
-          left={(ICON_BOX - 36) / 2}
-          position='absolute'
-          style={motion.holdCircleStyle}
-          top={(TAB_HEIGHT - 36) / 2}
-          width={36}
+      <Animated.View
+        style={[
+          {
+            alignItems: 'center',
+            borderRadius: TAB_HEIGHT / 2,
+            flexDirection: 'row',
+            height: TAB_HEIGHT,
+            overflow: 'visible',
+          },
+          motion.containerStyle,
+        ]}>
+        <Animated.View
+          style={[
+            {
+              backgroundColor: colors.accent,
+              borderRadius: 18,
+              height: 36,
+              left: (ICON_BOX - 36) / 2,
+              position: 'absolute',
+              top: (TAB_HEIGHT - 36) / 2,
+              width: 36,
+            },
+            motion.holdCircleStyle,
+          ]}
         />
         <ThemedView height={TAB_HEIGHT} width={ICON_BOX}>
-          <AnimatedThemedView absoluteFillObject alignItems='center' justifyContent='center' style={[motion.iconInactiveStyle, motion.iconSqueezeStyle]}>
+          <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, motion.iconInactiveStyle, motion.iconSqueezeStyle]}>
             {item.icon(false, colors.muted, 22)}
-          </AnimatedThemedView>
-          <AnimatedThemedView absoluteFillObject alignItems='center' justifyContent='center' style={[motion.iconActiveStyle, motion.iconSqueezeStyle]}>
+          </Animated.View>
+          <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, motion.iconActiveStyle, motion.iconSqueezeStyle]}>
             {item.icon(true, colors.foreground, 22)}
-          </AnimatedThemedView>
+          </Animated.View>
         </ThemedView>
-        <AnimatedThemedView
-          height={TAB_HEIGHT}
-          justifyContent='center'
-          marginLeft={LABEL_MARGIN}
-          overflow='visible'
-          paddingRight={LABEL_PAD}
-          style={motion.labelStyle}>
-          <AnimatedThemedText
+        <Animated.View
+          style={[
+            {
+              height: TAB_HEIGHT,
+              justifyContent: 'center',
+              marginLeft: LABEL_MARGIN,
+              overflow: 'visible',
+              paddingRight: LABEL_PAD,
+            },
+            motion.labelStyle,
+          ]}>
+          <Animated.Text
             allowFontScaling={false}
-            color={colors.foreground}
-            flexShrink={0}
-            fontSize={15}
-            fontWeight='600'
-            height={TAB_HEIGHT}
-            includeFontPadding={false}
-            lineHeight={TAB_HEIGHT}
-            style={{ width: labelWidth }}>
+            style={{
+              color: colors.foreground,
+              flexShrink: 0,
+              fontSize: 15,
+              fontWeight: '600',
+              height: TAB_HEIGHT,
+              includeFontPadding: false,
+              lineHeight: TAB_HEIGHT,
+              width: labelWidth,
+            }}>
             {item.label}
-          </AnimatedThemedText>
-        </AnimatedThemedView>
-      </AnimatedThemedView>
+          </Animated.Text>
+        </Animated.View>
+      </Animated.View>
     </Pressable>
   );
 }

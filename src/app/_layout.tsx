@@ -1,9 +1,9 @@
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Inter_100Thin, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_900Black, useFonts } from '@expo-google-fonts/inter';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-
+import { ToastManager } from 'components/base';
 import { AnimatedSplashOverlay } from 'components/animated-icon';
 import { AppDrawer } from 'components/app-drawer';
 import { AutoUpdateModal } from 'components/auto-update-modal';
@@ -48,6 +48,7 @@ export default function TabLayout() {
               </AppDrawer>
             </BottomSheetModalProvider>
           </AppQueryProvider>
+          <ToastManager />
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </ThemeProvider>

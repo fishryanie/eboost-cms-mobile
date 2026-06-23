@@ -5,12 +5,10 @@ import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, ICON_BOX, LABEL_MARGIN, LABEL_PAD } from './constants';
+import { colors, ICON_BOX, LABEL_MARGIN, LABEL_PAD, TAB_HEIGHT } from './constants';
 import { useCardMotion } from './hooks';
 import { MorphTab } from './morph-tab';
 import { MeasurementLayer, Panel } from './panel';
-
-const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
 
 function TabBarSurface({ children }: { children: ReactNode }) {
   const commonStyle = {
@@ -77,7 +75,7 @@ export function AnimatedTabBar({ descriptors, navigation, state }: BottomTabBarP
     (activeItem ? Math.ceil(activeItem.label.length * 8.5 + 4) + LABEL_PAD + LABEL_MARGIN : 0) +
     Math.max(items.length - 1, 0) * 2 +
     12;
-  const motion = useCardMotion(sizes, { ...toolbar, w: toolbar.w || estimatedWidth }, view);
+  const motion = useCardMotion(sizes, { ...toolbar, w: toolbar.w || estimatedWidth, h: toolbar.h || TAB_HEIGHT + 12 }, view);
 
   const onPress = (item: NavItem) => {
     if (activeKey !== item.key) {
@@ -94,7 +92,7 @@ export function AnimatedTabBar({ descriptors, navigation, state }: BottomTabBarP
 
   return (
     <ThemedView absoluteFillObject backgroundColor='transparent' overflow='visible' pointerEvents='box-none'>
-      <MeasurementLayer items={items} onMeasure={onMeasure} />
+      <MeasurementLayer items={items} onMeasure={onMeasure} width={toolbar.w || estimatedWidth} />
       {view !== 'default' && <Pressable accessibilityLabel='Close menu' accessibilityRole='button' onPress={close} style={StyleSheet.absoluteFill} />}
       <ThemedView
         alignItems='center'
@@ -106,26 +104,34 @@ export function AnimatedTabBar({ descriptors, navigation, state }: BottomTabBarP
         pointerEvents='box-none'
         position='absolute'
         right={0}>
-        <AnimatedThemedView
-          borderRadius={28}
-          elevation={8}
-          shadowColor='#000'
-          shadowOffset={{ height: 10, width: 0 }}
-          shadowOpacity={0.18}
-          shadowRadius={20}
-          style={motion.cardStyle}>
+        <Animated.View
+          style={[
+            {
+              borderRadius: 28,
+              elevation: 8,
+              shadowColor: '#000',
+              shadowOffset: { height: 10, width: 0 },
+              shadowOpacity: 0.18,
+              shadowRadius: 20,
+            },
+            motion.cardStyle,
+          ]}>
           <TabBarSurface>
             <ThemedView flex={1} overflow='hidden' width='100%'>
               {items.map(item => (
                 <Panel key={item.key} active={view === item.key} direction={panelDirection} item={item} onClose={close} />
               ))}
             </ThemedView>
-            <AnimatedThemedView
-              backgroundColor={colors.border}
-              height={StyleSheet.hairlineWidth}
+            <Animated.View
               pointerEvents='none'
-              style={motion.dividerStyle}
-              width='100%'
+              style={[
+                {
+                  backgroundColor: colors.border,
+                  height: StyleSheet.hairlineWidth,
+                  width: '100%',
+                },
+                motion.dividerStyle,
+              ]}
             />
             <ThemedView
               alignItems='center'
@@ -143,7 +149,7 @@ export function AnimatedTabBar({ descriptors, navigation, state }: BottomTabBarP
               ))}
             </ThemedView>
           </TabBarSurface>
-        </AnimatedThemedView>
+        </Animated.View>
       </ThemedView>
     </ThemedView>
   );

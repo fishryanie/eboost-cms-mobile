@@ -46,14 +46,14 @@ function getUserAvatar(user: UserListItem) {
   return getDisplayImageUrl(user.image?.url || user.avatarUrl || user.avatar_url || user.avatar?.url || user.avatar?.path);
 }
 
-export const UserCard = memo(function UserCard({ onPress, user }: { onPress: () => void; user: UserListItem }) {
+export const UserCard = memo(function UserCard({ onPress, style, user }: { onPress: () => void; style?: any; user: UserListItem }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const displayName = user.name || user.username || user.email || `User #${user.id}`;
   const levelColor = user.userLevel?.backgroundColor || '#00AF55';
   const avatarUrl = getUserAvatar(user);
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, style, pressed && styles.pressed]}>
       <ThemedView alignItems='center' alignSelf='stretch' justifyContent='center' width={58}>
         <ThemedView
           alignItems='center'
