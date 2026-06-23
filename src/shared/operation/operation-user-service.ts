@@ -100,7 +100,7 @@ export function adjustUserBalance(input: BalanceAdjustmentInput) {
 }
 
 export function transferMoneyUsers(input: TransferMoneyInput) {
-  return apiRequest('api/user/transfer-money-users', {
+  return apiRequest('api/controller/utilities/transfer-money-users', {
     data: input,
     method: 'POST',
     service: 'core',

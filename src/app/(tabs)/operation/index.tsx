@@ -215,6 +215,10 @@ export default function OperationScreen() {
       router.push('/operation/adjust-balance');
       return;
     }
+    if (service.key === 'transfer-money') {
+      router.push('/operation/transfer-money');
+      return;
+    }
     setSelectedService(service);
     setSelectedUser(null);
     setIsPickerOpen(true);

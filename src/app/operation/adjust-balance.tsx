@@ -6,15 +6,15 @@ import SegmentedControl from 'components/organisms/segmented-control';
 import { AppButton } from 'components/ui';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
 import { useRouter } from 'expo-router';
-import { Info } from 'lucide-react-native';
+import { CheckCircle2, Info } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Dimensions, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import Toast from 'react-native-toast-message';
 import { UserCard } from 'shared/users/components/user-card';
 import { useInfiniteUsers } from 'shared/users/hooks';
 import { FontFamily, Palette } from 'themes';
-import { mhs } from 'themes/scaling';
+import { mhs, width } from 'themes/scaling';
 import { apiRequest } from 'utils/api/client';
 
 export default function AdjustBalanceScreen() {
@@ -42,6 +42,9 @@ export default function AdjustBalanceScreen() {
   // Modal state
   const [password, setPassword] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+
+  const selectedUserId = users[0]?.id;
 
   const onSubmit = () => {
     setIsModalVisible(true);
@@ -49,7 +52,6 @@ export default function AdjustBalanceScreen() {
 
   const { isPending, mutate } = useMutation({
     mutationFn: async () => {
-      const selectedUserId = users[0]?.id;
       if (!selectedUserId) throw new Error('User not selected');
 
       // 1. Check admin password
@@ -73,19 +75,12 @@ export default function AdjustBalanceScreen() {
     },
     onSuccess: () => {
       setIsModalVisible(false);
-      Toast.show({
-        type: 'success',
-        text1: 'Transaction Successful',
-        text2: 'Balance has been adjusted successfully.',
-      });
-      router.back();
+      setTimeout(() => {
+        setIsSuccessModalVisible(true);
+      }, 500);
     },
     onError: (error: any) => {
-      Toast.show({
-        type: 'error',
-        text1: 'Transaction Failed',
-        text2: error?.message || 'Failed to process transaction',
-      });
+      Toast.show({ type: 'error', text1: 'Transaction Failed', text2: error?.message || 'Failed to process transaction' });
     },
   });
 
@@ -94,23 +89,26 @@ export default function AdjustBalanceScreen() {
       <HeaderTitle title='Adjust Balance' />
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled'>
+        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={20}>
+          Manually add (+) or deduct (-) funds from a specific user's wallet. This is typically used for refunds, compensations, or corrections. You must
+          provide a clear reason for auditing purposes.
+        </ThemedText>
+        {/* Transaction Type */}
+        <SegmentedControl
+          segmentedControlBackgroundColor={Palette.antiFlashWhite}
+          activeSegmentBackgroundColor={Palette.accent}
+          borderRadius={mhs(16)}
+          currentIndex={type === 'plus' ? 0 : 1}
+          onChange={index => setType(index === 0 ? 'plus' : 'deduct')}
+          width={width - mhs(40)}>
+          <ThemedText color={type === 'plus' ? '#FFF' : Palette.textPrimary} fontFamily={FontFamily.medium} textAlign='center'>
+            Plus
+          </ThemedText>
+          <ThemedText color={type === 'deduct' ? '#FFF' : Palette.textPrimary} fontFamily={FontFamily.medium} textAlign='center'>
+            Deduct
+          </ThemedText>
+        </SegmentedControl>
         <ThemedView gap={'six'}>
-          {/* Transaction Type */}
-          <SegmentedControl
-            segmentedControlBackgroundColor={Palette.antiFlashWhite}
-            activeSegmentBackgroundColor={Palette.accent}
-            borderRadius={mhs(16)}
-            currentIndex={type === 'plus' ? 0 : 1}
-            onChange={index => setType(index === 0 ? 'plus' : 'deduct')}
-            width={Dimensions.get('window').width - mhs(40)}>
-            <ThemedText color={type === 'plus' ? '#FFF' : Palette.textPrimary} fontFamily={FontFamily.medium} textAlign='center'>
-              Plus
-            </ThemedText>
-            <ThemedText color={type === 'deduct' ? '#FFF' : Palette.textPrimary} fontFamily={FontFamily.medium} textAlign='center'>
-              Deduct
-            </ThemedText>
-          </SegmentedControl>
-
           {/* User Search Input & Results */}
           <ThemedView>
             <FloatingTextInput
@@ -188,6 +186,61 @@ export default function AdjustBalanceScreen() {
           <AppButton disabled={!password || isPending} loading={isPending} onPress={() => mutate()}>
             Confirm
           </AppButton>
+        </ThemedView>
+      </Modal>
+
+      <Modal
+        isVisible={isSuccessModalVisible}
+        onBackButtonPress={() => {
+          setIsSuccessModalVisible(false);
+          router.back();
+        }}
+        onBackdropPress={() => {
+          setIsSuccessModalVisible(false);
+          router.back();
+        }}
+        style={{ margin: mhs(20), justifyContent: 'center' }}>
+        <ThemedView backgroundColor={Palette.surfaceBase} borderRadius={16} gap={'six'} padding={24} alignItems='center'>
+          <ThemedView width={64} height={64} borderRadius={32} backgroundColor='#D1FAE5' alignItems='center' justifyContent='center' marginBottom={8}>
+            <CheckCircle2 color='#10B981' size={32} />
+          </ThemedView>
+          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={18} textAlign='center'>
+            Transaction Successful
+          </ThemedText>
+          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} textAlign='center' marginTop={2} lineHeight={20}>
+            You have successfully {type === 'plus' ? 'added' : 'deducted'}{' '}
+            <ThemedText color={type === 'plus' ? Palette.accent : Palette.danger} fontFamily={FontFamily.bold}>
+              {amount} đ
+            </ThemedText>{' '}
+            {type === 'plus' ? 'to' : 'from'}{' '}
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold}>
+              {users[0]?.name || users[0]?.username}
+            </ThemedText>
+            's wallet.
+          </ThemedText>
+
+          <ThemedView flexDirection='row' gap={'four'} marginTop={20} width='100%'>
+            <ThemedView flex={1}>
+              <AppButton
+                onPress={() => {
+                  setIsSuccessModalVisible(false);
+                  router.back();
+                }}
+                style={{ backgroundColor: Palette.antiFlashWhite }}
+                textStyle={{ color: Palette.textPrimary }}>
+                Close
+              </AppButton>
+            </ThemedView>
+            <ThemedView flex={1}>
+              <AppButton
+                onPress={() => {
+                  setIsSuccessModalVisible(false);
+                  router.replace({ pathname: '/user/[id]', params: { id: selectedUserId as number } });
+                }}>
+                View User
+              </AppButton>
+            </ThemedView>
+          </ThemedView>
         </ThemedView>
       </Modal>
     </ThemedView>
