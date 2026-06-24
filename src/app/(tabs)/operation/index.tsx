@@ -219,6 +219,10 @@ export default function OperationScreen() {
       router.push('/operation/transfer-money');
       return;
     }
+    if (service.key === 'modify-ranking') {
+      router.push('/operation/modify-ranking');
+      return;
+    }
     setSelectedService(service);
     setSelectedUser(null);
     setIsPickerOpen(true);
@@ -263,7 +267,7 @@ export default function OperationScreen() {
                   Operation
                 </ThemedText>
                 <ThemedText fontSize={16} color={Palette.textSecondary} marginTop={mhs(4)}>
-                  User service, account actions, and operational performance
+                  Manage user accounts and monitor key operational metrics.
                 </ThemedText>
               </ThemedView>
               <OperationServicesSection onSelectService={openService} tileWidth={tileWidth} />
@@ -322,7 +326,7 @@ function OperationServicesSection({ onSelectService, tileWidth }: { onSelectServ
 
   return (
     <ThemedView gap={'three'}>
-      <SectionTitle subtitle='Same user service shortcuts used by CMS.' title='User Services' />
+      <SectionTitle subtitle='Quick access to essential account management actions.' title='User Services' />
       <ThemedView gap={'three'}>
         {rows.map((row, rowIndex) => (
           <ThemedView flexDirection='row' justifyContent='space-between' key={`operation-service-row-${rowIndex}`} style={styles.serviceRow}>
@@ -344,11 +348,13 @@ function ServiceShortcut({ onPress, service, tileWidth }: { onPress: () => void;
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.serviceTile, { width: tileWidth }, pressed && styles.pressed]}>
       <ThemedView style={styles.serviceIcon}>
-        <IconComponent color={Palette.textTertiary} size={23} />
+        <IconComponent color={Palette.textTertiary} size={28} />
       </ThemedView>
-      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={13} numberOfLines={2} textAlign='center'>
-        {service.title}
-      </ThemedText>
+      <ThemedView justifyContent='flex-start' width='100%'>
+        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={14} numberOfLines={2} textAlign='center'>
+          {service.title.replace(' ', '\n')}
+        </ThemedText>
+      </ThemedView>
     </Pressable>
   );
 }
@@ -462,8 +468,6 @@ function OperationUserWizard({ onBack, onDone, service, user }: { onBack: () => 
   const [authPassword, setAuthPassword] = useState('');
   const [canUseBiometric, setCanUseBiometric] = useState(false);
   const [pendingPayload, setPendingPayload] = useState<Record<string, unknown> | null>(null);
-  const levelsQuery = useQuery({ enabled: service.key === 'modify-ranking', queryFn: fetchUserLevels, queryKey: ['operation', 'user-levels'] });
-  const userLevels = useMemo(() => getCollectionData(levelsQuery.data), [levelsQuery.data]);
   const mutation = useMutation({
     mutationFn: async ({ authenticatedPassword }: { authenticatedPassword?: string }) => {
       const response = await confirmAdminPassword(authenticatedPassword || '');
@@ -486,10 +490,6 @@ function OperationUserWizard({ onBack, onDone, service, user }: { onBack: () => 
           from: user.id,
           to: Number(pendingPayload?.to),
         });
-      }
-
-      if (service.key === 'modify-ranking') {
-        return updateUserRanking({ iriId: String(pendingPayload?.iriId || ''), userId: user.id });
       }
 
       if (service.key === 'change-email') {
@@ -611,10 +611,7 @@ function OperationUserWizard({ onBack, onDone, service, user }: { onBack: () => 
         <SelectedUserSummary user={user} />
         {step === 'input' ? (
           <InputStep
-            canLoadLevels={service.key === 'modify-ranking'}
             formValues={formValues}
-            levels={userLevels}
-            levelsLoading={levelsQuery.isLoading}
             onNext={goToAuth}
             onValueChange={updateValue}
             serviceKey={service.key}
@@ -640,17 +637,12 @@ function OperationUserWizard({ onBack, onDone, service, user }: { onBack: () => 
 
 function InputStep({
   formValues,
-  levels,
-  levelsLoading,
   onNext,
   onValueChange,
   serviceKey,
   user,
 }: {
-  canLoadLevels: boolean;
   formValues: Record<string, string>;
-  levels: UserLevel[];
-  levelsLoading: boolean;
   onNext: (payload: Record<string, unknown>) => void;
   onValueChange: (key: string, value: string) => void;
   serviceKey: OperationServiceKey;
@@ -697,14 +689,6 @@ function InputStep({
       return;
     }
 
-    if (serviceKey === 'modify-ranking') {
-      if (!formValues.iriId) {
-        Alert.alert('Ranking required', 'Select a ranking level.');
-        return;
-      }
-      onNext({ iriId: formValues.iriId });
-      return;
-    }
 
     if (serviceKey === 'change-email') {
       const email = formValues.email?.trim();
@@ -821,32 +805,6 @@ function InputStep({
             value={formValues.amount || ''}
           />
         </>
-      ) : null}
-
-      {serviceKey === 'modify-ranking' ? (
-        <ThemedView gap={'three'}>
-          {levelsLoading ? <ActivityIndicator color={Palette.accent} /> : null}
-          {levels.map(level => {
-            const selected = formValues.iriId === level.iriId;
-            return (
-              <Pressable
-                key={level.iriId || level.id}
-                onPress={() => onValueChange('iriId', level.iriId || `api/user_levels/${level.id}`)}
-                style={({ pressed }) => [styles.levelOption, selected && styles.levelOptionSelected, pressed && styles.pressed]}>
-                <ThemedView style={[styles.levelDot, { backgroundColor: level.backgroundColor || operationAccent }]} />
-                <ThemedView flex={1} minWidth={0}>
-                  <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={14}>
-                    {level.name}
-                  </ThemedText>
-                  <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} marginTop={2}>
-                    {getUserLevelLabel(level)}
-                  </ThemedText>
-                </ThemedView>
-                {selected ? <SymbolView name='checkmark.circle.fill' resizeMode='scaleAspectFit' size={22} tintColor={Palette.accent} /> : null}
-              </Pressable>
-            );
-          })}
-        </ThemedView>
       ) : null}
 
       {serviceKey === 'change-email' ? (
@@ -1081,7 +1039,7 @@ function OperationStatsSection({
     <ThemedView gap={'three'}>
       <PerformanceHorizontalSection
         accentColor='#0F9F6E'
-        description='Current month leaders by sessions, energy, and paid amount.'
+        description='Highlighting the most active users of the current month.'
         items={topUsers.slice(0, 10).map((item, index) => ({
           label: item.user_name || item.user_email || `User #${item.user_id}`,
           meta: `${formatNumber(item.total_orders)} sessions • ${decimalFormatter.format(Number(item.total_energy) || 0)} kWh`,
@@ -1094,7 +1052,7 @@ function OperationStatsSection({
       />
       <PerformanceHorizontalSection
         accentColor='#2563EB'
-        description='Current month station leaders by sessions, energy, and paid amount.'
+        description='Discover top-performing charging stations of the current month.'
         items={topStations.slice(0, 10).map((item, index) => ({
           label: item.station_name || `Station #${item.station_id}`,
           meta: `${formatNumber(item.total_orders)} sessions • ${formatCurrency(item.total_paid)}`,
@@ -1675,10 +1633,10 @@ const styles = StyleSheet.create({
   serviceIcon: {
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.06)',
-    borderRadius: mhs(12),
-    height: 48,
+    borderRadius: mhs(16),
+    height: 56,
     justifyContent: 'center',
-    width: 48,
+    width: 56,
   },
 
   serviceRow: {
@@ -1686,9 +1644,9 @@ const styles = StyleSheet.create({
   },
   serviceTile: {
     alignItems: 'center',
-    gap: mhs(4),
-    minHeight: 74,
-    justifyContent: 'center',
+    gap: mhs(6),
+    minHeight: 88,
+    justifyContent: 'flex-start',
     paddingHorizontal: mhs(4),
   },
   sheetHeader: {
