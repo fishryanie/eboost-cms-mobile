@@ -2,7 +2,7 @@ import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal, BottomSheet
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
+import { Alert, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -448,7 +448,9 @@ export default function StaffManagementsScreen() {
           ) : (
             <EmptyState message='Try a different name, email, or status filter.' title='No administrators found' />
           ),
-          ListFooterComponent: staffQuery.isFetchingNextPage ? <ActivityIndicator color={Palette.accent} style={styles.footerLoader} /> : null,
+          ListFooterComponent: staffQuery.isFetchingNextPage ? (
+            <ThemedView alignSelf='center' borderRadius={'pill'} height={18} loading marginVertical={24} width={132} />
+          ) : null,
           onEndReached: loadMore,
           onEndReachedThreshold: 0.55,
           refreshControl: <RefreshControl onRefresh={() => staffQuery.refetch()} refreshing={staffQuery.isRefetching} tintColor={Palette.accent} />,

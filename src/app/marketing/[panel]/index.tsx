@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { SubscriptionStatsCard } from 'app/(tabs)/marketing/components/marketing-sections';
+import { SubscriptionStatsCard } from 'app/(tabs)/marketing/components/subscription-stats';
 import { getMenuPanel, getMenuSection } from 'components/animated-tab-bar/constants';
 import { ThemedView } from 'components/base';
 import { CmsPlaceholderPanelScreen } from 'components/cms-placeholder-panel-screen';

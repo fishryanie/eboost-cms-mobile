@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { Cable } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl } from 'react-native';
+import { FlatList, RefreshControl } from 'react-native';
 
 import { HeaderTitle, ThemedView } from 'components/base';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from 'components/base/empty-state';
@@ -87,8 +87,10 @@ function SessionList({ searchPlaceholder, vehicle }: { searchPlaceholder: string
 function SessionEmptyState({ isLoading }: { isLoading: boolean }) {
   if (isLoading) {
     return (
-      <ThemedView contentCenter flex={1}>
-        <ActivityIndicator color={Palette.accent} />
+      <ThemedView gap={'three'} paddingHorizontal={'four'} paddingTop={'four'}>
+        <ThemedView borderRadius={'large'} height={96} loading />
+        <ThemedView borderRadius={'large'} height={96} loading />
+        <ThemedView borderRadius={'large'} height={96} loading />
       </ThemedView>
     );
   }

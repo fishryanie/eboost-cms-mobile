@@ -47,7 +47,7 @@ export function QuickServiceShortcut({ onPress, service, tileWidth }: { onPress?
       onPress={onPress}
       style={({ pressed }) => [styles.serviceShortcut, { width: tileWidth }, pressed && styles.pressed]}>
       <ThemedView style={styles.serviceIconSurface}>
-        <Icon color={Palette.textTertiary} size={23} strokeWidth={1.9} />
+        <Icon color={Palette.textPrimary} size={22} />
       </ThemedView>
       <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={13} numberOfLines={2} textAlign='center'>
         {service.labelLines.filter(Boolean).join(' ')}

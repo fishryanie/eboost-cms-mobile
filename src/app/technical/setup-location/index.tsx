@@ -2,7 +2,7 @@ import { mhs } from 'themes/scaling';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
 import { BottomButton, ThemedText, ThemedView } from 'components/base';
 import { useLocationDetail } from 'shared/locations/hooks';
@@ -43,8 +43,11 @@ export default function SetupLocationScreen() {
     <ThemedView flex={1}>
       <AppScreen canGoBack onBack={() => router.back()} title='Setup Location' contentContainerStyle={styles.content}>
         {isLoading ? (
-          <ThemedView flex={1} alignItems='center' justifyContent='center' style={{ marginTop: 100 }}>
-            <ActivityIndicator color={Palette.accent} size='large' />
+          <ThemedView gap={'four'} marginTop={100}>
+            <ThemedView borderRadius={'large'} height={88} loading />
+            <ThemedView borderRadius={'large'} height={56} loading />
+            <ThemedView borderRadius={'large'} height={56} loading />
+            <ThemedView borderRadius={'large'} height={56} loading />
           </ThemedView>
         ) : isError ? (
           <ThemedView flex={1} alignItems='center' justifyContent='center' gap={'three'} style={{ marginTop: 100 }}>

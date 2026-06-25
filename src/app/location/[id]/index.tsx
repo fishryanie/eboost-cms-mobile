@@ -1,6 +1,6 @@
 import { mhs } from 'themes/scaling';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
@@ -29,10 +29,8 @@ export default function LocationDetailScreen() {
 
       {locationQuery.isLoading ? (
         <ThemedView gap={'four'}>
-          <ActivityIndicator color={Palette.accent} />
-          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} textAlign='center'>
-            Loading location
-          </ThemedText>
+          <ThemedView borderRadius={'large'} height={128} loading />
+          <ThemedView borderRadius={'large'} height={64} loading />
         </ThemedView>
       ) : locationQuery.isError || !location ? (
         <ThemedView gap={'four'}>
@@ -75,9 +73,10 @@ export default function LocationDetailScreen() {
               </ThemedText>
             </ThemedView>
             {stationsQuery.isLoading ? (
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} textAlign='center'>
-                Loading stations
-              </ThemedText>
+              <ThemedView gap={'three'}>
+                <ThemedView borderRadius={'large'} height={72} loading />
+                <ThemedView borderRadius={'large'} height={72} loading />
+              </ThemedView>
             ) : (stationsQuery.data || []).length === 0 ? (
               <EmptyState title='No stations' message='No station records were returned for this location.' />
             ) : (

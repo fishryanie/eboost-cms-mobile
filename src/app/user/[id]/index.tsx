@@ -1,6 +1,6 @@
 import { mhs } from 'themes/scaling';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
@@ -84,10 +84,8 @@ export default function UserProfileScreen() {
         <EmptyState message='No user ID was provided.' title='User unavailable' />
       ) : profileQuery.isLoading ? (
         <ThemedView gap={'four'}>
-          <ActivityIndicator color={Palette.accent} />
-          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} textAlign='center'>
-            Loading user profile
-          </ThemedText>
+          <ThemedView borderRadius={'large'} height={148} loading />
+          <ThemedView borderRadius={'large'} height={180} loading />
         </ThemedView>
       ) : profileQuery.isError || !user ? (
         <ThemedView gap={'four'}>

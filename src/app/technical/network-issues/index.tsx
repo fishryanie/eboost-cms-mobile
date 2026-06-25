@@ -47,6 +47,7 @@ export default function NetworkIssuesScreen() {
     <ThemedView flex={1}>
       <AnimatedHeaderFlatList
         largeTitle='Network Issues'
+        subtitle='Chargers currently offline'
         largeTitleContainerStyle={styles.issueLargeTitleContainer}
         canGoBack
         onBack={() => router.back()}
@@ -85,7 +86,7 @@ export default function NetworkIssuesScreen() {
             tintColor={Palette.accent}
           />
         }
-        renderItem={({ item }: { item: NetworkIssue }) => <NetworkIssueCard item={item} />}
+        renderItem={({ item, index }: { item: NetworkIssue; index: number }) => <NetworkIssueCard item={item} isLast={index === issues.length - 1} />}
         showsVerticalScrollIndicator={false}
       />
     </ThemedView>

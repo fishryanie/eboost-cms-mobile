@@ -7,7 +7,7 @@ import {
   BottomSheetTextInput,
   type BottomSheetFooterProps } from '@gorhom/bottom-sheet';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -155,11 +155,10 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
         stickyHeaderIndices={[0]}
         ListEmptyComponent={
           chargersQuery.isLoading ? (
-            <ThemedView alignItems='center' gap={'three'} paddingVertical={'six'}>
-              <ActivityIndicator color={Palette.accent} />
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20}>
-                Loading chargers
-              </ThemedText>
+            <ThemedView gap={'three'} paddingVertical={'three'}>
+              <ThemedView borderRadius={'large'} height={76} loading />
+              <ThemedView borderRadius={'large'} height={76} loading />
+              <ThemedView borderRadius={'large'} height={76} loading />
             </ThemedView>
           ) : chargersQuery.isError ? (
             <ThemedView gap={'three'} paddingVertical={'three'}>

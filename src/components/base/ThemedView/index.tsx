@@ -2,9 +2,11 @@ import { forwardRef } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, type ThemeColor } from 'themes';
+import { Colors, Palette, type ThemeColor } from 'themes';
 import { Radius, Spacing } from 'themes/layout';
 import { handleFlex, handleFlexGrow, handleFlexShrink, handleRound, handleSquare, mhs, mvs } from 'themes/scaling';
+
+import { SkeletonShimmer, type SkeletonReduceMotion } from './skeleton-shimmer';
 
 type SpacingKey = keyof typeof Spacing;
 type RadiusKey = keyof typeof Radius;
@@ -37,8 +39,10 @@ type ViewStyleRadiusKeys = 'borderRadius' | 'borderTopLeftRadius' | 'borderTopRi
 type DimensionValueWithSpacing = number | 'auto' | `${number}%` | SpacingKey;
 
 export type ThemedViewProps = ViewProps &
-  Omit<ViewStyle, "width" | "height"> & { width?: number | string; height?: number | string } &
-  Omit<ViewStyle, 'flex' | 'flexGrow' | 'flexShrink' | ViewStyleSpacingKeys | ViewStyleRadiusKeys> & {
+  Omit<ViewStyle, 'width' | 'height'> & { width?: number | string; height?: number | string } & Omit<
+    ViewStyle,
+    'flex' | 'flexGrow' | 'flexShrink' | ViewStyleSpacingKeys | ViewStyleRadiusKeys
+  > & {
     gap?: number | SpacingKey;
     rowGap?: number | SpacingKey;
     columnGap?: number | SpacingKey;
@@ -87,6 +91,11 @@ export type ThemedViewProps = ViewProps &
     safeMarginBottom?: boolean | number | SpacingKey;
     safeTop?: boolean | number | SpacingKey;
     safeBottom?: boolean | number | SpacingKey;
+    loading?: boolean;
+    skeletonBaseColor?: string;
+    skeletonShimmerColor?: string;
+    skeletonDuration?: number;
+    skeletonReduceMotion?: SkeletonReduceMotion;
   };
 
 const HORIZONTAL_VIEW_KEYS = new Set([
@@ -241,6 +250,7 @@ const splitViewProps = (props: Record<string, unknown>) => {
 
 export const ThemedView = forwardRef<View, ThemedViewProps>(function ThemedView(
   {
+    children,
     style,
     lightColor,
     darkColor: _darkColor,
@@ -262,6 +272,11 @@ export const ThemedView = forwardRef<View, ThemedViewProps>(function ThemedView(
     flex,
     flexGrow,
     flexShrink,
+    loading = false,
+    skeletonBaseColor,
+    skeletonShimmerColor = Palette.surfaceBase,
+    skeletonDuration = 1000,
+    skeletonReduceMotion = 'system',
     ...rest
   },
   ref,
@@ -269,12 +284,13 @@ export const ThemedView = forwardRef<View, ThemedViewProps>(function ThemedView(
   const safeInsets = useSafeAreaInsets();
   const { viewProps, viewStyle } = splitViewProps(rest as Record<string, unknown>);
   const themedBackgroundColor = lightColor ?? (type ? Colors.light[type] : undefined);
+  const loadingBackgroundColor = skeletonBaseColor ?? themedBackgroundColor ?? Palette.surfaceMuted;
 
   return (
     <View
       ref={ref}
       style={[
-        themedBackgroundColor ? { backgroundColor: themedBackgroundColor } : undefined,
+        loading ? { backgroundColor: loadingBackgroundColor } : themedBackgroundColor ? { backgroundColor: themedBackgroundColor } : undefined,
         flex !== undefined ? handleFlex(flex) : undefined,
         flexGrow !== undefined ? handleFlexGrow(flexGrow) : undefined,
         flexShrink !== undefined ? handleFlexShrink(flexShrink) : undefined,
@@ -311,10 +327,20 @@ export const ThemedView = forwardRef<View, ThemedViewProps>(function ThemedView(
         hasSafeInsetValue(safeTop) ? { top: withSafeInset(safeInsets.top, resolveSafeSpacing(safeTop, rest.top, true)) } : undefined,
         hasSafeInsetValue(safeBottom) ? { bottom: withSafeInset(safeInsets.bottom, resolveSafeSpacing(safeBottom, rest.bottom, true)) } : undefined,
         viewStyle,
+        loading ? styles.loadingContainer : undefined,
         scaleStyleProp(style),
       ]}
-      {...viewProps}
-    />
+      {...viewProps}>
+      {loading ? undefined : children}
+      {loading && (
+        <SkeletonShimmer
+          baseColor={loadingBackgroundColor}
+          shimmerColor={skeletonShimmerColor}
+          duration={skeletonDuration}
+          reduceMotion={skeletonReduceMotion}
+        />
+      )}
+    </View>
   );
 });
 
@@ -331,6 +357,10 @@ const styles = StyleSheet.create({
   rowCenter: {
     alignItems: 'center',
     flexDirection: 'row',
+  },
+  loadingContainer: {
+    overflow: 'hidden',
+    position: 'relative',
   },
   wrap: {
     flexWrap: 'wrap',

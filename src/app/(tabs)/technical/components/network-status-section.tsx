@@ -1,4 +1,4 @@
-import { Pressable, ActivityIndicator } from 'react-native';
+import { Pressable } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import { ThemedText, ThemedView } from 'components/base';
@@ -106,12 +106,7 @@ export function VehicleNetworkLane({
 }) {
   if (query.isLoading) {
     return (
-      <ThemedView alignItems='center' flexDirection='row' gap={'two'} style={styles.connectorStrip}>
-        <ActivityIndicator color={accent} size='small' />
-        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
-          Loading {title.toLowerCase()}...
-        </ThemedText>
-      </ThemedView>
+      <ThemedView accessibilityLabel={`Loading ${title.toLowerCase()}`} borderRadius={'medium'} height={42} loading style={styles.connectorStrip} />
     );
   }
 

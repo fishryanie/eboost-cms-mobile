@@ -9,7 +9,7 @@ import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { CheckCircle2 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import Toast from 'react-native-toast-message';
 import { confirmAdminPassword, fetchUserLevels, getCollectionData, updateUserRanking } from 'shared/operation/operation-user-service';
@@ -118,9 +118,7 @@ export default function ModifyRankingScreen() {
             />
 
             {usersQuery.isFetching && (
-              <ThemedView alignItems='center' marginTop={16}>
-                <ActivityIndicator color={Palette.accent} />
-              </ThemedView>
+              <ThemedView borderRadius={'large'} height={84} loading marginTop={16} />
             )}
 
             {hasSearched && users.length === 0 && !usersQuery.isFetching && (
@@ -141,7 +139,7 @@ export default function ModifyRankingScreen() {
           {/* User Levels Selection */}
           <ThemedView marginTop={16}>
             {levelsQuery.isLoading ? (
-              <ActivityIndicator color={Palette.accent} />
+              <ThemedView borderRadius={'large'} height={56} loading />
             ) : (
               <Pressable onPress={() => levelSheetRef.current?.present()}>
                 <ThemedView pointerEvents="none">

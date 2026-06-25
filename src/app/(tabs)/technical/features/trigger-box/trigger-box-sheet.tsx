@@ -8,7 +8,7 @@ import {
   type BottomSheetFooterProps } from '@gorhom/bottom-sheet';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from 'components/base';
@@ -497,11 +497,10 @@ export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerB
         stickyHeaderIndices={[0]}
         ListEmptyComponent={
           chargersQuery.isLoading ? (
-            <ThemedView alignItems='center' gap={'three'} paddingVertical={'six'}>
-              <ActivityIndicator color={Palette.accent} />
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20}>
-                Loading chargers
-              </ThemedText>
+            <ThemedView gap={'three'} paddingVertical={'three'}>
+              <ThemedView borderRadius={'large'} height={76} loading />
+              <ThemedView borderRadius={'large'} height={76} loading />
+              <ThemedView borderRadius={'large'} height={76} loading />
             </ThemedView>
           ) : chargersQuery.isError ? (
             <ThemedView gap={'three'} paddingVertical={'three'}>

@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText, ThemedView } from 'components/base';
 
+import { useRouter } from 'expo-router';
 import { Palette } from 'themes';
 import { Colors, HEADER_HEIGHT, MAX_BLUR_INTENSITY, spacing } from '../animated-header-scrollview/conf';
 
@@ -64,6 +65,7 @@ function AnimatedHeaderFlatListComponent<T>({
 }: AnimatedHeaderFlatListProps<T>) {
   const scrollY = useSharedValue(0);
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: event => {
@@ -170,7 +172,7 @@ function AnimatedHeaderFlatListComponent<T>({
           paddingHorizontal={spacing.md}
           height={HEADER_HEIGHT}>
           {canGoBack ? (
-            <Pressable onPress={onBack} hitSlop={8} style={{ zIndex: 1 }}>
+            <Pressable onPress={() => onBack || router.back()} hitSlop={8} style={{ zIndex: 1 }}>
               <ChevronLeft color={Palette.textPrimary} size={28} />
             </Pressable>
           ) : (

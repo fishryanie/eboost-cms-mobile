@@ -1,6 +1,6 @@
 import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal } from '@gorhom/bottom-sheet';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText, ThemedView } from 'components/base';
@@ -56,7 +56,11 @@ export function StaffLogsSheet({ member, onClose, visible }: { member: StaffMemb
         keyExtractor={item => String(item.id)}
         ListEmptyComponent={
           logsQuery.isLoading ? (
-            <ActivityIndicator color={Palette.accent} />
+            <ThemedView gap={'three'} paddingVertical={'four'}>
+              <ThemedView borderRadius={'large'} height={62} loading />
+              <ThemedView borderRadius={'large'} height={62} loading />
+              <ThemedView borderRadius={'large'} height={62} loading />
+            </ThemedView>
           ) : (
             <EmptyState message='No recent administrator activities were returned.' title='No activity' />
           )

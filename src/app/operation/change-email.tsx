@@ -7,7 +7,7 @@ import FloatingTextInput from 'components/ui/FloatingTextInput';
 import { useRouter } from 'expo-router';
 import { CheckCircle2, Info } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import Toast from 'react-native-toast-message';
 import { updateUserEmail } from 'shared/operation/operation-user-service';
@@ -118,7 +118,7 @@ export default function ChangeEmailScreen() {
             {query !== '' && (
               <ThemedView gap={'two'} marginTop={12}>
                 {usersQuery.isLoading ? (
-                  <ActivityIndicator color={Palette.accent} style={{ alignSelf: 'center' }} />
+                  <ThemedView borderRadius={'large'} height={84} loading />
                 ) : users.length > 0 ? (
                   <UserCard
                     user={users[0]}

@@ -1,18 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
-import { Bell, CalendarPlus, ChevronLeft, Gift, TicketPercent, type LucideIcon } from 'lucide-react-native';
+import { Bell, CalendarPlus, ChevronLeft, ChevronsRight, Gift, TicketPercent, type LucideIcon } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { FlatList, Pressable, RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
 import { mhs } from 'themes/scaling';
 import { Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
 
 import { getCurrentMonthRange, toSubscriptionStatsSummary, type ShareMetric, type SubscriptionStatsResponse } from 'utils/marketing';
-import { MarketingServicesSection, ModuleSection, SubscriptionStatsCard } from './components/marketing-sections';
-import { getMenuSection } from 'components/animated-tab-bar/constants';
+import { MarketingServicesSection } from './components/marketing-services';
+import { SubscriptionStatsCard, SectionTitle } from './components/subscription-stats';
+import { fetchAtRiskUsers, getCollectionData, type AtRiskUserItem } from 'shared/operation/operation-user-service';
+import { FontFamily } from 'themes';
 
 const screenHorizontalPadding = 18;
-const serviceTileSize = 64;
+const serviceTileSize = 82;
 const chartColors = ['#6F8EF6', '#5567F0', '#3843A7', '#141C3A', '#9AA7BD', '#D9DEE7', '#2F9E7F', '#F59E0B'];
 const compactNumber = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
 const currencyFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
@@ -192,9 +195,9 @@ const styles = StyleSheet.create({
 });
 
 export default function MarketingScreen() {
+  const router = useRouter();
   const focusStats = false;
   const onBack = undefined;
-  const section = getMenuSection('marketing');
   const { width } = useWindowDimensions();
   const [shareMetric, setShareMetric] = useState<ShareMetric>('revenue');
   const monthRange = useMemo(() => getCurrentMonthRange(), []);
@@ -202,8 +205,10 @@ export default function MarketingScreen() {
     queryFn: () => apiRequest<SubscriptionStatsResponse>('api/controller/statistic/subscription-kw-summary', { params: monthRange }),
     queryKey: ['marketing', 'subscription-package-stats', monthRange.start, monthRange.end],
   });
+  const atRiskQuery = useQuery({ queryFn: () => fetchAtRiskUsers(), queryKey: ['operation', 'at-risk-users'] });
   const summary = useMemo(() => toSubscriptionStatsSummary(statsQuery.data, shareMetric), [shareMetric, statsQuery.data]);
   const serviceTileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - mhs(12) * 3) / 4));
+  const emptyAtRiskUsers: AtRiskUserItem[] = [];
 
   const isMainScreen = !onBack;
   return (
@@ -234,7 +239,11 @@ export default function MarketingScreen() {
                 summary={summary}
                 width={width}
               />
-              {!focusStats ? <ModuleSection accentColor={section.accentColor} panels={section.panels} /> : null}
+              <AtRiskSubscriptionSection
+                accentColor='#D92D20'
+                items={getCollectionData(atRiskQuery.data) || emptyAtRiskUsers}
+                onViewMore={() => router.push('/marketing/at-risk-users')}
+              />
             </ThemedView>
           }
           ListHeaderComponent={onBack ? (
@@ -257,3 +266,84 @@ export default function MarketingScreen() {
       </ThemedView>
   );
 }
+
+const atRiskStyles = StyleSheet.create({
+  inlineMetric: {
+    borderBottomColor: Palette.borderSubtle,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: mhs(8),
+  },
+  inlineMetricValue: {
+    fontVariant: ['tabular-nums'],
+  },
+});
+
+function AtRiskSubscriptionSection({
+  accentColor,
+  items,
+  onViewMore,
+}: {
+  accentColor: string;
+  items: AtRiskUserItem[];
+  onViewMore: () => void;
+}) {
+  const closestDays = items.reduce<number | undefined>((current, item) => {
+    if (typeof item.days_left !== 'number') {
+      return current;
+    }
+
+    return current === undefined ? item.days_left : Math.min(current, item.days_left);
+  }, undefined);
+  const manualRenewals = items.filter(item => !item.auto_renew).length;
+
+  return (
+    <ThemedView gap={'three'}>
+      <ThemedView alignItems='center' flexDirection='row' gap={'two'}>
+        <ThemedView flex={1} minWidth={0}>
+          <SectionTitle title='Subscription Expiry Risk' subtitle='Users approaching expiration.' />
+        </ThemedView>
+        <Pressable
+          accessibilityLabel='View at-risk users'
+          accessibilityRole='button'
+          disabled={items.length === 0}
+          onPress={onViewMore}
+          style={({ pressed }) => [
+            { paddingHorizontal: mhs(4), paddingVertical: mhs(8) },
+            { flexDirection: 'row', alignItems: 'center', gap: mhs(2) },
+            pressed && { opacity: 0.72, transform: [{ scale: 0.99 }] }
+          ]}>
+          <ThemedText color={items.length ? Palette.accent : Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={13} lineHeight={18}>
+            View user
+          </ThemedText>
+          <ChevronsRight color={items.length ? Palette.accent : Palette.textTertiary} size={16} strokeWidth={2.5} />
+        </Pressable>
+      </ThemedView>
+
+      <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={mhs(24)} padding={mhs(20)}>
+        <ThemedView flexDirection='row' gap={'three'}>
+          <InlineMetric accentColor={accentColor} label='Expiring users' value={formatNumber(items.length)} />
+          <InlineMetric accentColor={accentColor} label='Closest expiry' value={closestDays === undefined ? '--' : `${closestDays}d`} />
+          <InlineMetric accentColor={accentColor} label='Manual renew' value={formatNumber(manualRenewals)} />
+        </ThemedView>
+      </ThemedView>
+    </ThemedView>
+  );
+}
+
+function InlineMetric({ accentColor, label, value }: { accentColor: string; label: string; value: string }) {
+  return (
+    <ThemedView flex={1} minWidth={0} style={atRiskStyles.inlineMetric}>
+      <ThemedText numberOfLines={1} color={accentColor} fontFamily={FontFamily.bold} fontSize={16} style={atRiskStyles.inlineMetricValue}>
+        {value}
+      </ThemedText>
+      <ThemedText numberOfLines={2} color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={10} lineHeight={13}>
+        {label}
+      </ThemedText>
+    </ThemedView>
+  );
+}
+
+function formatNumber(value?: number | string | null) {
+  return compactNumber.format(Number(value) || 0);
+}
+

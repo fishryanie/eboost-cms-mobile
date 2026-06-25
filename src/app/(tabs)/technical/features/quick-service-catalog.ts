@@ -38,7 +38,6 @@ export const quickServiceGroups: QuickServiceGroup[] = [
       },
       { icon: 'rotateCcw', labelLines: ['Reset', ''], name: 'Reset', slug: 'reset' },
       { icon: 'circleMinus', labelLines: ['Uninstall', ''], name: 'Uninstall Charger', slug: 'uninstall-charger' },
-      { icon: 'wrench', labelLines: ['Reinstall', ''], name: 'Reinstall Charger', slug: 'reinstall-charger' },
       { icon: 'lockOpen', labelLines: ['Unlock', ''], name: 'Unlock Charger', slug: 'unlock-charger' },
       {
         icon: 'gauge',
@@ -63,25 +62,6 @@ export const quickServiceGroups: QuickServiceGroup[] = [
         labelLines: ['Download', 'QR Code'],
         name: 'Download QR Code',
         slug: 'download-qr-code',
-      },
-
-      {
-        icon: 'pencilLine',
-        labelLines: ['Edit Charger', 'Info'],
-        name: 'Edit Charger Information',
-        slug: 'edit-charger-information',
-      },
-      {
-        icon: 'badgeDollarSign',
-        labelLines: ['Change', 'Price'],
-        name: 'Change Charger Price',
-        slug: 'change-charger-price',
-      },
-      {
-        icon: 'badgeInfo',
-        labelLines: ['View Charger', 'Details'],
-        name: 'View Charger Details',
-        slug: 'view-charger-details',
       },
       {
         icon: 'mapPin',

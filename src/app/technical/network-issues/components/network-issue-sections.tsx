@@ -1,15 +1,10 @@
-import { useState } from 'react';
-import { Pressable, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Pressable } from 'react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
-import { SearchBar } from 'components/molecules/search-bar';
-import { AnimatedHeaderScrollView } from 'components/organisms/animated-header-scrollview';
-import { EmptyState } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 
-import { LoadingBlock, RetryBlock, getNetworkIssues } from 'components/technical/list-ui';
-import { formatRelativeTime, formatShortTime } from 'components/technical/common';
+import { formatRelativeTime } from 'components/technical/common';
 import { styles } from 'components/technical/styles';
 
 type NetworkIssue = ConnectionLogRecord & {
@@ -22,7 +17,8 @@ export function IssueFilterSwitch({
   bikeCount,
   carCount,
   filter,
-  onChange }: {
+  onChange,
+}: {
   bikeCount: number;
   carCount: number;
   filter: NetworkIssueFilter;
@@ -54,27 +50,70 @@ export function IssueFilterSwitch({
   );
 }
 
-export function NetworkIssueCard({ item }: { item: NetworkIssue }) {
+export function NetworkIssueCard({ item, isLast }: { item: NetworkIssue; isLast?: boolean }) {
   const router = useRouter();
+
+  const timestamp = item.timestamp;
+  const date = timestamp ? new Date(timestamp) : new Date();
+  const dayStr = !Number.isNaN(date.getTime()) ? date.getDate().toString() : '--';
+  const monthStr = !Number.isNaN(date.getTime()) ? (date.getMonth() + 1).toString() : '';
+  const timeStr = !Number.isNaN(date.getTime()) ? date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+
+  const color = item.vehicle === 'bike' ? Palette.accent : '#3867D6';
 
   return (
     <Pressable
-      onPress={() => router.push({ pathname: '/technical/box-status-logs', params: { id: item.chargePointID, vehicle: item.vehicle } } as never)}
-      style={({ pressed }) => [styles.issueCard, pressed && styles.pressed]}>
-      <ThemedView backgroundColor={item.vehicle === 'bike' ? Palette.accent : '#3867D6'} style={styles.issueVehicleRail} />
-      <ThemedView flex={1} gap={2} minWidth={0}>
-        <ThemedView alignItems='center' flexDirection='row' gap={'two'}>
-          <ThemedText numberOfLines={1} color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
-            {item.chargePointID || '-'}
+      onPress={() =>
+        router.push({ pathname: '/technical/box-status-logs', params: { id: item.chargePointID, vehicle: item.vehicle, station: item.stationName } } as never)
+      }
+      style={({ pressed }) => [{ flexDirection: 'row', width: '100%' }, pressed && styles.pressed]}>
+      {/* Left Column: Date & Day */}
+      <ThemedView alignItems='center' marginRight={'three'} width={56}>
+        <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={16}>
+          {dayStr}
+          {monthStr ? (
+            <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={11}>
+              /{monthStr}
+            </ThemedText>
+          ) : null}
+        </ThemedText>
+        <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={10} marginTop={'one'}>
+          {timeStr}
+        </ThemedText>
+        <ThemedView backgroundColor={Palette.antiFlashWhite} borderRadius={20} marginTop={'one'} paddingHorizontal={4} paddingVertical={2}>
+          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={9} textAlign='center'>
+            {formatRelativeTime(item.timestamp)}
           </ThemedText>
         </ThemedView>
-        <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} lineHeight={16}>
-          {item.stationName || `${item.vehicle === 'bike' ? 'Bike' : 'Car'} charger`} • {formatShortTime(item.timestamp)}
-        </ThemedText>
       </ThemedView>
-      <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15} style={styles.issueAge}>
-        {formatRelativeTime(item.timestamp)}
-      </ThemedText>
+
+      {/* Middle Column: Dot & Line */}
+      <ThemedView alignItems='center' marginRight={'three'} width={24}>
+        <ThemedView
+          backgroundColor={color}
+          borderColor={Palette.surfaceBase}
+          borderRadius={7}
+          borderWidth={2}
+          height={14}
+          marginTop={'one'}
+          width={14}
+          zIndex={1}
+        />
+        {!isLast && <ThemedView backgroundColor={Palette.borderSubtle} bottom={-20} position='absolute' top={14} width={1} />}
+      </ThemedView>
+
+      {/* Right Column: Content */}
+      <ThemedView flex={1} paddingBottom={'five'}>
+        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15}>
+          {item.chargePointID || '-'}
+        </ThemedText>
+
+        <ThemedView marginTop={'one'}>
+          <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={12}>
+            {item.stationName || `${item.vehicle === 'bike' ? 'Bike' : 'Car'} charger`}
+          </ThemedText>
+        </ThemedView>
+      </ThemedView>
     </Pressable>
   );
 }

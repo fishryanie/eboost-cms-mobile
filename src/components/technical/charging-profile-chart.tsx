@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ActivityIndicator, Dimensions, View } from 'react-native';
+import { Dimensions, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { LineChart } from 'react-native-gifted-charts';
 import { Palette, FontFamily } from 'themes';
@@ -87,8 +87,9 @@ export const ChargingProfileChart: React.FC<ChargingProfileChartProps> = ({ tran
 
   if (isLoading) {
     return (
-      <ThemedView alignItems="center" flex={1} justifyContent="center" padding={'four'}>
-        <ActivityIndicator color={Palette.accent} size="large" />
+      <ThemedView flex={1} gap={'three'} padding={'four'}>
+        <ThemedView borderRadius={'large'} flex={1} loading minHeight={180} />
+        <ThemedView alignSelf='center' borderRadius={'pill'} height={18} loading width='62%' />
       </ThemedView>
     );
   }

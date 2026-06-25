@@ -3,7 +3,7 @@ import { ThemedText, ThemedView } from 'components/base';
 import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 import { EmptyState } from 'components/ui';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, RefreshControl, StyleSheet } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet } from 'react-native';
 import { FontFamily, Palette } from 'themes';
 import { mhs } from 'themes/scaling';
 import { apiRequest } from 'utils/api/client';
@@ -12,8 +12,9 @@ import { StatusLogCard } from './components/status-log-card';
 
 export default function BoxStatusLogsScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string; vehicle?: TechnicalVehicle }>();
+  const params = useLocalSearchParams<{ id?: string; vehicle?: TechnicalVehicle; station?: string }>();
   const id = params.id || '';
+  const station = params.station || '';
   const vehicle = params.vehicle === 'car' ? 'car' : 'bike';
   const query = useQuery({
     queryKey: ['technical', 'box-status-logs', vehicle, id],
@@ -34,7 +35,7 @@ export default function BoxStatusLogsScreen() {
     <ThemedView backgroundColor={Palette.surfaceBase} flex={1}>
       <AnimatedHeaderFlatList
         canGoBack
-        subtitle={id}
+        subtitle={station ? `${station} • ${id}` : id}
         largeTitle='Status Logs'
         onBack={() => router.back()}
         largeTitleContainerStyle={styles.largeTitleContainer}
@@ -43,11 +44,10 @@ export default function BoxStatusLogsScreen() {
         keyExtractor={(item: StatusLogRecord, index: number) => `${item.chargePointID || id}-${item.timestamp}-${index}`}
         ListEmptyComponent={
           loading ? (
-            <ThemedView alignItems='center' gap={'three'} paddingVertical={'eight'}>
-              <ActivityIndicator color={Palette.accent} size='large' />
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={13} lineHeight={18}>
-                Loading status logs...
-              </ThemedText>
+            <ThemedView gap={'three'} paddingHorizontal={'four'} paddingVertical={'four'}>
+              <ThemedView borderRadius={'large'} height={84} loading />
+              <ThemedView borderRadius={'large'} height={84} loading />
+              <ThemedView borderRadius={'large'} height={84} loading />
             </ThemedView>
           ) : error ? (
             <ThemedView alignItems='center' backgroundColor='#FEF2F2' borderRadius='medium' gap='three' padding='four' marginHorizontal='four'>

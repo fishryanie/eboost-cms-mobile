@@ -29,6 +29,23 @@ const STATUS_COLORS: Record<string, string> = {
   Unavailable: '#fa8c16',
   Faulted: '#ff4d4f' };
 
+const OCPPErrorCodeMap: Record<string, string> = {
+  A0108: 'Nhấn Emergency Stop',
+  A0112: 'Cảm biến cửa',
+  A0113: 'Cảnh báo mở nắp bất thường',
+  A0302: 'Lỗi giao tiếp ocpp và pcba',
+  A1303: 'Lỗi tiếp địa',
+  A0401: 'Lỗi giao tiếp',
+  A0413: 'InputOverVoltage',
+  A0416: 'Sai thứ tự lắp đặt',
+  A0902: 'Lỗi Contactor',
+  B0415: 'Không tìm thấy module',
+  B0418: 'N/A',
+  B2004: 'Lỗi điện áp CP',
+  C0402: 'Module mất kết nối',
+  D0209: 'Lỗi hiển thị',
+};
+
 function formatStatus(value: StatusLogRecord['status'], vehicle: TechnicalVehicle) {
   if (value === undefined || value === null || value === '') return '-';
   if (vehicle === 'car') return String(value);
@@ -64,15 +81,36 @@ export function StatusLogCard({
   isLast?: boolean;
 }) {
   const chargerId = item.chargePointID || item.vendor_id || item.box_id || item.boxId || '-';
-  const errorCode = item.errorCode || item.error_code || item.vendorErrorCode || item.vendor_error_code || '';
+  const rawErrorCode = item.errorCode || item.error_code || '';
+  const parsedErrorCode = rawErrorCode === 'NoError' ? '' : (OCPPErrorCodeMap[rawErrorCode] ? `${rawErrorCode} - ${OCPPErrorCodeMap[rawErrorCode]}` : rawErrorCode);
+  
+  const rawVendorErrorCode = item.vendorErrorCode || item.vendor_error_code || '';
+  const vendorErrorCode = OCPPErrorCodeMap[rawVendorErrorCode] ? `${rawVendorErrorCode} - ${OCPPErrorCodeMap[rawVendorErrorCode]}` : rawVendorErrorCode;
+  
   const status = formatStatus(item.status, vehicle);
   const color = STATUS_COLORS[status] || STATUS_COLORS.default;
-  const isWarning = !!errorCode || status === 'Faulted' || status === 'NoPower';
+  
+  let displayText = '';
+  if (vendorErrorCode) {
+    displayText = vendorErrorCode;
+  } else if (parsedErrorCode) {
+    displayText = parsedErrorCode;
+  } else if (item.info && item.info !== 'Normal event' && item.info !== 'NoError') {
+    displayText = item.info;
+  }
+
+  const isWarning = !!parsedErrorCode || !!vendorErrorCode || status === 'Faulted' || status === 'NoPower' || !!displayText;
+  const textColor = isWarning ? Palette.danger : color;
+
+  const connPrefix = vehicle === 'bike' ? 'O' : 'C';
+  const connNumber = item.connectorID ?? item.connector_id ?? '-';
+  const connText = `${connPrefix}${connNumber}-${status}`;
 
   if (isTimeline) {
     const timestamp = item.timestamp || item.receivedAt;
     const date = timestamp ? new Date(timestamp) : new Date();
     const dayStr = !Number.isNaN(date.getTime()) ? date.getDate().toString() : '--';
+    const monthStr = !Number.isNaN(date.getTime()) ? (date.getMonth() + 1).toString() : '';
     const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
     const textStr = !Number.isNaN(date.getTime()) ? days[date.getDay()] : '---';
     const timeStr = !Number.isNaN(date.getTime()) ? date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '--:--';
@@ -80,15 +118,16 @@ export function StatusLogCard({
     return (
       <ThemedView flexDirection='row' paddingHorizontal={'four'} width='100%'>
         {/* Left Column: Date & Day */}
-        <ThemedView alignItems='center' marginRight={'three'} width={40}>
+        <ThemedView alignItems='center' marginRight={'three'} width={44}>
           <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={16}>
             {dayStr}
-          </ThemedText>
-          <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={11}>
-            {textStr}
+            {monthStr ? <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={11}>/{monthStr}</ThemedText> : null}
           </ThemedText>
           <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={10} marginTop={'one'}>
             {timeStr}
+          </ThemedText>
+          <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={11}>
+            {textStr}
           </ThemedText>
         </ThemedView>
 
@@ -118,18 +157,16 @@ export function StatusLogCard({
         {/* Right Column: Content */}
         <ThemedView flex={1} paddingBottom={'five'}>
           <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15}>
-            {status}
+            {connText}
           </ThemedText>
 
-          <ThemedView marginTop={'one'}>
-            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={13} numberOfLines={2}>
-              {vehicle === 'bike' ? 'Outlet' : 'Connector'} {item.connectorID ?? item.connector_id ?? '-'}
-              <ThemedText color={Palette.textTertiary}> • </ThemedText>
-              <ThemedText color={isWarning ? Palette.danger : Palette.textSecondary} fontFamily={FontFamily.regular}>
-                {errorCode || item.info || 'Normal event'}
+          {!!displayText && (
+            <ThemedView marginTop={'one'}>
+              <ThemedText color={textColor} fontFamily={FontFamily.regular} fontSize={13} numberOfLines={2}>
+                {displayText}
               </ThemedText>
-            </ThemedText>
-          </ThemedView>
+            </ThemedView>
+          )}
         </ThemedView>
       </ThemedView>
     );
@@ -159,8 +196,7 @@ export function StatusLogCard({
 
         <ThemedView alignItems='flex-end' minWidth={66}>
           <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={12} lineHeight={16}>
-            {vehicle === 'bike' ? 'Outlet ' : 'Conn '}
-            {item.connectorID ?? item.connector_id ?? '-'}
+            {connText}
           </ThemedText>
         </ThemedView>
       </ThemedView>
@@ -185,25 +221,27 @@ export function StatusLogCard({
         </ThemedView>
       </ThemedView>
 
-      <ThemedView backgroundColor={Palette.borderSubtle} height={1} />
+      {!!displayText && <ThemedView backgroundColor={Palette.borderSubtle} height={1} />}
 
       {/* Bottom row: Raw log info */}
-      <ThemedView alignItems='flex-start' flexDirection='row' gap={'two'}>
-        <ThemedView
-          alignItems='center'
-          backgroundColor={isWarning ? '#FFF1F0' : Palette.surfaceMuted}
-          borderRadius={16}
-          height={32}
-          justifyContent='center'
-          width={32}>
-          {isWarning ? <AlertCircle color={Palette.danger} size={16} /> : <Zap color={Palette.textSecondary} size={16} />}
+      {!!displayText && (
+        <ThemedView alignItems='flex-start' flexDirection='row' gap={'two'}>
+          <ThemedView
+            alignItems='center'
+            backgroundColor={isWarning ? '#FFF1F0' : Palette.surfaceMuted}
+            borderRadius={16}
+            height={32}
+            justifyContent='center'
+            width={32}>
+            {isWarning ? <AlertCircle color={Palette.danger} size={16} /> : <Zap color={Palette.textSecondary} size={16} />}
+          </ThemedView>
+          <ThemedView flex={1} gap={'one'} justifyContent='center' minWidth={0}>
+            <ThemedText color={textColor} fontFamily={FontFamily.regular} fontSize={13} lineHeight={18}>
+              {displayText}
+            </ThemedText>
+          </ThemedView>
         </ThemedView>
-        <ThemedView flex={1} gap={'one'} justifyContent='center' minWidth={0}>
-          <ThemedText color={isWarning ? Palette.danger : Palette.textPrimary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={18}>
-            {errorCode || item.info || 'Normal event'}
-          </ThemedText>
-        </ThemedView>
-      </ThemedView>
+      )}
     </ThemedView>
   );
 }

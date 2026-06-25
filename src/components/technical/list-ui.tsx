@@ -1,4 +1,4 @@
-import { Pressable, ActivityIndicator } from 'react-native';
+import { Pressable } from 'react-native';
 import { ChevronsRight } from 'lucide-react-native';
 import { ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
@@ -51,11 +51,9 @@ export function ProgressBar({ color, percent }: { color: string; percent: number
 
 export function LoadingBlock({ label }: { label: string }) {
   return (
-    <ThemedView alignItems='center' gap={'three'} paddingTop={'five'}>
-      <ActivityIndicator color={Palette.accent} />
-      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20}>
-        {label}
-      </ThemedText>
+    <ThemedView gap={'three'} paddingTop={'five'}>
+      <ThemedView borderRadius={'large'} height={72} loading />
+      <ThemedView alignSelf='center' borderRadius={'pill'} height={20} loading width='58%' accessibilityLabel={label} />
     </ThemedView>
   );
 }

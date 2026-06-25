@@ -2,7 +2,7 @@ import { mhs } from 'themes/scaling';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
@@ -44,10 +44,9 @@ export default function UsersScreen({ onBack }: { onBack?: () => void } = {}) {
         ListEmptyComponent={
           usersQuery.isLoading ? (
             <ThemedView gap={'four'} paddingTop={'five'}>
-              <ActivityIndicator color={Palette.accent} />
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} textAlign='center'>
-                Loading users
-              </ThemedText>
+              <ThemedView borderRadius={'large'} height={88} loading />
+              <ThemedView borderRadius={'large'} height={88} loading />
+              <ThemedView borderRadius={'large'} height={88} loading />
             </ThemedView>
           ) : usersQuery.isError ? (
             <ThemedView gap={'four'} paddingTop={'five'}>
@@ -60,7 +59,7 @@ export default function UsersScreen({ onBack }: { onBack?: () => void } = {}) {
         }
         ListFooterComponent={
           usersQuery.isFetchingNextPage ? (
-            <ActivityIndicator color={Palette.accent} style={styles.footerLoader} />
+            <ThemedView alignSelf='center' borderRadius={'pill'} height={18} loading marginVertical={24} width={132} />
           ) : usersQuery.isFetchNextPageError ? (
             <Pressable onPress={() => usersQuery.fetchNextPage()} style={styles.retryMore}>
               <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20}>

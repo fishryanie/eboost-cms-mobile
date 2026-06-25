@@ -8,7 +8,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { ArrowDownUp, ArrowRight, CheckCircle2, Info, User } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import Toast from 'react-native-toast-message';
 import { transferMoneyUsers } from 'shared/operation/operation-user-service';
@@ -139,7 +139,7 @@ export default function TransferMoneyScreen() {
             {senderQuery !== '' && (
               <ThemedView gap={'two'} marginTop={12}>
                 {senderUsersQuery.isLoading ? (
-                  <ActivityIndicator color={Palette.accent} style={{ alignSelf: 'center' }} />
+                  <ThemedView borderRadius={'large'} height={84} loading />
                 ) : senderUsers.length > 0 ? (
                   <UserCard
                     user={senderUsers[0]}
@@ -193,7 +193,7 @@ export default function TransferMoneyScreen() {
             {receiverQuery !== '' && (
               <ThemedView gap={'two'} marginTop={12}>
                 {receiverUsersQuery.isLoading ? (
-                  <ActivityIndicator color={Palette.accent} style={{ alignSelf: 'center' }} />
+                  <ThemedView borderRadius={'large'} height={84} loading />
                 ) : receiverUsers.length > 0 ? (
                   <UserCard
                     user={receiverUsers[0]}

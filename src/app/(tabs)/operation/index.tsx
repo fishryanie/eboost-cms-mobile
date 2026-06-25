@@ -6,8 +6,9 @@ import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { ArrowRightLeft, ChevronLeft, ChevronsRight, CreditCard, Lock, Mail, ShieldCheck, Star, Wallet } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
+import { Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BarChart, LineChart } from 'react-native-gifted-charts';
 import { mhs } from 'themes/scaling';
 import { AppButton, EmptyState } from 'components/ui';
 import { PaymentCheckoutSheet } from 'shared/operation/components/payment-checkout/payment-checkout-sheet';
@@ -21,7 +22,6 @@ import {
   adjustUserBalance,
   confirmAdminPassword,
   fetchAlePayHistory,
-  fetchAtRiskUsers,
   fetchTopStations,
   fetchTopUsers,
   fetchUserGrowth,
@@ -32,7 +32,6 @@ import {
   updateUserEmail,
   updateUserPassword,
   updateUserRanking,
-  type AtRiskUserItem,
   type BalanceAdjustmentType,
   type TopStationPerformanceItem,
   type TopUserPerformanceItem,
@@ -59,7 +58,6 @@ const operationAccent = '#E46B2C';
 const emptyUsers: UserListItem[] = [];
 const emptyTopUsers: TopUserPerformanceItem[] = [];
 const emptyTopStations: TopStationPerformanceItem[] = [];
-const emptyAtRiskUsers: AtRiskUserItem[] = [];
 const emptyGrowth: UserGrowthChartItem[] = [];
 
 const operationServices: OperationService[] = [
@@ -198,13 +196,12 @@ export default function OperationScreen() {
   const [paymentRecord, setPaymentRecord] = useState<any>(null);
   const topUsersQuery = useQuery({ queryFn: () => fetchTopUsers(), queryKey: ['operation', 'top-users'] });
   const topStationsQuery = useQuery({ queryFn: () => fetchTopStations(), queryKey: ['operation', 'top-stations'] });
-  const atRiskQuery = useQuery({ queryFn: () => fetchAtRiskUsers(), queryKey: ['operation', 'at-risk-users'] });
   const growthRange = useMemo(() => getLastMonthsRange(12), []);
   const growthQuery = useQuery({ queryFn: () => fetchUserGrowth(), queryKey: ['operation', 'user-growth'] });
   const growthChartQuery = useQuery({ queryFn: () => fetchUserGrowthChart(growthRange), queryKey: ['operation', 'user-growth-chart', growthRange] });
   const tileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - mhs(12) * 3) / 4));
   const isRefreshing =
-    topUsersQuery.isRefetching || topStationsQuery.isRefetching || atRiskQuery.isRefetching || growthQuery.isRefetching || growthChartQuery.isRefetching;
+    topUsersQuery.isRefetching || topStationsQuery.isRefetching || growthQuery.isRefetching || growthChartQuery.isRefetching;
 
   const openService = useCallback((service: OperationService) => {
     if (service.key === 'payment-checkout') {
@@ -221,6 +218,14 @@ export default function OperationScreen() {
     }
     if (service.key === 'modify-ranking') {
       router.push('/operation/modify-ranking');
+      return;
+    }
+    if (service.key === 'change-email') {
+      router.push('/operation/change-email');
+      return;
+    }
+    if (service.key === 'change-password') {
+      router.push('/operation/change-password');
       return;
     }
     setSelectedService(service);
@@ -272,11 +277,10 @@ export default function OperationScreen() {
               </ThemedView>
               <OperationServicesSection onSelectService={openService} tileWidth={tileWidth} />
               <OperationStatsSection
-                atRiskUsers={getCollectionData(atRiskQuery.data) || emptyAtRiskUsers}
                 growth={getCollectionData(growthChartQuery.data) || emptyGrowth}
                 growthSummary={growthQuery.data?.data}
                 isLoading={
-                  topUsersQuery.isLoading || topStationsQuery.isLoading || atRiskQuery.isLoading || growthQuery.isLoading || growthChartQuery.isLoading
+                  topUsersQuery.isLoading || topStationsQuery.isLoading || growthQuery.isLoading || growthChartQuery.isLoading
                 }
                 onViewMoreTopStations={() => router.push('/operation/locations')}
                 onViewMoreTopUsers={() => router.push('/operation/users')}
@@ -290,7 +294,6 @@ export default function OperationScreen() {
               onRefresh={() => {
                 void topUsersQuery.refetch();
                 void topStationsQuery.refetch();
-                void atRiskQuery.refetch();
                 void growthQuery.refetch();
                 void growthChartQuery.refetch();
               }}
@@ -348,7 +351,7 @@ function ServiceShortcut({ onPress, service, tileWidth }: { onPress: () => void;
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.serviceTile, { width: tileWidth }, pressed && styles.pressed]}>
       <ThemedView style={styles.serviceIcon}>
-        <IconComponent color={Palette.textTertiary} size={28} />
+        <IconComponent color={Palette.textPrimary} size={22} />
       </ThemedView>
       <ThemedView justifyContent='flex-start' width='100%'>
         <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={14} numberOfLines={2} textAlign='center'>
@@ -436,10 +439,9 @@ function UserPickerSheet({
         ListEmptyComponent={
           usersQuery.isLoading ? (
             <ThemedView gap={'three'} paddingTop={'six'}>
-              <ActivityIndicator color={Palette.accent} />
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={14} textAlign='center'>
-                Loading users
-              </ThemedText>
+              <ThemedView borderRadius={'large'} height={88} loading />
+              <ThemedView borderRadius={'large'} height={88} loading />
+              <ThemedView borderRadius={'large'} height={88} loading />
             </ThemedView>
           ) : usersQuery.isError ? (
             <EmptyState message='The user list could not be loaded.' title='Users unavailable' />
@@ -447,7 +449,11 @@ function UserPickerSheet({
             <EmptyState message={query ? 'Try another ID, phone number, or email.' : 'No user records were returned.'} title='No users found' />
           )
         }
-        ListFooterComponent={usersQuery.isFetchingNextPage ? <ActivityIndicator color={Palette.accent} style={styles.footerLoader} /> : null}
+        ListFooterComponent={
+          usersQuery.isFetchingNextPage ? (
+            <ThemedView alignSelf='center' borderRadius={'pill'} height={18} loading marginVertical={24} width={132} />
+          ) : null
+        }
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         renderItem={({ item }) => (
@@ -776,7 +782,7 @@ function InputStep({
           {receiverSearch || receiverUsersQuery.isLoading ? (
             <ThemedView style={styles.inlineList}>
               {receiverUsersQuery.isLoading ? (
-                <ActivityIndicator color={Palette.accent} />
+                <ThemedView borderRadius={'large'} height={58} loading />
               ) : (
                 receiverUsers.slice(0, 5).map(item => (
                   <Pressable
@@ -896,7 +902,7 @@ function ResultStep({ loading, onDone, result }: { loading: boolean; onDone: () 
   return (
     <ThemedView gap={'four'} style={styles.resultCard}>
       {loading ? (
-        <ActivityIndicator color={Palette.accent} size='large' />
+        <ThemedView borderRadius={'pill'} height={58} loading width={58} />
       ) : (
         <SymbolView
           name={success ? 'checkmark.circle.fill' : 'xmark.circle.fill'}
@@ -1003,7 +1009,6 @@ function SegmentedInput({ onChange, options, value }: { onChange: (value: string
 }
 
 function OperationStatsSection({
-  atRiskUsers,
   growth,
   growthSummary,
   isLoading,
@@ -1012,7 +1017,6 @@ function OperationStatsSection({
   topStations,
   topUsers,
 }: {
-  atRiskUsers: AtRiskUserItem[];
   growth: UserGrowthChartItem[];
   growthSummary?: UserGrowthSummary;
   isLoading: boolean;
@@ -1022,15 +1026,12 @@ function OperationStatsSection({
   topUsers: TopUserPerformanceItem[];
 }) {
   const { width } = useWindowDimensions();
-  const [showAtRiskUsers, setShowAtRiskUsers] = useState(false);
 
   if (isLoading) {
     return (
       <ThemedView gap={'three'}>
         <SectionTitle subtitle='Loading dashboard metrics' title='Operation Analytics' />
-        <ThemedView style={styles.loadingCard}>
-          <ActivityIndicator color={Palette.accent} />
-        </ThemedView>
+        <ThemedView borderRadius={'large'} height={128} loading />
       </ThemedView>
     );
   }
@@ -1063,12 +1064,6 @@ function OperationStatsSection({
         title='Top Performing Stations'
         onViewMore={onViewMoreTopStations}
       />
-      <AtRiskSubscriptionSection
-        accentColor='#D92D20'
-        items={atRiskUsers}
-        showList={showAtRiskUsers}
-        onToggleList={() => setShowAtRiskUsers(value => !value)}
-      />
       <UserGrowthSection growth={growth} summary={growthSummary} />
     </ThemedView>
   );
@@ -1092,22 +1087,24 @@ function PerformanceHorizontalSection({
   const cardWidth = Math.max(206, Math.round(screenWidth * 0.6));
 
   return (
-    <ThemedView style={styles.analyticsSection}>
-      <ThemedView alignItems='flex-start' flexDirection='row' gap={'three'}>
-        <ThemedView style={[styles.analyticsMark, styles.topUsersAnalyticsMark, { backgroundColor: accentColor }]} />
+    <ThemedView gap={'three'}>
+      <ThemedView alignItems='center' flexDirection='row' gap={'two'}>
         <ThemedView flex={1} minWidth={0}>
-          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={16}>
-            {title}
-          </ThemedText>
-          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} marginTop={2}>
-            {description}
-          </ThemedText>
+          <SectionTitle subtitle={description} title={title} />
         </ThemedView>
-        <Pressable onPress={onViewMore} style={styles.viewMoreButton}>
-          <ThemedText color={accentColor} fontFamily={FontFamily.bold} fontSize={12}>
+        <Pressable
+          accessibilityLabel='View more'
+          accessibilityRole='button'
+          onPress={onViewMore}
+          style={({ pressed }) => [
+            { paddingHorizontal: mhs(4), paddingVertical: mhs(8) },
+            { flexDirection: 'row', alignItems: 'center', gap: mhs(2) },
+            pressed && styles.pressed
+          ]}>
+          <ThemedText color={accentColor} fontFamily={FontFamily.medium} fontSize={13} lineHeight={18}>
             View more
           </ThemedText>
-          <ChevronsRight color={accentColor} size={14} strokeWidth={2.4} />
+          <ChevronsRight color={accentColor} size={16} strokeWidth={2.5} />
         </Pressable>
       </ThemedView>
       {items.length ? (
@@ -1192,225 +1189,118 @@ function getTopUserRankTone(index: number) {
   };
 }
 
-function AtRiskSubscriptionSection({
-  accentColor,
-  items,
-  onToggleList,
-  showList,
-}: {
-  accentColor: string;
-  items: AtRiskUserItem[];
-  onToggleList: () => void;
-  showList: boolean;
-}) {
-  const closestDays = items.reduce<number | undefined>((current, item) => {
-    if (typeof item.days_left !== 'number') {
-      return current;
-    }
-
-    return current === undefined ? item.days_left : Math.min(current, item.days_left);
-  }, undefined);
-  const manualRenewals = items.filter(item => !item.auto_renew).length;
-
-  return (
-    <ThemedView style={styles.analyticsSection}>
-      <ThemedView alignItems='flex-start' flexDirection='row' gap={'three'}>
-        <ThemedView style={[styles.analyticsMark, styles.topUsersAnalyticsMark, { backgroundColor: accentColor }]} />
-        <ThemedView flex={1} minWidth={0}>
-          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={16}>
-            Subscription Expiry Risk
-          </ThemedText>
-          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} marginTop={2}>
-            Users with subscriptions approaching expiration.
-          </ThemedText>
-        </ThemedView>
-        <Pressable onPress={onToggleList} style={styles.viewMoreButton}>
-          <ThemedText color={accentColor} fontFamily={FontFamily.bold} fontSize={12}>
-            {showList ? 'Hide' : 'View more'}
-          </ThemedText>
-          <ChevronsRight color={accentColor} size={14} strokeWidth={2.4} style={showList ? styles.viewMoreIconOpen : undefined} />
-        </Pressable>
-      </ThemedView>
-      <ThemedView flexDirection='row' gap={'three'} style={styles.atRiskMetrics}>
-        <InlineMetric accentColor={accentColor} label='Expiring users' value={formatNumber(items.length)} />
-        <InlineMetric accentColor={accentColor} label='Closest expiry' value={closestDays === undefined ? '--' : `${closestDays}d`} />
-        <InlineMetric accentColor={accentColor} label='Manual renew' value={formatNumber(manualRenewals)} />
-      </ThemedView>
-      {showList ? (
-        items.length ? (
-          <ThemedView style={styles.analyticsRows}>
-            {items.map((item, index) => (
-              <TopRankRow
-                accentColor={accentColor}
-                index={index}
-                item={{
-                  label: item.user?.name || item.user?.email || `User #${item.user?.id || '--'}`,
-                  meta: `${item.days_left ?? '--'} days left • ${(item.risk_types || []).join(', ') || 'subscription expiry'}`,
-                  rank: item.subscription_id,
-                  value: item.auto_renew ? 'Auto' : 'Manual',
-                }}
-                key={`at-risk-${item.subscription_id}`}
-              />
-            ))}
-          </ThemedView>
-        ) : (
-          <EmptyState message='No expiring subscriptions returned.' title='No data' />
-        )
-      ) : null}
-    </ThemedView>
-  );
-}
-
-function InlineMetric({ accentColor, label, value }: { accentColor: string; label: string; value: string }) {
-  return (
-    <ThemedView flex={1} minWidth={0} style={styles.inlineMetric}>
-      <ThemedText numberOfLines={1} color={accentColor} fontFamily={FontFamily.bold} fontSize={16} style={styles.inlineMetricValue}>
-        {value}
-      </ThemedText>
-      <ThemedText numberOfLines={2} color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={10} lineHeight={13}>
-        {label}
-      </ThemedText>
-    </ThemedView>
-  );
-}
-
-function StatsListSection({
-  accentColor,
-  items,
-  symbol,
-  title,
-}: {
-  accentColor: string;
-  items: { label: string; meta: string; rank: number; value: string }[];
-  symbol: SymbolName;
-  title: string;
-}) {
-  return (
-    <ThemedView style={styles.analyticsSection}>
-      <ThemedView alignItems='center' flexDirection='row' gap={'three'}>
-        <ThemedView style={[styles.analyticsMark, { backgroundColor: accentColor }]} />
-        <ThemedView flex={1} minWidth={0}>
-          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={16}>
-            {title}
-          </ThemedText>
-          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} marginTop={2}>
-            Ranked snapshot from CMS dashboard
-          </ThemedText>
-        </ThemedView>
-        <SymbolView name={symbol} resizeMode='scaleAspectFit' size={18} tintColor={accentColor} />
-      </ThemedView>
-      {items.length ? (
-        <ThemedView style={styles.analyticsRows}>
-          {items.map((item, index) => (
-            <TopRankRow accentColor={accentColor} index={index} item={item} key={`${title}-${item.label}-${item.rank}`} />
-          ))}
-        </ThemedView>
-      ) : (
-        <EmptyState message='No dashboard data returned.' title='No data' />
-      )}
-    </ThemedView>
-  );
-}
-
-function TopRankRow({ accentColor, index, item }: { accentColor: string; index: number; item: { label: string; meta: string; rank: number; value: string } }) {
-  return (
-    <ThemedView style={styles.topRankRow}>
-      <ThemedView alignItems='center' flexDirection='row' gap={'three'}>
-        <ThemedText color={accentColor} fontFamily={FontFamily.bold} fontSize={13} style={styles.rankNumber}>
-          {String(index + 1).padStart(2, '0')}
-        </ThemedText>
-        <ThemedView flex={1} minWidth={0}>
-          <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={14}>
-            {item.label}
-          </ThemedText>
-          <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} marginTop={3}>
-            {item.meta}
-          </ThemedText>
-        </ThemedView>
-        <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={13} textAlign='right'>
-          {item.value}
-        </ThemedText>
-      </ThemedView>
-    </ThemedView>
-  );
-}
 
 function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[]; summary?: UserGrowthSummary }) {
-  const maxValue = Math.max(...growth.map(item => Number(item.total_users) || 0), 1);
+  const maxValue = Math.max(...growth.map(item => Number(item.total_users) || 0), 10);
   const chartItems = growth.slice(-12);
 
+  const lineData = chartItems.map(item => {
+    return {
+      value: Number(item.total_users) || 0,
+      label: formatGrowthMonth(item.time),
+    };
+  });
+
   return (
-    <ThemedView style={styles.analyticsSection}>
-      <ThemedView alignItems='flex-start' flexDirection='row' gap={'three'}>
-        <ThemedView style={[styles.analyticsMark, styles.topUsersAnalyticsMark, { backgroundColor: operationAccent }]} />
+    <ThemedView gap={'three'}>
+      <ThemedView alignItems='center' flexDirection='row' gap={'two'}>
         <ThemedView flex={1} minWidth={0}>
-          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={16}>
-            User Growth
-          </ThemedText>
-          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={11} marginTop={2}>
-            Monthly user base trend and charging activity.
-          </ThemedText>
+          <SectionTitle subtitle='Monthly user base trend and charging activity.' title='User Growth' />
         </ThemedView>
         <SymbolView name='chart.line.uptrend.xyaxis' resizeMode='scaleAspectFit' size={18} tintColor={operationAccent} />
       </ThemedView>
-      <ThemedView flexDirection='row' gap={'three'} style={styles.growthSummaryLine}>
-        <GrowthMetric change={summary?.today_vs_yesterday_growth_percent} label='Total users' value={formatFullNumber(summary?.total_users)} />
-        <GrowthMetric change={summary?.charged_today_vs_yesterday_percent} label='Active today' value={formatFullNumber(summary?.users_charged_today)} />
-        <GrowthMetric
-          change={summary?.avg_charge_duration_change_percent}
-          label='Avg duration'
-          value={formatDurationMinutes(summary?.avg_charge_duration_all_time)}
-        />
+      
+      <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={mhs(24)} gap={'four'} padding={mhs(20)}>
+        <ThemedView flexDirection='row' gap={'three'}>
+          <PremiumGrowthCard 
+            label='Total Users' 
+            value={formatFullNumber(summary?.total_users)} 
+            change={summary?.today_vs_yesterday_growth_percent} 
+            icon='person.2.fill'
+            color='#3B82F6'
+          />
+          <PremiumGrowthCard 
+            label='Active Today' 
+            value={formatFullNumber(summary?.users_charged_today)} 
+            change={summary?.charged_today_vs_yesterday_percent} 
+            icon='bolt.fill'
+            color='#10B981'
+          />
+          <PremiumGrowthCard 
+            label='Avg Duration' 
+            value={formatDurationMinutes(summary?.avg_charge_duration_all_time)} 
+            change={summary?.avg_charge_duration_change_percent} 
+            icon='clock.fill'
+            color='#8B5CF6'
+          />
+        </ThemedView>
+        
+        <ThemedView gap={'three'}>
+          <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.bold} fontSize={10} textTransform='uppercase'>
+            Trend - Last 12 months
+          </ThemedText>
+          {chartItems.length ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
+              <LineChart
+                data={lineData}
+                curved
+                isAnimated
+                animationDuration={1200}
+                color="#3B82F6"
+                thickness={3}
+                hideDataPoints={false}
+                dataPointsColor="#3B82F6"
+                dataPointsRadius={4}
+                startFillColor="#3B82F6"
+                endFillColor="#3B82F6"
+                startOpacity={0.2}
+                endOpacity={0.01}
+                areaChart
+                hideRules
+                xAxisThickness={1}
+                xAxisColor={Palette.borderSubtle}
+                yAxisThickness={0}
+                yAxisTextStyle={{ color: Palette.textTertiary, fontSize: 10, fontFamily: FontFamily.medium }}
+                noOfSections={4}
+                maxValue={maxValue * 1.1}
+                labelWidth={40}
+                xAxisLabelTextStyle={{ color: Palette.textSecondary, fontSize: 10, fontFamily: FontFamily.medium, textAlign: 'center' }}
+                initialSpacing={20}
+                endSpacing={20}
+                yAxisLabelContainerStyle={{ paddingRight: 12 }}
+              />
+            </ScrollView>
+          ) : (
+            <EmptyState message='No growth data returned.' title='No data' />
+          )}
+        </ThemedView>
       </ThemedView>
-      <ThemedView alignSelf='flex-start' style={styles.growthChartLabel}>
-        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.bold} fontSize={11}>
-          New & total users - last 12 months
-        </ThemedText>
-      </ThemedView>
-      {chartItems.length ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.growthChartScroller}>
-          {chartItems.map(item => {
-            const total = Number(item.total_users) || 0;
-            const height = Math.max(18, Math.round((total / maxValue) * 118));
-            return (
-              <ThemedView alignItems='center' gap={'one'} key={item.time} style={styles.growthBarColumn}>
-                <ThemedText numberOfLines={1} color='#05A84B' fontFamily={FontFamily.bold} fontSize={11}>
-                  +{formatFullNumber(item.new_users)}
-                </ThemedText>
-                <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={11}>
-                  {formatFullNumber(item.total_users)}
-                </ThemedText>
-                <ThemedView justifyContent='flex-end' style={styles.growthBarTrack}>
-                  <ThemedView style={[styles.growthBar, { height }]} />
-                </ThemedView>
-                <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={10}>
-                  {formatGrowthMonth(item.time)}
-                </ThemedText>
-              </ThemedView>
-            );
-          })}
-        </ScrollView>
-      ) : (
-        <EmptyState message='No growth data returned.' title='No data' />
-      )}
     </ThemedView>
   );
 }
 
-function GrowthMetric({ change, label, value }: { change?: number; label: string; value: string }) {
-  const changeColor = Number(change) >= 0 ? '#05A84B' : '#F43F5E';
-
+function PremiumGrowthCard({ change, label, value, icon, color }: { change?: number; label: string; value: string; icon: SymbolName; color: string }) {
+  const isPositive = Number(change) >= 0;
+  const changeColor = isPositive ? '#10B981' : '#F43F5E';
+  
   return (
-    <ThemedView flex={1} minWidth={0} style={styles.growthMetric}>
-      <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={17} textAlign='center'>
+    <ThemedView flex={1} minWidth={0} backgroundColor={Palette.surfaceBase} borderColor={Palette.borderSubtle} borderRadius={mhs(12)} borderWidth={1} padding={mhs(8)} style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 }}>
+      <ThemedView flexDirection='row' alignItems='center' gap={mhs(4)} marginBottom={mhs(6)}>
+        <ThemedView backgroundColor={`${color}15`} borderRadius={mhs(6)} padding={mhs(4)}>
+          <SymbolView name={icon} size={10} tintColor={color} />
+        </ThemedView>
+        <ThemedText flex={1} numberOfLines={1} color={Palette.textTertiary} fontFamily={FontFamily.bold} fontSize={9} textTransform='uppercase' lineHeight={13}>
+          {label}
+        </ThemedText>
+      </ThemedView>
+      <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20} adjustsFontSizeToFit>
         {value}
       </ThemedText>
-      <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={10} marginTop={2} textAlign='center'>
-        {label}
-      </ThemedText>
-      <ThemedText numberOfLines={1} color={changeColor} fontFamily={FontFamily.semibold} fontSize={10} marginTop={4} textAlign='center'>
-        {formatPercent(change)}
-      </ThemedText>
+      {change !== undefined && (
+        <ThemedText numberOfLines={1} color={changeColor} fontFamily={FontFamily.bold} fontSize={11} marginTop={2}>
+          {formatPercent(change)}
+        </ThemedText>
+      )}
     </ThemedView>
   );
 }
@@ -1460,30 +1350,9 @@ const styles = StyleSheet.create({
     height: 126,
     width: '100%',
   },
-  growthChartLabel: {
-    backgroundColor: Palette.surfaceMuted,
-    borderRadius: 999,
-    marginTop: mhs(16),
-    paddingHorizontal: mhs(12),
-    paddingVertical: mhs(8),
-  },
   growthChartScroller: {
     alignItems: 'flex-end',
     gap: mhs(12),
-    paddingTop: mhs(12),
-    paddingRight: screenHorizontalPadding,
-  },
-  growthMetric: {
-    backgroundColor: Palette.surfaceMuted,
-    borderColor: Palette.borderSubtle,
-    borderCurve: 'continuous',
-    borderRadius: mhs(21),
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: mhs(8),
-    paddingVertical: mhs(12),
-  },
-  growthSummaryLine: {
-    marginTop: mhs(16),
   },
   iconButton: {
     alignItems: 'center',
@@ -1632,11 +1501,11 @@ const styles = StyleSheet.create({
   },
   serviceIcon: {
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: Palette.antiFlashWhite,
     borderRadius: mhs(16),
-    height: 56,
+    height: mhs(56),
     justifyContent: 'center',
-    width: 56,
+    width: mhs(56),
   },
 
   serviceRow: {
@@ -1663,19 +1532,8 @@ const styles = StyleSheet.create({
     height: 42,
     minWidth: 88,
   },
-  analyticsMark: {
-    borderRadius: 999,
-    height: 24,
-    width: 3,
-  },
   analyticsRows: {
     marginTop: mhs(12),
-  },
-  analyticsSection: {
-    borderBottomColor: Palette.borderSubtle,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingBottom: mhs(24),
-    paddingTop: mhs(4),
   },
   rankNumber: {
     width: 24,
@@ -1719,17 +1577,6 @@ const styles = StyleSheet.create({
   topUsersScrollerContent: {
     gap: mhs(12),
     paddingRight: screenHorizontalPadding,
-  },
-  topUsersAnalyticsMark: {
-    marginTop: 2,
-  },
-  viewMoreButton: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 2,
-    minHeight: 32,
-    justifyContent: 'center',
-    paddingLeft: mhs(8),
   },
   viewMoreIconOpen: {
     transform: [{ rotate: '90deg' }],
