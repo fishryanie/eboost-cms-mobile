@@ -12,6 +12,8 @@ import { bootstrapSession } from 'utils/session/bootstrap';
 import * as Sentry from '@sentry/react-native';
 import * as Notifications from 'expo-notifications';
 import { useNotifications } from 'hooks/use-notifications';
+import { useAdminProfile } from 'utils/auth/admin-profile';
+import { useEffect } from 'react';
 
 bootstrapSession();
 
@@ -40,6 +42,12 @@ function TabLayout() {
     Inter_700Bold,
     Inter_900Black,
   });
+  const loadProfile = useAdminProfile(state => state.loadProfile);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
   const theme = DefaultTheme as ReactNavigation.Theme;
 
   return (

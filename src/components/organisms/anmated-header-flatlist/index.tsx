@@ -143,7 +143,7 @@ function AnimatedHeaderFlatListComponent<T>({
           },
           smallHeaderStyle,
         ]}>
-        <ThemedView rowCenter justifyContent='space-between' paddingHorizontal={spacing.lg} paddingBottom={spacing.sm}>
+        <ThemedView rowCenter justifyContent='space-between' paddingHorizontal={spacing.lg} height={HEADER_HEIGHT}>
           <ThemedView flex={1} alignItems='center'>
             <Animated.Text style={[styles.smallHeaderTitle, smallHeaderTitleStyle]}>{largeTitle}</Animated.Text>
 

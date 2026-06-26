@@ -48,9 +48,16 @@ export function AutoUpdateModal() {
   const handleStartDownload = async () => {
     setModalState('downloading');
     try {
-      await Updates.fetchUpdateAsync();
-      // Backup trigger chuyển trạng thái nếu isUpdatePending không kích hoạt nhanh
-      setModalState('ready');
+      const result = await Updates.fetchUpdateAsync();
+      
+      if (result.isNew) {
+        setModalState('ready');
+      } else if (isUpdatePending) {
+        setModalState('ready');
+      } else {
+        // Nếu không có bản cập nhật mới nào thực sự được tải xuống
+        setModalState('hidden');
+      }
     } catch (e) {
       console.log('Download error:', e);
       setModalState('hidden');

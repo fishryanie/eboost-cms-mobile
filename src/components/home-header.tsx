@@ -3,11 +3,9 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { mhs } from 'themes/scaling';
-
 import { FontFamily, Palette } from 'themes';
-import { adminProfile } from 'utils/auth/admin-profile';
+import { useAdminProfile } from 'utils/auth/admin-profile';
 import { useDrawerStore } from 'utils/drawer-store';
-
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,6 +21,7 @@ const colors = {
 
 export function HomeHeader() {
   const { top } = useSafeAreaInsets();
+  const adminProfile = useAdminProfile();
   const openDrawer = useDrawerStore(state => state.openDrawer);
   const segments = useSegments();
   const currentTab = segments[segments.length - 1] || 'technical';
@@ -47,8 +46,8 @@ export function HomeHeader() {
         <MaskedView
           maskElement={<LinearGradient colors={mask.colors as any} locations={mask.locations as any} style={StyleSheet.absoluteFill} />}
           style={StyleSheet.absoluteFill}>
-          <LinearGradient colors={['rgba(255,255,255,0.85)', 'rgba(255,255,255,0.8)', 'rgba(255,255,255,0)']} style={StyleSheet.absoluteFill} />
-          <BlurView intensity={100} tint='light' style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={['rgba(255,255,255,0.7)', 'rgba(255,255,255,0.6)', 'rgba(255,255,255,0)']} style={StyleSheet.absoluteFill} />
+          <BlurView intensity={80} tint='light' style={StyleSheet.absoluteFill} />
         </MaskedView>
       </Animated.View>
 
@@ -59,7 +58,7 @@ export function HomeHeader() {
         style={({ pressed }) => [styles.profileButton, pressed && styles.pressed]}>
         <Image
           source={{ uri: 'https://cdn-icons-png.flaticon.com/128/149/149071.png' }}
-          style={{ width: 44, height: 44, borderRadius: 22 }}
+          style={{ width: 40, height: 40, borderRadius: 22 }}
           contentFit="cover"
         />
         <ThemedView gap={2} minWidth={0}>

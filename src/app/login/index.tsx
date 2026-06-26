@@ -22,6 +22,7 @@ import { biometricCredentialStore } from 'utils/auth/biometric-credentials';
 import { calculateKeyboardAwareScrollY } from 'utils/auth/keyboard-avoidance';
 import { parseLoginForm, type LoginFieldErrors } from 'utils/auth/login-validation';
 import { useBiometricLogin } from 'hooks/use-biometric-login';
+import { useAdminProfile } from 'utils/auth/admin-profile';
 import { AppButton } from 'components/ui';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
 import { FontFamily, Palette } from 'themes';
@@ -56,6 +57,7 @@ export default function LoginScreen() {
       }
 
       await Promise.all([biometricCredentialStore.setLastUsername(credentials.username), queueBiometricOptIn(credentials)]);
+      useAdminProfile.getState().loadProfile();
       await completeAuthenticatedSession(response.token);
     },
     onError: error => {

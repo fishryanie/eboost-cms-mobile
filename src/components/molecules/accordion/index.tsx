@@ -3,6 +3,7 @@ import { AndroidHaptics, impactAsync, ImpactFeedbackStyle, performAndroidHaptics
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { interpolate, useAnimatedProps, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { ChevronDown } from 'lucide-react-native';
 import { AccordionThemes } from './presets';
 import type { AccordionContentProps, AccordionContextType, AccordionItemProps, AccordionProps, AccordionTriggerProps } from './types';
 
@@ -41,7 +42,7 @@ const ChevronIcon = ({ isOpen }: { isOpen: boolean }) => {
   return (
     <>
       <Animated.View style={animatedStyle}>
-        <Ionicons name='chevron-down' size={20} color={theme.iconColor} />
+        <ChevronDown size={20} color={theme.iconColor} />
       </Animated.View>
     </>
   );

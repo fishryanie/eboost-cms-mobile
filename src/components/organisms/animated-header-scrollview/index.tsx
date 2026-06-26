@@ -1,9 +1,7 @@
-import MaskedView from '@react-native-masked-view/masked-view';
-import { BlurView, BlurViewProps } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ChevronLeft } from 'lucide-react-native';
 import React, { memo } from 'react';
-import { Platform, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
-import { easeGradient } from 'react-native-easing-gradient';
+import { Pressable, StyleSheet, TextStyle, View } from 'react-native';
+
 import Animated, {
   Extrapolation,
   interpolate,
@@ -14,275 +12,195 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+
+import MaskedView from '@react-native-masked-view/masked-view';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { easeGradient } from 'react-native-easing-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { ThemedText, ThemedView } from 'components/base';
+
+import { useRouter } from 'expo-router';
+import { Palette } from 'themes';
 import { Colors, HEADER_HEIGHT, MAX_BLUR_INTENSITY, spacing } from './conf';
+
 import type { AnimatedHeaderProps } from './types';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
-export const AnimatedHeaderScrollView: React.FC<AnimatedHeaderProps> & React.FunctionComponent<AnimatedHeaderProps> = memo<AnimatedHeaderProps>(
-  ({
-    largeTitle,
-    subtitle,
-    children,
-    rightComponent,
-    showsVerticalScrollIndicator = false,
-    contentContainerStyle,
-    headerBackgroundGradient = {
-      colors: ['rgba(0, 0, 0, 0.85)', 'rgba(0, 0, 0, 0.8)', 'transparent'],
-      start: { x: 0.5, y: 0 },
-      end: { x: 0.5, y: 1 },
-    },
-    headerBlurConfig = {
-      intensity: 10,
-      tint: Platform.OS === 'ios' ? 'systemThickMaterialDark' : 'dark',
-    },
-    smallTitleBlurIntensity = 90,
-    smallTitleBlurTint = 'dark',
-    maskGradientColors = {
-      start: 'transparent',
-      middle: 'rgba(0,0,0,0.99)',
-      end: 'black',
-    },
-    largeTitleBlurIntensity = 20,
-    largeHeaderTitleStyle: _largeTitleStyle = { fontSize: 40 },
-    largeHeaderSubtitleStyle,
-    smallHeaderSubtitleStyle: _smallHeaderSubtitleStylez,
-    smallHeaderTitleStyle,
-  }: AnimatedHeaderProps): (React.ReactNode & React.JSX.Element & React.ReactElement) | null => {
-    const scrollY = useSharedValue<number>(0);
-    const insets = useSafeAreaInsets();
+const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
+  largeTitle,
+  subtitle,
+  children,
+  rightComponent,
+  showsVerticalScrollIndicator,
+  contentContainerStyle,
+  canGoBack,
+  onBack,
+  largeHeaderTitleStyle,
+  largeHeaderSubtitleStyle,
+  smallHeaderTitleStyle,
+  smallHeaderSubtitleStyle,
+}) => {
+  const scrollY = useSharedValue(0);
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
 
-    const onScroll = useAnimatedScrollHandler<Record<string, unknown>>({
-      onScroll: event => {
-        scrollY.value = event.contentOffset.y;
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: event => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const animatedLargeTitleStyle = useAnimatedStyle(() => {
+    // Fallback to 40 if not provided
+    const fontSizeStyle = (largeHeaderTitleStyle as any)?.fontSize;
+    const fontSize = typeof fontSizeStyle === 'number' ? fontSizeStyle : 40;
+
+    return {
+      fontSize: interpolate(-scrollY.value, [0, 100], [fontSize, fontSize * 2], Extrapolation.CLAMP),
+    };
+  });
+
+  const largeTitleOpacityStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 60], [1, 0], Extrapolation.CLAMP),
+  }));
+
+  const smallHeaderStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(interpolate(scrollY.value, [40, 80], [0, 1], Extrapolation.CLAMP), { duration: 300 }),
+    transform: [
+      {
+        translateY: withTiming(interpolate(scrollY.value, [40, 80], [20, 0], Extrapolation.CLAMP), { duration: 300 }),
       },
-    });
+    ],
+  }));
 
-    const animatedLargeTitleStylez = useAnimatedStyle<Partial<Pick<TextStyle, 'fontSize'>>>(() => {
-      const __largeTitleProps__: any = _largeTitleStyle || {};
-      const fontSizeValue = __largeTitleProps__['fontSize'];
+  const smallSubtitleStyle = useAnimatedStyle(() => ({
+    opacity: withSpring(scrollY.value > 100 ? 0.5 : 0),
+  }));
 
-      const fontSize = interpolate(-scrollY.value, [0, 100], [fontSizeValue, fontSizeValue * 2], Extrapolation.CLAMP);
-      return {
-        fontSize,
-      };
-    });
+  const headerBackgroundStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 80], [0, 1], Extrapolation.CLAMP),
+  }));
 
-    const largeTitleStyle = useAnimatedStyle<Partial<Pick<TextStyle, 'opacity'>>>(() => {
-      const opacity = interpolate(scrollY.value, [0, 60], [1, 0], Extrapolation.CLAMP);
+  const headerBlurAnimatedProps = useAnimatedProps(() => ({
+    intensity: interpolate(scrollY.value, [0, 100], [0, MAX_BLUR_INTENSITY], Extrapolation.CLAMP),
+  }));
 
-      return {
-        opacity,
-      };
-    });
+  const mask = easeGradient({
+    colorStops: {
+      0: { color: 'rgba(255,255,255,1)' },
+      0.5: { color: 'rgba(255,255,255,0.99)' },
+      1: { color: 'rgba(255,255,255,0)' },
+    },
+    extraColorStopsPerTransition: 20,
+  });
 
-    const smallHeaderStyle = useAnimatedStyle<Partial<Pick<TextStyle, 'opacity'>>>(() => {
-      const opacity = withTiming<number>(interpolate(scrollY.value, [40, 80], [0, 1], Extrapolation.CLAMP), {
-        duration: 600,
-      });
-
-      const translateY = withTiming<number>(interpolate(scrollY.value, [40, 80], [20, 0], Extrapolation.CLAMP), {
-        duration: 600,
-      });
-
-      return {
-        opacity,
-        transform: [{ translateY }],
-      };
-    });
-
-    const smallHeaderSubtitleStyle = useAnimatedStyle<Partial<Pick<TextStyle, 'opacity'>>>(() => {
-      const shouldShow = scrollY.value > 100;
-
-      return {
-        opacity: withSpring<number>(shouldShow ? 0.5 : 0, {
-          damping: 18,
-          stiffness: 120,
-          mass: 1.2,
-        }),
-        transform: [
+  return (
+    <ThemedView flex={1} backgroundColor={Colors.white}>
+      <Animated.View
+        style={[
+          styles.headerBackground,
           {
-            translateY: withTiming<number>(shouldShow ? 0 : 10, {
-              duration: 900,
-            }),
+            height: HEADER_HEIGHT + insets.top + 50,
           },
-        ],
-      };
-    });
+          headerBackgroundStyle,
+        ]}>
+        <MaskedView
+          maskElement={<LinearGradient colors={mask.colors as any} locations={mask.locations as any} style={StyleSheet.absoluteFill} />}
+          style={StyleSheet.absoluteFill}>
+          <LinearGradient colors={['rgba(255,255,255,0.85)', 'rgba(255,255,255,0.8)', 'rgba(255,255,255,0)']} style={StyleSheet.absoluteFill} />
 
-    const headerBackgroundStylez = useAnimatedStyle<Partial<Pick<ViewStyle, 'opacity'>>>(() => {
-      const opacity = interpolate(scrollY.value, [0, 80], [0, 1], Extrapolation.CLAMP);
+          <AnimatedBlurView animatedProps={headerBlurAnimatedProps as any} intensity={10} tint='light' style={StyleSheet.absoluteFill} />
+        </MaskedView>
+      </Animated.View>
 
-      return {
-        opacity,
-      };
-    });
+      <Animated.View
+        style={[
+          styles.fixedHeader,
+          {
+            paddingTop: insets.top,
+            height: HEADER_HEIGHT + insets.top,
+          },
+          smallHeaderStyle,
+        ]}>
+        <ThemedView rowCenter justifyContent='space-between' paddingHorizontal={spacing.lg} height={HEADER_HEIGHT}>
+          <ThemedView flex={1} alignItems='center'>
+            <Animated.Text style={[styles.smallHeaderTitle, smallHeaderTitleStyle]}>{largeTitle}</Animated.Text>
 
-    const animatedHeaderBlur = useAnimatedProps(() => {
-      const intensity = interpolate(scrollY.value, [0, 100], [0, MAX_BLUR_INTENSITY], Extrapolation.CLAMP);
+            {!!subtitle && <Animated.Text style={[styles.smallHeaderSubtitle, smallHeaderSubtitleStyle, smallSubtitleStyle]}>{subtitle}</Animated.Text>}
+          </ThemedView>
 
-      return {
-        intensity,
-      } as any;
-    });
+          {rightComponent}
+        </ThemedView>
+      </Animated.View>
 
-    const largeTitleBlur = useAnimatedProps(() => {
-      const intensity = interpolate(scrollY.value, [0, 80], [largeTitleBlurIntensity, 0], Extrapolation.CLAMP);
-
-      return {
-        intensity,
-      } as any;
-    });
-
-    const smallTitleBlur = useAnimatedProps<Partial<Pick<BlurViewProps, 'intensity'>>>(() => {
-      const intensity = interpolate(scrollY.value, [0, 80, 100], [0, 15, 0], Extrapolation.CLAMP);
-
-      const _intensity = scrollY.value < 30 ? withTiming<number>(0, { duration: 900 }) : intensity;
-
-      return {
-        intensity: _intensity,
-      } as any;
-    });
-
-    const { colors: maskColors, locations: maskLocations } = easeGradient({
-      colorStops: {
-        0: { color: maskGradientColors.start },
-        0.5: { color: maskGradientColors.middle },
-        1: { color: maskGradientColors.end },
-      },
-      extraColorStopsPerTransition: 20,
-    });
-
-    return (
-      <View style={styles.container}>
-        <Animated.View
-          style={[
-            styles.headerBackgroundContainer,
-            {
-              height: HEADER_HEIGHT + insets.top + 50,
-            },
-            headerBackgroundStylez,
-          ]}>
-          {Platform.OS !== 'web' ? (
-            <MaskedView
-              maskElement={
-                <LinearGradient
-                  locations={maskLocations as any}
-                  colors={maskColors as any}
-                  style={StyleSheet.absoluteFill}
-                  start={{ x: 0.5, y: 1 }}
-                  end={{ x: 0.5, y: 0 }}
-                />
-              }
-              style={[StyleSheet.absoluteFill]}>
-              <LinearGradient
-                colors={headerBackgroundGradient.colors as any}
-                locations={headerBackgroundGradient.locations}
-                start={headerBackgroundGradient.start}
-                end={headerBackgroundGradient.end}
-                style={StyleSheet.absoluteFill}
-              />
-              <BlurView intensity={headerBlurConfig.intensity} tint={headerBlurConfig.tint as any} style={[StyleSheet.absoluteFill]} />
-            </MaskedView>
+      <ThemedView
+        pointerEvents='box-none'
+        style={[
+          styles.fixedHeader,
+          {
+            paddingTop: insets.top,
+            height: HEADER_HEIGHT + insets.top,
+            zIndex: 12,
+          },
+        ]}>
+        <ThemedView
+          pointerEvents='box-none'
+          flexDirection='row'
+          alignItems='center'
+          justifyContent='space-between'
+          paddingHorizontal={spacing.md}
+          height={HEADER_HEIGHT}>
+          {canGoBack ? (
+            <Pressable onPress={() => (onBack ? onBack() : router.back())} hitSlop={8} style={{ zIndex: 1 }}>
+              <ChevronLeft color={Palette.textPrimary} size={28} />
+            </Pressable>
           ) : (
-            <Animated.View style={[StyleSheet.absoluteFill, styles.webHeaderBackground]} />
+            <ThemedView />
+          )}
+        </ThemedView>
+      </ThemedView>
+
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+        contentContainerStyle={[
+          contentContainerStyle,
+          {
+            paddingTop: Math.max(insets.top, 40) + HEADER_HEIGHT,
+            paddingBottom: insets.bottom + spacing.xl,
+          },
+        ]}>
+        <Animated.View style={[styles.largeTitleContainer, largeTitleOpacityStyle]}>
+          <Animated.Text style={[styles.largeTitle, largeHeaderTitleStyle, animatedLargeTitleStyle]}>{largeTitle}</Animated.Text>
+
+          {!!subtitle && (
+            <ThemedText color={Colors.gray[400]} fontSize={18} marginTop={spacing.xs} style={largeHeaderSubtitleStyle as any}>
+              {subtitle}
+            </ThemedText>
           )}
         </Animated.View>
 
-        <Animated.View
-          style={[
-            styles.fixedHeader,
-            {
-              paddingTop: insets.top,
-              height: HEADER_HEIGHT + insets.top,
-            },
-            smallHeaderStyle,
-          ]}>
-          <View style={styles.fixedHeaderContent}>
-            <View style={styles.fixedHeaderTextContainer}>
-              <Animated.Text style={[styles.smallHeaderTitle, smallHeaderTitleStyle]}>{largeTitle}</Animated.Text>
-              {subtitle && <Animated.Text style={[styles.smallHeaderSubtitle, smallHeaderSubtitleStyle, _smallHeaderSubtitleStylez]}>{subtitle}</Animated.Text>}
-            </View>
+        {children}
+      </Animated.ScrollView>
+    </ThemedView>
+  );
+};
 
-            <MaskedView
-              maskElement={
-                <LinearGradient
-                  locations={maskLocations as any}
-                  colors={maskColors as any}
-                  style={StyleSheet.absoluteFill}
-                  start={{ x: 0.5, y: 1 }}
-                  end={{ x: 0.5, y: 0 }}
-                />
-              }
-              style={[StyleSheet.absoluteFill]}>
-              <LinearGradient colors={['transparent', 'transparent']} style={StyleSheet.absoluteFill} />
-              <AnimatedBlurView
-                animatedProps={smallTitleBlur}
-                intensity={smallTitleBlurIntensity}
-                tint={smallTitleBlurTint}
-                style={[
-                  styles.smallTitleBlurOverlay,
-                  {
-                    height: HEADER_HEIGHT + insets.top + 20,
-                  },
-                ]}
-              />
-            </MaskedView>
-
-            {rightComponent && <View style={styles.rightComponentContainer}>{rightComponent}</View>}
-          </View>
-        </Animated.View>
-
-        <Animated.ScrollView
-          onScroll={onScroll}
-          scrollEventThrottle={16}
-          showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-          contentContainerStyle={[
-            {
-              paddingTop: insets.top + spacing.md,
-              paddingBottom: insets.bottom + spacing.xl,
-            },
-            contentContainerStyle,
-          ]}>
-          <Animated.View style={[styles.largeTitleContainer, largeTitleStyle]}>
-            <View style={styles.largeTitleTextContainer}>
-              <Animated.Text style={[styles.largeTitle, _largeTitleStyle, animatedLargeTitleStylez]}>{largeTitle}</Animated.Text>
-              {subtitle && <Text style={[styles.largeSubtitle, largeHeaderSubtitleStyle]}>{subtitle}</Text>}
-            </View>
-          </Animated.View>
-
-          <View style={styles.content}>{children}</View>
-        </Animated.ScrollView>
-      </View>
-    );
-  },
-);
-
-export default memo<React.FC<AnimatedHeaderProps> & React.FunctionComponent<AnimatedHeaderProps>>(AnimatedHeaderScrollView);
+export default memo(AnimatedHeaderScrollViewComponent);
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.black,
-  },
-  headerBackgroundContainer: {
+  headerBackground: {
     position: 'absolute',
-    top: 0,
     left: 0,
     right: 0,
+    top: 0,
     zIndex: 10,
   },
-  webHeaderBackground: {
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-  },
-  smallTitleBlurOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 99,
-  },
+
   fixedHeader: {
     position: 'absolute',
     top: 0,
@@ -291,71 +209,25 @@ const styles = StyleSheet.create({
     zIndex: 11,
     justifyContent: 'flex-end',
   },
-  fixedHeaderContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-  },
-  fixedHeaderTextContainer: {
-    flex: 1,
-    alignItems: 'center',
-  },
+
   smallHeaderTitle: {
-    fontSize: 24,
-    color: Colors.white,
-    textAlign: 'center',
+    color: Palette.textPrimary,
+    fontSize: 18,
+    fontWeight: '600',
   },
+
   smallHeaderSubtitle: {
+    color: Palette.textSecondary,
     fontSize: 12,
-    color: Colors.gray[400],
-    textAlign: 'center',
   },
-  rightComponentContainer: {
-    marginLeft: spacing.md,
-  },
+
   largeTitleContainer: {
     paddingHorizontal: spacing.md,
     marginBottom: spacing.md,
   },
-  largeTitleTextContainer: {},
-  backgroundImageContainer: {
-    marginHorizontal: -spacing.lg,
-    marginBottom: spacing.md,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  backgroundImage: {
-    width: '100%',
-    height: 200,
-  },
-  backgroundOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.52)',
-  },
-  largeTitleContent: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
-    justifyContent: 'flex-end',
-    flex: 1,
-  },
+
   largeTitle: {
     fontSize: 40,
-    color: Colors.white,
-    letterSpacing: -0.5,
-    paddingTop: 5,
-  },
-  largeSubtitle: {
-    fontSize: 18,
-    color: Colors.gray[400],
-    marginTop: spacing.xs,
-    paddingTop: 5,
-  },
-  content: {
-    paddingHorizontal: spacing.md,
-  },
-  largeTitleBlurContainer: {
-    backgroundColor: 'transparent',
+    color: Palette.textPrimary,
   },
 });

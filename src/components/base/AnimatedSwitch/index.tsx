@@ -5,6 +5,7 @@ import { Canvas, Group, Blur, ColorMatrix, Paint, Oval, Circle, RoundedRect } fr
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, interpolate, useDerivedValue, clamp, WithSpringConfig } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SymbolView } from 'expo-symbols';
+import { Check, X } from 'lucide-react-native';
 import { DEFAULT_BLOB_COLOR, DEFAULT_ICON_COLOR, DEFAULT_OFF_COLOR, DEFAULT_ON_COLOR, DEFAULT_SIZE, DEFAULT_THRESHOLD } from './const';
 import type { IAnimatedBridge, ICoreOval, IGooeySwitch, IShadowOval } from './types';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -283,7 +284,7 @@ export const GooeySwitch: React.FC<IGooeySwitch> & React.FunctionComponent<IGooe
         <SymbolView name='checkmark' size={ICON_SIZE} tintColor={iconTint} weight='bold' />
       ) : (
         <>
-          <Ionicons name='checkmark' size={ICON_SIZE} color={iconTint} />
+          <Check size={ICON_SIZE} color={iconTint} />
         </>
       );
 
@@ -292,7 +293,7 @@ export const GooeySwitch: React.FC<IGooeySwitch> & React.FunctionComponent<IGooe
         <SymbolView name='xmark' size={X_ICON_SIZE} tintColor={iconTint} weight='semibold' />
       ) : (
         <>
-          <Ionicons name='close-outline' size={X_ICON_SIZE} color={iconTint} />
+          <X size={X_ICON_SIZE} color={iconTint} />
         </>
       );
 

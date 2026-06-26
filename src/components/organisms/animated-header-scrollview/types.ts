@@ -38,6 +38,9 @@ interface AnimatedHeaderProps {
   readonly largeHeaderSubtitleStyle?: StyleProp<TextStyle>;
   readonly smallHeaderTitleStyle?: StyleProp<TextStyle>;
   readonly smallHeaderSubtitleStyle?: StyleProp<TextStyle>;
+
+  readonly canGoBack?: boolean;
+  readonly onBack?: () => void;
 }
 
 export type { AnimatedHeaderProps, GradientConfig, BlurConfig };

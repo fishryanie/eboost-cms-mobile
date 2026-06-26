@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps 
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BarChart, LineChart } from 'react-native-gifted-charts';
+import { useScrollStore } from 'utils/scroll-store';
 import { mhs } from 'themes/scaling';
 import { AppButton, EmptyState } from 'components/ui';
 import { PaymentCheckoutSheet } from 'shared/operation/components/payment-checkout/payment-checkout-sheet';

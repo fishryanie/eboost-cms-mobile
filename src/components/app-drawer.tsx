@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
-import { adminProfile } from 'utils/auth/admin-profile';
+import { useAdminProfile } from 'utils/auth/admin-profile';
 import { sessionKeys } from 'utils/session/use-session-token';
 import { sessionStore } from 'utils/session/session-store';
 import { useDrawerStore } from 'utils/drawer-store';
@@ -44,6 +44,7 @@ export function AppDrawer({ children }: PropsWithChildren) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const adminProfile = useAdminProfile();
 
   useEffect(() => {
     const unsubscribe = useDrawerStore.subscribe((state, previousState) => {
