@@ -14,8 +14,8 @@ import {
   type KeyboardEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  type View as NativeView } from 'react-native';
-
+  type View as NativeView,
+} from 'react-native';
 
 import { loginAdmin } from 'utils/auth/auth-service';
 import { biometricCredentialStore } from 'utils/auth/biometric-credentials';
@@ -60,7 +60,8 @@ export default function LoginScreen() {
     },
     onError: error => {
       setErrorMessage(error instanceof Error ? error.message : 'Please check your credentials and try again.');
-    } });
+    },
+  });
 
   const updateUsername = (value: string) => {
     setUsername(value);
@@ -102,7 +103,8 @@ export default function LoginScreen() {
           cardBottomY: cardY + cardHeight,
           currentScrollY: scrollYRef.current,
           gap: KEYBOARD_CARD_GAP,
-          keyboardTopY });
+          keyboardTopY,
+        });
 
         if (nextScrollY !== scrollYRef.current) {
           scrollViewRef.current?.scrollTo({ animated: true, y: nextScrollY });
@@ -295,24 +297,32 @@ const styles = StyleSheet.create({
     height: actionControlHeight,
     paddingHorizontal: 0,
     paddingVertical: 0,
-    width: actionControlHeight },
+    width: actionControlHeight,
+  },
   iconActionButtonDisabled: {
-    borderColor: Palette.borderSubtle },
+    borderColor: Palette.borderSubtle,
+  },
   cardLogoImage: {
     height: mvs(34),
     width: mhs(cardLogoWidth),
-    objectFit: 'fill' },
+    objectFit: 'fill',
+  },
 
   gradientCanvas: {
-    flex: 1 },
+    flex: 1,
+  },
   scrollContainer: {
     paddingBottom: mvs(84),
     paddingHorizontal: 24,
-    paddingTop: mvs(94) },
+    paddingTop: mvs(94),
+  },
   primaryActionButton: {
     borderRadius: radiusPill,
     boxShadow: '0 8px 18px rgba(1, 167, 78, 0.18)',
-    height: actionControlHeight },
+    height: actionControlHeight,
+  },
   primaryActionLabel: {
     fontSize: 16,
-    lineHeight: 22 } });
+    lineHeight: 22,
+  },
+});

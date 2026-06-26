@@ -172,7 +172,7 @@ function AnimatedHeaderFlatListComponent<T>({
           paddingHorizontal={spacing.md}
           height={HEADER_HEIGHT}>
           {canGoBack ? (
-            <Pressable onPress={() => onBack || router.back()} hitSlop={8} style={{ zIndex: 1 }}>
+            <Pressable onPress={() => (onBack ? onBack() : router.back())} hitSlop={8} style={{ zIndex: 1 }}>
               <ChevronLeft color={Palette.textPrimary} size={28} />
             </Pressable>
           ) : (

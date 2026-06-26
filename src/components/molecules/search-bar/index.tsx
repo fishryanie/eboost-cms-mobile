@@ -195,17 +195,13 @@ export const SearchBar = ({
   }));
 
   return (
-    <ThemedView width="100%" paddingHorizontal={0} style={style} onLayout={handleLayout}>
-      <ThemedView flexDirection="row" alignItems="center" width="100%">
+    <ThemedView width='100%' paddingHorizontal={0} style={style} onLayout={handleLayout}>
+      <ThemedView flexDirection='row' alignItems='center' width='100%'>
         <AnimatedView style={[animatedContainerStyle, Platform.OS === 'android' && animatedAndroidBlurStylez]}>
-          <ThemedView backgroundColor="rgba(118, 118, 128, 0.12)" borderRadius={999} minHeight={42} justifyContent="center" style={styles.blurContainer}>
+          <ThemedView backgroundColor='rgba(118, 118, 128, 0.12)' borderRadius={999} minHeight={42} justifyContent='center' style={styles.blurContainer}>
             <AnimatedView style={[styles.searchContent, animatedSearchContentStyle]}>
               <AnimatedView style={[styles.searchIconContainer, animatedIconStyle, props?.iconStyle]}>
-                {renderLeadingIcons ? (
-                  renderLeadingIcons()
-                ) : (
-                  <Search size={18} color='#98A2B3' />
-                )}
+                {renderLeadingIcons ? renderLeadingIcons() : <Search size={18} color='#98A2B3' />}
               </AnimatedView>
 
               <AnimatedView style={[{ flex: 1 }, animatedInputWrapperStyle]}>
@@ -232,7 +228,11 @@ export const SearchBar = ({
                   onPress={handleClear}
                   style={[styles.clearButton, animatedClearButtonStyle]}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  {renderTrailingIcons ? renderTrailingIcons() : <SymbolView name='xmark.circle.fill' size={18} tintColor='#98A2B3' fallback={<Search size={18} color='#98A2B3' />} />}
+                  {renderTrailingIcons ? (
+                    renderTrailingIcons()
+                  ) : (
+                    <SymbolView name='xmark.circle.fill' size={18} tintColor='#98A2B3' fallback={<Search size={18} color='#98A2B3' />} />
+                  )}
                 </AnimatedTouchable>
               )}
             </AnimatedView>
@@ -242,11 +242,7 @@ export const SearchBar = ({
         {enableWidthAnimation && (
           <AnimatedView style={[styles.cancelButtonContainer, animatedCancelStyle]}>
             <TouchableOpacity onPress={handleCancel} style={styles.cancelButton} activeOpacity={0.6} hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}>
-              <ThemedText
-                fontSize={17}
-                fontFamily="System"
-                fontWeight="400"
-                color={props?.tint ?? '#007AFF'}>
+              <ThemedText fontSize={17} fontFamily='System' fontWeight='400' color={props?.tint ?? '#007AFF'}>
                 Cancel
               </ThemedText>
             </TouchableOpacity>

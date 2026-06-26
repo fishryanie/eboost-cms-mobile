@@ -7,13 +7,12 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { ThemedText, ThemedView } from 'components/base';
 
-const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
-const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
-
 import { FontFamily, Palette } from 'themes';
 import { ImagePreviewModal } from 'components/media/image-preview-modal';
 import { getDisplayImageUrl } from 'utils/media/image-url';
 
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
 const ACTION_WIDTH = 144;
 const ACTION_TRIGGER = ACTION_WIDTH * 0.4;
@@ -50,7 +49,8 @@ export function LocationCard({
   onEdit,
   onPress,
   onRelocate,
-  onUploadImage }: {
+  onUploadImage,
+}: {
   location: LocationRecord;
   onEdit: () => void;
   onPress: () => void;
@@ -84,15 +84,18 @@ export function LocationCard({
       translateX.set(
         withSpring(shouldOpen ? -ACTION_WIDTH : 0, {
           damping: 18,
-          stiffness: 220 }),
+          stiffness: 220,
+        }),
       );
     });
 
   const foregroundStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.get() }] }));
+    transform: [{ translateX: translateX.get() }],
+  }));
 
   const actionStyle = useAnimatedStyle(() => ({
-    opacity: Math.min(1, Math.abs(translateX.get()) / ACTION_WIDTH + 0.15) }));
+    opacity: Math.min(1, Math.abs(translateX.get()) / ACTION_WIDTH + 0.15),
+  }));
 
   return (
     <ThemedView backgroundColor={Palette.surfaceBase} overflow='hidden'>
@@ -209,31 +212,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'stretch',
     justifyContent: 'center',
-    width: ACTION_WIDTH / 2 },
+    width: ACTION_WIDTH / 2,
+  },
   actionPressed: {
-    opacity: 0.75 },
+    opacity: 0.75,
+  },
   actionsRail: {
     bottom: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     position: 'absolute',
     right: 0,
     top: 0,
-    width: ACTION_WIDTH },
+    width: ACTION_WIDTH,
+  },
   actionText: {
     color: '#071C12',
     fontFamily: FontFamily.medium,
     fontSize: 14,
-    lineHeight: 18 },
+    lineHeight: 18,
+  },
   editAction: {
-    backgroundColor: '#FFAA0A' },
+    backgroundColor: '#FFAA0A',
+  },
   editActionText: {
-    color: '#241600' },
+    color: '#241600',
+  },
   foreground: {
-    backgroundColor: Palette.surfaceBase },
+    backgroundColor: Palette.surfaceBase,
+  },
   pressed: {
-    backgroundColor: '#F7F8FA' },
+    backgroundColor: '#F7F8FA',
+  },
   relocateAction: {
-    backgroundColor: '#05AE51' },
+    backgroundColor: '#05AE51',
+  },
   row: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceBase,
@@ -244,18 +256,21 @@ const styles = StyleSheet.create({
     minHeight: 82,
     paddingLeft: mhs(12),
     paddingRight: mhs(12),
-    paddingVertical: mhs(8) },
+    paddingVertical: mhs(8),
+  },
   statusBubble: {
     alignItems: 'center',
     borderRadius: mhs(12),
     maxWidth: 82,
     minWidth: 62,
     paddingHorizontal: 6,
-    paddingVertical: 2 },
+    paddingVertical: 2,
+  },
   thumbnailImage: {
     borderRadius: mhs(16),
     height: THUMB_SIZE,
-    width: THUMB_SIZE },
+    width: THUMB_SIZE,
+  },
   toggle: {
     alignItems: 'flex-end',
     backgroundColor: '#04B05A',
@@ -263,17 +278,21 @@ const styles = StyleSheet.create({
     height: 20,
     justifyContent: 'center',
     paddingHorizontal: 2,
-    width: 38 },
+    width: 38,
+  },
   toggleKnob: {
     backgroundColor: '#FFFFFF',
     borderRadius: 999,
     boxShadow: '0 1px 2px rgba(0, 0, 0, 0.18)',
     height: 16,
-    width: 16 },
+    width: 16,
+  },
   toggleKnobOff: {
-    alignSelf: 'flex-start' },
+    alignSelf: 'flex-start',
+  },
   toggleOff: {
-    backgroundColor: '#C9C9CC' },
+    backgroundColor: '#C9C9CC',
+  },
   uploadPlaceholder: {
     alignItems: 'center',
     borderColor: '#D4DFEC',
@@ -282,7 +301,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     height: THUMB_SIZE,
     justifyContent: 'center',
-    width: THUMB_SIZE },
+    width: THUMB_SIZE,
+  },
   uploadPlaceholderPressed: {
     backgroundColor: Palette.surfaceMuted,
-    borderColor: Palette.accent } });
+    borderColor: Palette.accent,
+  },
+});

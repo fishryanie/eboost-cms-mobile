@@ -1,15 +1,10 @@
-import React, { useState } from "react";
-import { StyleSheet } from "react-native";
-import Animated, { LinearTransition } from "react-native-reanimated";
-import type { ChipGroupProps, ChipItem } from "./Chip.types";
-import { AnimatedChip } from "./AnimatedChip";
+import React, { useState } from 'react';
+import { StyleSheet } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
+import type { ChipGroupProps, ChipItem } from './Chip.types';
+import { AnimatedChip } from './AnimatedChip';
 
-export const ChipGroup: React.FC<ChipGroupProps<ChipItem>> = ({
-  chips,
-  onChange,
-  containerStyle,
-  selectedIndex,
-}) => {
+export const ChipGroup: React.FC<ChipGroupProps<ChipItem>> = ({ chips, onChange, containerStyle, selectedIndex }) => {
   const [internalIndex, setInternalIndex] = useState(0);
   const activeIndex = selectedIndex ?? internalIndex;
 
@@ -20,10 +15,7 @@ export const ChipGroup: React.FC<ChipGroupProps<ChipItem>> = ({
     onChange?.(index);
   };
   return (
-    <Animated.View
-      style={[styles.container, containerStyle]}
-      layout={LinearTransition}
-    >
+    <Animated.View style={[styles.container, containerStyle]} layout={LinearTransition}>
       {chips.map((item, index) => (
         <AnimatedChip
           key={index}
@@ -42,7 +34,7 @@ export const ChipGroup: React.FC<ChipGroupProps<ChipItem>> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 8,
   },
 });

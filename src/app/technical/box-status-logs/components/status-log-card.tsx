@@ -27,7 +27,8 @@ const STATUS_COLORS: Record<string, string> = {
   SuspendedEVSE: '#2f54eb',
   Reserved: '#722ed1',
   Unavailable: '#fa8c16',
-  Faulted: '#ff4d4f' };
+  Faulted: '#ff4d4f',
+};
 
 const OCPPErrorCodeMap: Record<string, string> = {
   A0108: 'Nhấn Emergency Stop',
@@ -65,7 +66,8 @@ function formatStatus(value: StatusLogRecord['status'], vehicle: TechnicalVehicl
     11: 'OverTime',
     12: 'RelayBroken',
     13: 'StoppedFromApp',
-    14: 'EmergencyStop' };
+    14: 'EmergencyStop',
+  };
 
   return bikeStatus[Number(value)] || String(value);
 }
@@ -74,7 +76,8 @@ export function StatusLogCard({
   item,
   vehicle,
   isTimeline,
-  isLast }: {
+  isLast,
+}: {
   item: StatusLogRecord;
   vehicle: TechnicalVehicle;
   isTimeline?: boolean;
@@ -82,14 +85,15 @@ export function StatusLogCard({
 }) {
   const chargerId = item.chargePointID || item.vendor_id || item.box_id || item.boxId || '-';
   const rawErrorCode = item.errorCode || item.error_code || '';
-  const parsedErrorCode = rawErrorCode === 'NoError' ? '' : (OCPPErrorCodeMap[rawErrorCode] ? `${rawErrorCode} - ${OCPPErrorCodeMap[rawErrorCode]}` : rawErrorCode);
-  
+  const parsedErrorCode =
+    rawErrorCode === 'NoError' ? '' : OCPPErrorCodeMap[rawErrorCode] ? `${rawErrorCode} - ${OCPPErrorCodeMap[rawErrorCode]}` : rawErrorCode;
+
   const rawVendorErrorCode = item.vendorErrorCode || item.vendor_error_code || '';
   const vendorErrorCode = OCPPErrorCodeMap[rawVendorErrorCode] ? `${rawVendorErrorCode} - ${OCPPErrorCodeMap[rawVendorErrorCode]}` : rawVendorErrorCode;
-  
+
   const status = formatStatus(item.status, vehicle);
   const color = STATUS_COLORS[status] || STATUS_COLORS.default;
-  
+
   let displayText = '';
   if (vendorErrorCode) {
     displayText = vendorErrorCode;
@@ -121,7 +125,11 @@ export function StatusLogCard({
         <ThemedView alignItems='center' marginRight={'three'} width={44}>
           <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={16}>
             {dayStr}
-            {monthStr ? <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={11}>/{monthStr}</ThemedText> : null}
+            {monthStr ? (
+              <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={11}>
+                /{monthStr}
+              </ThemedText>
+            ) : null}
           </ThemedText>
           <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={10} marginTop={'one'}>
             {timeStr}
@@ -143,15 +151,7 @@ export function StatusLogCard({
             width={14}
             zIndex={2}
           />
-          {!isLast && (
-            <ThemedView
-              backgroundColor={Palette.borderSubtle}
-              flex={1}
-              marginBottom={-24}
-              marginTop={-8}
-              width={2}
-            />
-          )}
+          {!isLast && <ThemedView backgroundColor={Palette.borderSubtle} flex={1} marginBottom={-24} marginTop={-8} width={2} />}
         </ThemedView>
 
         {/* Right Column: Content */}

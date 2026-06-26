@@ -12,7 +12,8 @@ import { getDisplayImageUrl } from 'utils/media/image-url';
 import { getUserLoginProvider } from '../user-account';
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
-  maximumFractionDigits: 0 });
+  maximumFractionDigits: 0,
+});
 
 function VerificationIcon({ verified }: { verified?: boolean }) {
   const color = verified ? '#00B85A' : '#FF3B4E';
@@ -138,24 +139,29 @@ export const UserCard = memo(function UserCard({ onPress, style, user }: { onPre
 const styles = StyleSheet.create({
   avatarImage: {
     height: 50,
-    width: 50 },
+    width: 50,
+  },
   contactText: {
     color: Palette.textSecondary,
     fontFamily: FontFamily.regular,
     flexShrink: 1,
     fontSize: 12,
     lineHeight: 17,
-    minWidth: 0 },
+    minWidth: 0,
+  },
   levelBadge: {
     alignSelf: 'flex-end',
     borderRadius: mhs(12),
     maxWidth: 74,
     paddingHorizontal: 6,
-    paddingVertical: 3 },
+    paddingVertical: 3,
+  },
   phoneText: {
-    fontVariant: ['tabular-nums'] },
+    fontVariant: ['tabular-nums'],
+  },
   pressed: {
-    backgroundColor: Palette.surfaceMuted },
+    backgroundColor: Palette.surfaceMuted,
+  },
   row: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceBase,
@@ -165,11 +171,14 @@ const styles = StyleSheet.create({
     gap: mhs(8),
     minHeight: 82,
     paddingHorizontal: mhs(8),
-    paddingVertical: mhs(12) },
+    paddingVertical: mhs(12),
+  },
   verifyCircle: {
     alignItems: 'center',
     borderRadius: 999,
     borderWidth: 1.5,
     height: 15,
     justifyContent: 'center',
-    width: 15 } });
+    width: 15,
+  },
+});

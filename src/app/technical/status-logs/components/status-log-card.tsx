@@ -27,7 +27,8 @@ const STATUS_COLORS: Record<string, string> = {
   SuspendedEVSE: '#2f54eb',
   Reserved: '#722ed1',
   Unavailable: '#fa8c16',
-  Faulted: '#ff4d4f' };
+  Faulted: '#ff4d4f',
+};
 
 function formatStatus(value: StatusLogRecord['status'], vehicle: TechnicalVehicle) {
   if (value === undefined || value === null || value === '') return '-';
@@ -48,7 +49,8 @@ function formatStatus(value: StatusLogRecord['status'], vehicle: TechnicalVehicl
     11: 'OverTime',
     12: 'RelayBroken',
     13: 'StoppedFromApp',
-    14: 'EmergencyStop' };
+    14: 'EmergencyStop',
+  };
 
   return bikeStatus[Number(value)] || String(value);
 }
@@ -57,7 +59,8 @@ export function StatusLogCard({
   item,
   vehicle,
   isTimeline,
-  isLast }: {
+  isLast,
+}: {
   item: StatusLogRecord;
   vehicle: TechnicalVehicle;
   isTimeline?: boolean;
@@ -103,7 +106,8 @@ export function StatusLogCard({
               height: 14,
               marginTop: 4,
               width: 14,
-              zIndex: 2 }}
+              zIndex: 2,
+            }}
           />
           {!isLast && (
             <ThemedView
@@ -112,7 +116,8 @@ export function StatusLogCard({
                 flex: 1,
                 marginBottom: -24,
                 marginTop: -8,
-                width: 2 }}
+                width: 2,
+              }}
             />
           )}
         </ThemedView>

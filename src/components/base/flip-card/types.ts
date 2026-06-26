@@ -1,7 +1,7 @@
-import * as React from "react";
-import type { BlurTint } from "expo-blur";
-import type { ReactNode } from "react";
-import type { ViewStyle, PressableProps, DimensionValue } from "react-native";
+import * as React from 'react';
+import type { BlurTint } from 'expo-blur';
+import type { ReactNode } from 'react';
+import type { ViewStyle, PressableProps, DimensionValue } from 'react-native';
 
 interface FlipCardContextValue {
   isFlipped: boolean;
@@ -38,15 +38,9 @@ interface FlipCardBackProps extends React.PropsWithChildren {
   readonly style?: ViewStyle;
 }
 
-interface FlipCardTriggerProps extends Omit<PressableProps, "onPress"> {
+interface FlipCardTriggerProps extends Omit<PressableProps, 'onPress'> {
   readonly children?: ReactNode;
   readonly asChild?: boolean;
 }
 
-export type {
-  FlipCardContextValue,
-  FlipCardProps,
-  FlipCardFrontProps,
-  FlipCardBackProps,
-  FlipCardTriggerProps,
-};
+export type { FlipCardContextValue, FlipCardProps, FlipCardFrontProps, FlipCardBackProps, FlipCardTriggerProps };

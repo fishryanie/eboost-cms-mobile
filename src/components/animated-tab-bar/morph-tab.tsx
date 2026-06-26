@@ -54,7 +54,8 @@ export function MorphTab({ active, item, onPress }: { active: boolean; item: Nav
           ]}
         />
         <ThemedView height={TAB_HEIGHT} width={ICON_BOX}>
-          <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, motion.iconInactiveStyle, motion.iconSqueezeStyle]}>
+          <Animated.View
+            style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, motion.iconInactiveStyle, motion.iconSqueezeStyle]}>
             {item.icon(false, colors.muted, 22)}
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, motion.iconActiveStyle, motion.iconSqueezeStyle]}>

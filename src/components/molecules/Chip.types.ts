@@ -1,5 +1,5 @@
-import React from "react";
-import type { StyleProp, ViewStyle } from "react-native";
+import React from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
 
 interface ChipItem {
   label: string;

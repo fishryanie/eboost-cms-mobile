@@ -42,6 +42,9 @@ const styles = StyleSheet.create({
     borderRadius: mhs(21),
     borderWidth: 1,
     gap: mhs(16),
-    padding: mhs(16) },
+    padding: mhs(16),
+  },
   pressed: {
-    opacity: 0.72 } });
+    opacity: 0.72,
+  },
+});

@@ -27,15 +27,7 @@ function getInitials(member: Pick<StaffMember, 'email' | 'name' | 'username'>) {
     .join('');
 }
 
-export function ChangePasswordSheet({
-  member,
-  onClose,
-  visible,
-}: {
-  member: StaffMember | null;
-  onClose: () => void;
-  visible: boolean;
-}) {
+export function ChangePasswordSheet({ member, onClose, visible }: { member: StaffMember | null; onClose: () => void; visible: boolean }) {
   const ref = useRef<BottomSheetModal>(null);
   const isPresented = useRef(false);
   const queryClient = useQueryClient();
@@ -90,7 +82,10 @@ export function ChangePasswordSheet({
     const special = '!@#$%^&*'[Math.floor(Math.random() * 8)];
     pass = pass.slice(0, 8) + upper + lower + num + special;
     // shuffle
-    pass = pass.split('').sort(() => 0.5 - Math.random()).join('');
+    pass = pass
+      .split('')
+      .sort(() => 0.5 - Math.random())
+      .join('');
     setPassword(pass);
   };
 
@@ -103,8 +98,8 @@ export function ChangePasswordSheet({
     <BottomSheetModal
       backdropComponent={renderBackdrop}
       enableDynamicSizing
-      keyboardBehavior="interactive"
-      keyboardBlurBehavior="restore"
+      keyboardBehavior='interactive'
+      keyboardBlurBehavior='restore'
       onDismiss={handleClose}
       ref={ref}>
       <BottomSheetScrollView contentContainerStyle={styles.sheetContent} keyboardShouldPersistTaps='handled'>
@@ -134,10 +129,7 @@ export function ChangePasswordSheet({
                 <SymbolView name={isPasswordVisible ? 'eye.slash.fill' : 'eye.fill'} resizeMode='scaleAspectFit' size={20} tintColor={Palette.textTertiary} />
               </Pressable>
             </ThemedView>
-            <Pressable
-              accessibilityRole='button'
-              onPress={generatePassword}
-              style={({ pressed }) => [styles.generateButton, pressed && styles.pressed]}>
+            <Pressable accessibilityRole='button' onPress={generatePassword} style={({ pressed }) => [styles.generateButton, pressed && styles.pressed]}>
               <SymbolView name='key.fill' resizeMode='scaleAspectFit' size={16} tintColor={Palette.accent} />
               <ThemedText color={Palette.accent} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20}>
                 Generate secure password
@@ -196,10 +188,12 @@ export function ChangePasswordSheet({
               {[
                 'Please copy and save this password safely before confirming.',
                 'The system will update the password immediately after confirmation.',
-                'The user will need the new password to log in.'
+                'The user will need the new password to log in.',
               ].map((note, index) => (
                 <ThemedView key={index} flexDirection='row' gap={'two'}>
-                  <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20}>•</ThemedText>
+                  <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20}>
+                    •
+                  </ThemedText>
                   <ThemedText color={Palette.textSecondary} flex={1} fontFamily={FontFamily.medium} fontSize={14} lineHeight={20}>
                     {note}
                   </ThemedText>
@@ -208,13 +202,7 @@ export function ChangePasswordSheet({
             </ThemedView>
 
             <ThemedView flexDirection='row' gap={'three'}>
-              <AppButton
-                buttonColor={Palette.surfaceMuted}
-                label='Back'
-                onPress={() => setStep(1)}
-                style={{ flex: 1 }}
-                textColor={Palette.textPrimary}
-              />
+              <AppButton buttonColor={Palette.surfaceMuted} label='Back' onPress={() => setStep(1)} style={{ flex: 1 }} textColor={Palette.textPrimary} />
               <AppButton
                 icon={<SymbolView name='checkmark' resizeMode='scaleAspectFit' size={18} tintColor='#FFFFFF' />}
                 label='Save'

@@ -72,7 +72,11 @@ export default function UsersScreen({ onBack }: { onBack?: () => void } = {}) {
           <ThemedView gap={'four'} padding={'four'}>
             <ThemedView alignItems='center' flexDirection='row' gap={'three'} justifyContent='space-between'>
               {onBack ? (
-                <Pressable accessibilityLabel='Back' accessibilityRole='button' onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+                <Pressable
+                  accessibilityLabel='Back'
+                  accessibilityRole='button'
+                  onPress={onBack}
+                  style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
                   <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
                 </Pressable>
               ) : null}
@@ -126,17 +130,22 @@ const styles = StyleSheet.create({
     borderRadius: mhs(16),
     height: 34,
     justifyContent: 'center',
-    width: 34 },
+    width: 34,
+  },
   clearButton: {
     paddingHorizontal: 4,
-    paddingVertical: 8 },
+    paddingVertical: 8,
+  },
   content: {
-    paddingBottom: 120 },
+    paddingBottom: 120,
+  },
   footerLoader: {
-    paddingVertical: mhs(24) },
+    paddingVertical: mhs(24),
+  },
   retryMore: {
     alignItems: 'center',
-    paddingVertical: 20 },
+    paddingVertical: 20,
+  },
 
   search: {
     backgroundColor: Palette.surfaceRaised,
@@ -147,6 +156,9 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.medium,
     fontSize: 15,
     height: 48,
-    paddingHorizontal: mhs(16) },
+    paddingHorizontal: mhs(16),
+  },
   pressed: {
-    opacity: 0.72 } });
+    opacity: 0.72,
+  },
+});

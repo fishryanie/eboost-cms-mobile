@@ -97,7 +97,8 @@ export function DomainApiBarRow({ index, item, percent }: { index: number; item:
 
 export function DomainAnalyzeSection({
   onViewMore,
-  query }: {
+  query,
+}: {
   onViewMore?: () => void;
   query: { data?: { items: DomainAnalyzeRecord[] }; error: Error | null; isLoading: boolean; refetch: () => void };
 }) {

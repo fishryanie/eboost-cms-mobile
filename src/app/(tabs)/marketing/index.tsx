@@ -3,16 +3,17 @@ import { ThemedText, ThemedView } from 'components/base';
 import { Bell, CalendarPlus, ChevronLeft, ChevronsRight, Gift, TicketPercent, type LucideIcon } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { FlatList, Pressable, RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
+import { ScrollView, Pressable, RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useScrollStore } from 'utils/scroll-store';
 import { mhs } from 'themes/scaling';
-import { Palette } from 'themes';
+import { Palette, FontFamily } from 'themes';
 import { apiRequest } from 'utils/api/client';
 
 import { getCurrentMonthRange, toSubscriptionStatsSummary, type ShareMetric, type SubscriptionStatsResponse } from 'utils/marketing';
 import { MarketingServicesSection } from './components/marketing-services';
 import { SubscriptionStatsCard, SectionTitle } from './components/subscription-stats';
 import { fetchAtRiskUsers, getCollectionData, type AtRiskUserItem } from 'shared/operation/operation-user-service';
-import { FontFamily } from 'themes';
 
 const screenHorizontalPadding = 18;
 const serviceTileSize = 82;
@@ -166,7 +167,6 @@ const styles = StyleSheet.create({
     width: 38,
   },
 
-
   serviceIconSurface: {
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.06)',
@@ -212,58 +212,63 @@ export default function MarketingScreen() {
 
   const isMainScreen = !onBack;
   return (
-      <ThemedView safePaddingBottom flex={1} backgroundColor={Palette.surfaceBase}>
-        <FlatList
-          contentContainerStyle={styles.content}
-          data={[]}
-          ListEmptyComponent={
-            <ThemedView marginTop={12} gap={focusStats ? 'three' : 'five'} paddingHorizontal={screenHorizontalPadding}>
-              <ThemedView>
-                <ThemedText fontFamily="bold" fontSize={34} lineHeight={40} letterSpacing={-0.5}>
-                  {isMainScreen ? 'Marketing' : 'Subscription Package Stats'}
-                </ThemedText>
-                {isMainScreen && (
-                  <ThemedText fontSize={16} color={Palette.textSecondary} marginTop={mhs(4)}>
-                    Promotions, notifications, bonus, and subscription performance.
-                  </ThemedText>
-                )}
-              </ThemedView>
-              {!focusStats ? <MarketingServicesSection tileWidth={serviceTileWidth} /> : null}
-              <SubscriptionStatsCard
-                isFetching={statsQuery.isFetching}
-                isLoading={statsQuery.isLoading}
-                monthRange={monthRange}
-                onMetricChange={setShareMetric}
-                onRefresh={() => statsQuery.refetch()}
-                shareMetric={shareMetric}
-                summary={summary}
-                width={width}
-              />
-              <AtRiskSubscriptionSection
-                accentColor='#D92D20'
-                items={getCollectionData(atRiskQuery.data) || emptyAtRiskUsers}
-                onViewMore={() => router.push('/marketing/at-risk-users')}
-              />
+    <ThemedView safePaddingBottom flex={1} backgroundColor={Palette.surfaceBase}>
+      <ScrollView
+        onScroll={e => {
+          const offsetY = e.nativeEvent.contentOffset.y;
+          useScrollStore.getState().setTabScrolled('marketing', offsetY > 20);
+        }}
+        scrollEventThrottle={16}
+        contentContainerStyle={[styles.content, { paddingTop: 60 + (useSafeAreaInsets().top || 0) }]}
+        refreshControl={<RefreshControl onRefresh={() => statsQuery.refetch()} refreshing={statsQuery.isRefetching} tintColor={Palette.accent} />}
+        showsVerticalScrollIndicator={false}
+      >
+        {onBack ? (
+          <ThemedView gap={'three'} paddingHorizontal={screenHorizontalPadding} paddingTop={'two'}>
+            <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
+              <Pressable
+                accessibilityLabel='Back'
+                accessibilityRole='button'
+                onPress={onBack}
+                style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+                <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
+              </Pressable>
             </ThemedView>
-          }
-          ListHeaderComponent={onBack ? (
-            <ThemedView gap={'three'} paddingHorizontal={screenHorizontalPadding} paddingTop={'two'}>
-              <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
-                <Pressable
-                  accessibilityLabel='Back'
-                  accessibilityRole='button'
-                  onPress={onBack}
-                  style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
-                  <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
-                </Pressable>
-              </ThemedView>
-            </ThemedView>
-          ) : null}
-          refreshControl={<RefreshControl onRefresh={() => statsQuery.refetch()} refreshing={statsQuery.isRefetching} tintColor={Palette.accent} />}
-          renderItem={null}
-          showsVerticalScrollIndicator={false}
-        />
-      </ThemedView>
+          </ThemedView>
+        ) : null}
+        
+        <ThemedView marginTop={12} gap={focusStats ? 'three' : 'five'} paddingHorizontal={screenHorizontalPadding}>
+          <ThemedView>
+            <ThemedText fontFamily='bold' fontSize={34} lineHeight={40} letterSpacing={-0.5}>
+              {isMainScreen ? 'Marketing' : 'Subscription Package Stats'}
+            </ThemedText>
+            {isMainScreen && (
+              <ThemedText fontSize={16} color={Palette.textSecondary} marginTop={mhs(4)}>
+                Promotions, notifications, bonus, and subscription performance.
+              </ThemedText>
+            )}
+          </ThemedView>
+          <ThemedView gap={'seven'}>
+            {!focusStats ? <MarketingServicesSection tileWidth={serviceTileWidth} /> : null}
+            <SubscriptionStatsCard
+              isFetching={statsQuery.isFetching}
+              isLoading={statsQuery.isLoading}
+              monthRange={monthRange}
+              onMetricChange={setShareMetric}
+              onRefresh={() => statsQuery.refetch()}
+              shareMetric={shareMetric}
+              summary={summary}
+              width={width}
+            />
+            <AtRiskSubscriptionSection
+              accentColor='#D92D20'
+              items={getCollectionData(atRiskQuery.data) || emptyAtRiskUsers}
+              onViewMore={() => router.push('/marketing/at-risk-users')}
+            />
+          </ThemedView>
+        </ThemedView>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
@@ -278,15 +283,7 @@ const atRiskStyles = StyleSheet.create({
   },
 });
 
-function AtRiskSubscriptionSection({
-  accentColor,
-  items,
-  onViewMore,
-}: {
-  accentColor: string;
-  items: AtRiskUserItem[];
-  onViewMore: () => void;
-}) {
+function AtRiskSubscriptionSection({ accentColor, items, onViewMore }: { accentColor: string; items: AtRiskUserItem[]; onViewMore: () => void }) {
   const closestDays = items.reduce<number | undefined>((current, item) => {
     if (typeof item.days_left !== 'number') {
       return current;
@@ -310,7 +307,7 @@ function AtRiskSubscriptionSection({
           style={({ pressed }) => [
             { paddingHorizontal: mhs(4), paddingVertical: mhs(8) },
             { flexDirection: 'row', alignItems: 'center', gap: mhs(2) },
-            pressed && { opacity: 0.72, transform: [{ scale: 0.99 }] }
+            pressed && { opacity: 0.72, transform: [{ scale: 0.99 }] },
           ]}>
           <ThemedText color={items.length ? Palette.accent : Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={13} lineHeight={18}>
             View user
@@ -346,4 +343,3 @@ function InlineMetric({ accentColor, label, value }: { accentColor: string; labe
 function formatNumber(value?: number | string | null) {
   return compactNumber.format(Number(value) || 0);
 }
-

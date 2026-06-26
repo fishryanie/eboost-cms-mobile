@@ -1,4 +1,3 @@
-
 export type OngoingSessionPayment = {
   activation: number;
   charging: number;

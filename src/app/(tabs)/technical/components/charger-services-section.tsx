@@ -13,7 +13,8 @@ import {
   RotateCcw,
   Wrench,
   Zap,
-  type LucideIcon } from 'lucide-react-native';
+  type LucideIcon,
+} from 'lucide-react-native';
 
 import { quickServiceGroups, type QuickServiceIconName, type QuickServiceItem } from 'app/(tabs)/technical/features/quick-service-catalog';
 import { ThemedText, ThemedView } from 'components/base';
@@ -35,7 +36,8 @@ const quickServiceIcons: Record<QuickServiceIconName, LucideIcon> = {
   qrCode: QrCode,
   rotateCcw: RotateCcw,
   wrench: Wrench,
-  zap: Zap };
+  zap: Zap,
+};
 
 export function QuickServiceShortcut({ onPress, service, tileWidth }: { onPress?: () => void; service: QuickServiceItem; tileWidth: number }) {
   const Icon = quickServiceIcons[service.icon];
@@ -60,7 +62,8 @@ export function ChargerServicesSection({
   onBoxAction,
   onReplaceMeter,
   onSetupLocation,
-  tileWidth }: {
+  tileWidth,
+}: {
   onBoxAction: (mode: 'reset' | 'trigger' | 'unlock') => void;
   onReplaceMeter: () => void;
   onSetupLocation: () => void;

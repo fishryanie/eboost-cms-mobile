@@ -3,12 +3,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
+import { Alert, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
 import { ActionSheet, AppButton, EmptyState } from 'components/ui';
-import { FontFamily, Palette } from 'themes';
-import { mhs } from 'themes/scaling';
 import { staffKeys, useInfiniteStaff } from 'shared/staff/hooks';
 import {
   archiveStaffMember,
@@ -21,7 +19,10 @@ import {
   updateStaffMember,
 } from 'shared/staff/staff-service';
 import type { StaffCreateInput, StaffListFilters, StaffMember, StaffRole } from 'shared/staff/types';
+import { FontFamily, Palette } from 'themes';
+import { mhs } from 'themes/scaling';
 
+import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 import { ChangePasswordSheet } from './change-password-sheet';
 import { StaffLogsSheet } from './staff-logs';
 
@@ -406,37 +407,25 @@ export default function StaffManagementsScreen() {
 
   return (
     <>
-      <ThemedView flex={1} backgroundColor={Palette.surfaceBase} safePaddingTop>
-        <FlatList
-          {...{
-            contentContainerStyle: styles.listContent,
-            data: staff,
-            keyExtractor: (item: StaffMember) => String(item.id),
-            ListHeaderComponent: (
-              <ThemedView gap={'three'} paddingHorizontal={'four'} paddingTop={'three'}>
-                <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
-                  <Pressable
-                    hitSlop={12}
-                    accessibilityRole='button'
-                    onPress={() => router.back()}
-                    style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}>
-                    <SymbolView name='chevron.left' resizeMode='scaleAspectFit' size={20} tintColor={Palette.textPrimary} />
-                  </Pressable>
-                  <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={24} lineHeight={30}>
-                    Staff List
-                  </ThemedText>
-                  <Pressable
-                    hitSlop={12}
-                    accessibilityRole='button'
-                    onPress={() => openSheet('create')}
-                    style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}>
-                    <SymbolView name='person.badge.plus' resizeMode='scaleAspectFit' size={20} tintColor='#FFFFFF' />
-                  </Pressable>
-                </ThemedView>
-                {searchBarElement}
-              </ThemedView>
-            ),
-            ListEmptyComponent: staffQuery.isLoading ? (
+      <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
+        <AnimatedHeaderFlatList
+          largeTitle='Staff List'
+          canGoBack={true}
+          rightComponent={
+            <Pressable
+              hitSlop={12}
+              accessibilityRole='button'
+              onPress={() => openSheet('create')}
+              style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}>
+              <SymbolView name='person.badge.plus' resizeMode='scaleAspectFit' size={20} tintColor='#FFFFFF' />
+            </Pressable>
+          }
+          searchBar={searchBarElement}
+          contentContainerStyle={styles.listContent}
+          data={staff}
+          keyExtractor={(item: StaffMember) => String(item.id)}
+          ListEmptyComponent={
+            staffQuery.isLoading ? (
               <ThemedView>
                 {[1, 2, 3, 4, 5, 6, 7].map(key => (
                   <StaffRowSkeleton key={key} />
@@ -446,24 +435,24 @@ export default function StaffManagementsScreen() {
               <EmptyState message='The administrators list could not be loaded.' title='Staff unavailable' />
             ) : (
               <EmptyState message='Try a different name, email, or status filter.' title='No administrators found' />
-            ),
-            ListFooterComponent: staffQuery.isFetchingNextPage ? (
-              <ThemedView alignSelf='center' borderRadius={'pill'} height={18} loading marginVertical={24} width={132} />
-            ) : null,
-            onEndReached: loadMore,
-            onEndReachedThreshold: 0.55,
-            refreshControl: <RefreshControl onRefresh={() => staffQuery.refetch()} refreshing={staffQuery.isRefetching} tintColor={Palette.accent} />,
-            renderItem: ({ item }: { item: StaffMember }) => (
-              <StaffRow
-                member={item}
-                onPress={member => {
-                  setSelectedMember(member);
-                  setActionsOpen(true);
-                }}
-              />
-            ),
-            showsVerticalScrollIndicator: false,
-          }}
+            )
+          }
+          ListFooterComponent={
+            staffQuery.isFetchingNextPage ? <ThemedView alignSelf='center' borderRadius={'pill'} height={18} loading marginVertical={24} width={132} /> : null
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.55}
+          refreshControl={<RefreshControl onRefresh={() => staffQuery.refetch()} refreshing={staffQuery.isRefetching} tintColor={Palette.accent} />}
+          renderItem={({ item }: { item: StaffMember }) => (
+            <StaffRow
+              member={item}
+              onPress={member => {
+                setSelectedMember(member);
+                setActionsOpen(true);
+              }}
+            />
+          )}
+          showsVerticalScrollIndicator={false}
         />
       </ThemedView>
 

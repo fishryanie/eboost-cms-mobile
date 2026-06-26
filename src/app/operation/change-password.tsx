@@ -77,7 +77,7 @@ export default function ChangePasswordScreen() {
         userId: selectedUser.id,
       });
     },
-    onSuccess: (response) => {
+    onSuccess: response => {
       if (response?.success === false || response?.statusCode === 'EVD011' || response?.statusCode === 'EVD013') {
         Toast.show({ type: 'error', text1: 'Change Password Failed', text2: response.message || 'Failed to process transaction' });
         return;
@@ -98,9 +98,10 @@ export default function ChangePasswordScreen() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled'>
         <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={20}>
-          Set a new password for a user. This is usually done when a user cannot reset their password via email. You must provide your admin password to confirm.
+          Set a new password for a user. This is usually done when a user cannot reset their password via email. You must provide your admin password to
+          confirm.
         </ThemedText>
-        
+
         <ThemedView gap={'six'} marginTop={24}>
           {/* User Search Input & Results */}
           <ThemedView>
@@ -139,13 +140,7 @@ export default function ChangePasswordScreen() {
           </ThemedView>
 
           {/* New Password */}
-          <FloatingTextInput
-            label='* New Password'
-            isPassword
-            onChangeText={setNewPassword}
-            placeholder='Enter new password'
-            value={newPassword}
-          />
+          <FloatingTextInput label='* New Password' isPassword onChangeText={setNewPassword} placeholder='Enter new password' value={newPassword} />
 
           {/* Confirm New Password */}
           <FloatingTextInput
@@ -175,7 +170,13 @@ export default function ChangePasswordScreen() {
           </ThemedView>
 
           {/* Admin Password Input */}
-          <FloatingTextInput isPassword label='* Admin Password' onChangeText={setAdminPassword} placeholder='Please enter admin password' value={adminPassword} />
+          <FloatingTextInput
+            isPassword
+            label='* Admin Password'
+            onChangeText={setAdminPassword}
+            placeholder='Please enter admin password'
+            value={adminPassword}
+          />
 
           <AppButton disabled={!adminPassword || isPending} loading={isPending} onPress={() => mutate()}>
             Confirm
@@ -202,7 +203,11 @@ export default function ChangePasswordScreen() {
             Password Updated Successfully
           </ThemedText>
           <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} textAlign='center' marginTop={2} lineHeight={20}>
-            The password for <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold}>{selectedUser?.name || selectedUser?.username}</ThemedText> has been updated successfully.
+            The password for{' '}
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold}>
+              {selectedUser?.name || selectedUser?.username}
+            </ThemedText>{' '}
+            has been updated successfully.
           </ThemedText>
 
           <ThemedView flexDirection='row' gap={'four'} marginTop={20} width='100%'>

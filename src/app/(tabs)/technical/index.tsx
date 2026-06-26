@@ -1,8 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, RefreshControl, useWindowDimensions } from 'react-native';
+import { ScrollView, RefreshControl, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { mhs } from 'themes/scaling';
+import { useScrollStore } from 'utils/scroll-store';
 
 import { ReplaceMeterSheet } from 'app/(tabs)/technical/components/replace-meter-sheet';
 import { SetupLocationSheet } from 'app/(tabs)/technical/components/setup-location-sheet';
@@ -95,20 +97,39 @@ export default function TechnicalScreen() {
   return (
     <>
       <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
-        <FlatList
-          contentContainerStyle={styles.content}
-          data={emptyOverviewData}
-          keyExtractor={(_, index) => String(index)}
-          ListEmptyComponent={
-            <ThemedView gap={'five'} marginTop={12} paddingHorizontal={screenHorizontalPadding}>
-              <ThemedView>
-                <ThemedText fontFamily='bold' fontSize={34} lineHeight={40} letterSpacing={-0.5}>
-                  Technical
-                </ThemedText>
-                <ThemedText fontSize={15} lineHeight={25} color={Palette.textSecondary} marginTop={mhs(4)}>
-                  Manage bike and car chargers, monitor network status, and handle technical operations from one place.
-                </ThemedText>
-              </ThemedView>
+        <ScrollView
+          onScroll={e => {
+            const offsetY = e.nativeEvent.contentOffset.y;
+            useScrollStore.getState().setTabScrolled('technical', offsetY > 20);
+          }}
+          scrollEventThrottle={16}
+          contentContainerStyle={[styles.content, { paddingTop: 60 + (useSafeAreaInsets().top || 0) }]}
+          refreshControl={
+            <RefreshControl
+              onRefresh={() => {
+                void refetchBikeNetwork();
+                void refetchBikeBoxStatus();
+                void refetchCarBoxStatus();
+                void refetchCarNetwork();
+                void refetchDomain();
+                void queryClient.invalidateQueries({ queryKey: ['technical', 'peak-usage-hours'] });
+              }}
+              refreshing={bikeNetworkRefetching || bikeBoxStatusRefetching || carBoxStatusRefetching || carNetworkRefetching || domainRefetching}
+              tintColor={Palette.accent}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          <ThemedView gap={'five'} marginTop={12} paddingHorizontal={screenHorizontalPadding}>
+            <ThemedView>
+              <ThemedText fontFamily='bold' fontSize={34} lineHeight={40} letterSpacing={-0.5}>
+                Technical
+              </ThemedText>
+              <ThemedText fontSize={16} color={Palette.textSecondary} marginTop={mhs(4)}>
+                Manage bike and car chargers, monitor network status, and handle technical operations from one place.
+              </ThemedText>
+            </ThemedView>
+            <ThemedView gap={'seven'}>
               <ChargerServicesSection
                 tileWidth={serviceTileWidth}
                 onBoxAction={setBoxActionMode}
@@ -167,24 +188,8 @@ export default function TechnicalScreen() {
                 }
               />
             </ThemedView>
-          }
-          refreshControl={
-            <RefreshControl
-              onRefresh={() => {
-                void refetchBikeNetwork();
-                void refetchBikeBoxStatus();
-                void refetchCarBoxStatus();
-                void refetchCarNetwork();
-                void refetchDomain();
-                void queryClient.invalidateQueries({ queryKey: ['technical', 'peak-usage-hours'] });
-              }}
-              refreshing={bikeNetworkRefetching || bikeBoxStatusRefetching || carBoxStatusRefetching || carNetworkRefetching || domainRefetching}
-              tintColor={Palette.accent}
-            />
-          }
-          renderItem={null}
-          showsVerticalScrollIndicator={false}
-        />
+          </ThemedView>
+        </ScrollView>
       </ThemedView>
       {boxActionMode ? <TriggerBoxSheet mode={boxActionMode} onClose={() => setBoxActionMode(null)} visible={Boolean(boxActionMode)} /> : null}
       {replaceMeterVisible ? <ReplaceMeterSheet onClose={() => setReplaceMeterVisible(false)} visible={replaceMeterVisible} /> : null}

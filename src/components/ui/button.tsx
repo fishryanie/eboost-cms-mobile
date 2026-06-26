@@ -4,10 +4,10 @@ import { ActivityIndicator, Pressable, StyleSheet, type PressableProps, type Sty
 import Animated, { interpolate, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ThemedView, ThemedText } from 'components/base';
 
-const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
-
 import { fs, mhs, mvs, rv } from 'themes/scaling';
 import { FontFamily, Palette } from 'themes';
+
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
 
 type AppButtonVariant = 'danger' | 'ghost' | 'primary' | 'secondary';
 
@@ -16,16 +16,21 @@ const DURATION = 300;
 const variantColors: Record<AppButtonVariant, { buttonColor: string; textColor: string }> = {
   danger: {
     buttonColor: Palette.danger,
-    textColor: '#FFFFFF' },
+    textColor: '#FFFFFF',
+  },
   ghost: {
     buttonColor: 'transparent',
-    textColor: Palette.accent },
+    textColor: Palette.accent,
+  },
   primary: {
     buttonColor: Palette.accent,
-    textColor: '#FFFFFF' },
+    textColor: '#FFFFFF',
+  },
   secondary: {
     buttonColor: Palette.textPrimary,
-    textColor: '#FFFFFF' } };
+    textColor: '#FFFFFF',
+  },
+};
 
 export type ScaleAnimatedButtonProps = Omit<PressableProps, 'children' | 'disabled' | 'style'> & {
   Icon?: ReactElement;
@@ -85,8 +90,10 @@ export function ScaleAnimatedButton({
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       {
-        scale: interpolate(transition.get(), [0, 1], [1, scale]) },
-    ] }));
+        scale: interpolate(transition.get(), [0, 1], [1, scale]),
+      },
+    ],
+  }));
   const disabled = isDisabled || isLoading || props.disabled;
   const renderedTitle = isLoading ? loadingLabel : title;
   const resolvedStyle = StyleSheet.flatten(style);
@@ -98,7 +105,8 @@ export function ScaleAnimatedButton({
       accessibilityState={{
         ...props.accessibilityState,
         busy: isLoading,
-        disabled }}
+        disabled,
+      }}
       accessibilityRole='button'
       disabled={disabled}
       onPress={onPress}
@@ -111,7 +119,8 @@ export function ScaleAnimatedButton({
               transition.set(
                 withTiming(0, {
                   duration: DURATION,
-                  reduceMotion: motion }),
+                  reduceMotion: motion,
+                }),
               );
             }
           }),
@@ -123,7 +132,8 @@ export function ScaleAnimatedButton({
           transition.set(
             withTiming(0, {
               duration: DURATION,
-              reduceMotion: motion }),
+              reduceMotion: motion,
+            }),
           );
         }
         isActive.set(false);
@@ -135,7 +145,8 @@ export function ScaleAnimatedButton({
           animatedStyle,
           {
             backgroundColor: buttonColor,
-            opacity: isDisabled ? 0.45 : 1 },
+            opacity: isDisabled ? 0.45 : 1,
+          },
           containerStyle,
           style,
         ]}>
@@ -202,14 +213,18 @@ const styles = StyleSheet.create({
     height: rv({ compact: 44, medium: 48 }),
     justifyContent: 'center',
     paddingHorizontal: mhs(24),
-    paddingVertical: mhs(12) },
+    paddingVertical: mhs(12),
+  },
   block: { alignSelf: 'stretch' },
   defaultPressable: {
     alignSelf: 'stretch',
     flexGrow: 1,
-    flexShrink: 1 },
+    flexShrink: 1,
+  },
   label: {
     flexShrink: 1,
     fontFamily: FontFamily.bold,
     fontSize: fs(14),
-    lineHeight: mvs(20) } });
+    lineHeight: mvs(20),
+  },
+});

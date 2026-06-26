@@ -17,19 +17,19 @@ export type ActionSheetItem = {
   onPress: () => void;
 };
 
-export function ActionSheet({ 
-  items, 
+export function ActionSheet({
+  items,
   primaryActions,
-  onClose, 
-  open, 
+  onClose,
+  open,
   title,
   description,
-  avatar
-}: { 
-  items: ActionSheetItem[]; 
+  avatar,
+}: {
+  items: ActionSheetItem[];
   primaryActions?: ActionSheetItem[];
-  onClose: () => void; 
-  open: boolean; 
+  onClose: () => void;
+  open: boolean;
   title?: ReactNode;
   description?: ReactNode;
   avatar?: ReactNode;
@@ -60,31 +60,23 @@ export function ActionSheet({
       ref={ref}
       snapPoints={snapPoints}>
       <BottomSheetScrollView contentContainerStyle={styles.content}>
-        
         {/* Header */}
         {(title || avatar || description) && (
           <ThemedView alignItems='center' marginBottom={'six'}>
-            {avatar && (
-              <ThemedView marginBottom={'three'}>
-                {avatar}
-              </ThemedView>
-            )}
+            {avatar && <ThemedView marginBottom={'three'}>{avatar}</ThemedView>}
             {title && (
               <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
                 {title}
               </ThemedText>
             )}
-            {description && (
-               typeof description === 'string' ? (
-                 <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={14} lineHeight={20} marginTop={4}>
-                   {description}
-                 </ThemedText>
-               ) : (
-                 <ThemedView marginTop={4}>
-                   {description}
-                 </ThemedView>
-               )
-            )}
+            {description &&
+              (typeof description === 'string' ? (
+                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={14} lineHeight={20} marginTop={4}>
+                  {description}
+                </ThemedText>
+              ) : (
+                <ThemedView marginTop={4}>{description}</ThemedView>
+              ))}
           </ThemedView>
         )}
 
@@ -99,31 +91,15 @@ export function ActionSheet({
                     ref.current?.dismiss();
                     action.onPress();
                   }}
-                  style={({ pressed }) => [
-                    styles.primaryRowItem,
-                    action.disabled && styles.disabled,
-                    pressed && styles.pressed,
-                  ]}>
+                  style={({ pressed }) => [styles.primaryRowItem, action.disabled && styles.disabled, pressed && styles.pressed]}>
                   {action.icon && (
-                    <SymbolView
-                      name={action.icon}
-                      resizeMode='scaleAspectFit'
-                      size={18}
-                      tintColor={action.danger ? Palette.danger : Palette.accent}
-                    />
+                    <SymbolView name={action.icon} resizeMode='scaleAspectFit' size={18} tintColor={action.danger ? Palette.danger : Palette.accent} />
                   )}
-                  <ThemedText
-                    color={action.danger ? Palette.danger : Palette.accent}
-                    fontFamily={FontFamily.bold}
-                    fontSize={15}
-                    lineHeight={20}
-                  >
+                  <ThemedText color={action.danger ? Palette.danger : Palette.accent} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
                     {action.label}
                   </ThemedText>
                 </Pressable>
-                {index < primaryActions.length - 1 && (
-                  <ThemedView backgroundColor={Palette.borderSubtle} width={1} />
-                )}
+                {index < primaryActions.length - 1 && <ThemedView backgroundColor={Palette.borderSubtle} width={1} />}
               </Fragment>
             ))}
           </ThemedView>
@@ -142,12 +118,7 @@ export function ActionSheet({
                   }}
                   style={({ pressed }) => [styles.item, item.disabled && styles.disabled, pressed && styles.pressed]}>
                   {item.icon ? (
-                    <SymbolView
-                      name={item.icon}
-                      resizeMode='scaleAspectFit'
-                      size={20}
-                      tintColor={item.danger ? Palette.danger : Palette.textPrimary}
-                    />
+                    <SymbolView name={item.icon} resizeMode='scaleAspectFit' size={20} tintColor={item.danger ? Palette.danger : Palette.textPrimary} />
                   ) : null}
                   <ThemedView flex={1}>
                     <ThemedText style={[styles.itemLabel, item.danger && styles.danger]}>{item.label}</ThemedText>
@@ -159,9 +130,7 @@ export function ActionSheet({
                   </ThemedView>
                   <SymbolView name='chevron.right' resizeMode='scaleAspectFit' size={16} tintColor={Palette.textTertiary} />
                 </Pressable>
-                {index < items.length - 1 && (
-                  <ThemedView backgroundColor={Palette.borderSubtle} height={StyleSheet.hairlineWidth} marginLeft={'four'} />
-                )}
+                {index < items.length - 1 && <ThemedView backgroundColor={Palette.borderSubtle} height={StyleSheet.hairlineWidth} marginLeft={'four'} />}
               </Fragment>
             ))}
           </ThemedView>

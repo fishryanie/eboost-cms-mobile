@@ -16,16 +16,10 @@ function collectFiles(dir) {
 describe('screen loading states', () => {
   it('uses ThemedView loading instead of screen-level ActivityIndicator', () => {
     const screenFiles = collectFiles(join(projectRoot, 'app'));
-    const helperFiles = [
-      join(projectRoot, 'components/technical/list-ui.tsx'),
-      join(projectRoot, 'components/technical/charging-profile-chart.tsx'),
-    ];
+    const helperFiles = [join(projectRoot, 'components/technical/list-ui.tsx'), join(projectRoot, 'components/technical/charging-profile-chart.tsx')];
 
     const offenders = [...screenFiles, ...helperFiles].filter(path => readFileSync(path, 'utf8').includes('ActivityIndicator'));
 
-    assert.deepEqual(
-      offenders.map(path => relative(projectRoot, path)).sort(),
-      [],
-    );
+    assert.deepEqual(offenders.map(path => relative(projectRoot, path)).sort(), []);
   });
 });

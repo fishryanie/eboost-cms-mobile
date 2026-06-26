@@ -6,12 +6,12 @@ import Modal from 'react-native-modal';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ThemedText, ThemedView } from 'components/base';
 
-const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
-const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
-
 import { FontFamily } from 'themes';
 
 import { clampZoomOffset } from 'utils/media/zoom-bounds';
+
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
@@ -82,7 +82,8 @@ export function ImagePreviewModal({ imageUrl, onClose, title, visible }: { image
   const imageGesture = Gesture.Simultaneous(pinch, pan, doubleTap);
 
   const imageStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.get() }, { translateY: translateY.get() }, { scale: scale.get() }] }));
+    transform: [{ translateX: translateX.get() }, { translateY: translateY.get() }, { scale: scale.get() }],
+  }));
 
   return (
     <Modal
@@ -139,15 +140,21 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     height: 38,
     justifyContent: 'center',
-    width: 38 },
+    width: 38,
+  },
   image: {
     height: '100%',
-    width: '100%' },
+    width: '100%',
+  },
   imageWrap: {
     height: '100%',
-    width: '100%' },
+    width: '100%',
+  },
   modal: {
-    margin: 0 },
+    margin: 0,
+  },
   overlay: {
     backgroundColor: '#000000',
-    flex: 1 } });
+    flex: 1,
+  },
+});

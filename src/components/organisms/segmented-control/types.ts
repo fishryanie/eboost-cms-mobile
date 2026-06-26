@@ -1,4 +1,4 @@
-import { SegmentedControlPresets } from "./presets";
+import { SegmentedControlPresets } from './presets';
 
 type SegmentedControlPreset = keyof typeof SegmentedControlPresets;
 

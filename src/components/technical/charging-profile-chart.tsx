@@ -14,7 +14,8 @@ export const ChargingProfileChart: React.FC<ChargingProfileChartProps> = ({ tran
   const { data, isLoading, error } = useQuery({
     queryKey: ['transaction-detail', transactionId],
     queryFn: () => apiRequest<any>(`api/transactions/${transactionId}`, { service: 'hub' }),
-    enabled: !!transactionId });
+    enabled: !!transactionId,
+  });
 
   const chartData = useMemo(() => {
     if (!data || !data.meterValues || data.meterValues.length === 0) return null;
@@ -47,7 +48,8 @@ export const ChargingProfileChart: React.FC<ChargingProfileChartProps> = ({ tran
       powerData.push({
         value: pVal,
         label: showLabel ? label : '',
-        labelTextStyle: { color: Palette.textTertiary, fontSize: 10, fontFamily: FontFamily.regular } });
+        labelTextStyle: { color: Palette.textTertiary, fontSize: 10, fontFamily: FontFamily.regular },
+      });
 
       const cL1 = getVal(m, 'Current.Import', 'L1');
       const cTotal = getVal(m, 'Current.Import');
@@ -74,12 +76,13 @@ export const ChargingProfileChart: React.FC<ChargingProfileChartProps> = ({ tran
       dataSet2: dataSet2.length > 0 ? dataSet2 : undefined,
       hasPower,
       hasCurrent,
-      hasVoltage };
+      hasVoltage,
+    };
   }, [data]);
 
   if (!transactionId) {
     return (
-      <ThemedView alignItems="center" flex={1} justifyContent="center" padding={'four'}>
+      <ThemedView alignItems='center' flex={1} justifyContent='center' padding={'four'}>
         <ThemedText color={Palette.textSecondary}>No transaction ID available</ThemedText>
       </ThemedView>
     );
@@ -96,7 +99,7 @@ export const ChargingProfileChart: React.FC<ChargingProfileChartProps> = ({ tran
 
   if (error || !chartData || (!chartData.dataSet1 && !chartData.dataSet2)) {
     return (
-      <ThemedView alignItems="center" flex={1} justifyContent="center" padding={'four'}>
+      <ThemedView alignItems='center' flex={1} justifyContent='center' padding={'four'}>
         <ThemedText color={Palette.textSecondary}>No profile data available</ThemedText>
       </ThemedView>
     );
@@ -105,27 +108,33 @@ export const ChargingProfileChart: React.FC<ChargingProfileChartProps> = ({ tran
   const { dataSet1, dataSet2, hasPower, hasCurrent, hasVoltage } = chartData;
 
   const width = Dimensions.get('window').width - 64; // Adjust based on padding
-  
+
   // Custom legend
   const renderLegend = () => {
     return (
-      <ThemedView flexDirection="row" flexWrap="wrap" gap={12} justifyContent="center" marginBottom={16}>
+      <ThemedView flexDirection='row' flexWrap='wrap' gap={12} justifyContent='center' marginBottom={16}>
         {hasPower && (
-          <ThemedView alignItems="center" flexDirection="row" gap={4}>
+          <ThemedView alignItems='center' flexDirection='row' gap={4}>
             <View style={{ width: 12, height: 12, backgroundColor: '#00b96b', borderRadius: 2 }} />
-            <ThemedText fontSize={10} color={Palette.textSecondary}>Power (kW)</ThemedText>
+            <ThemedText fontSize={10} color={Palette.textSecondary}>
+              Power (kW)
+            </ThemedText>
           </ThemedView>
         )}
         {hasCurrent && (
-          <ThemedView alignItems="center" flexDirection="row" gap={4}>
+          <ThemedView alignItems='center' flexDirection='row' gap={4}>
             <View style={{ width: 12, height: 12, backgroundColor: '#ff9c3a', borderRadius: 2 }} />
-            <ThemedText fontSize={10} color={Palette.textSecondary}>Current (A)</ThemedText>
+            <ThemedText fontSize={10} color={Palette.textSecondary}>
+              Current (A)
+            </ThemedText>
           </ThemedView>
         )}
         {hasVoltage && (
-          <ThemedView alignItems="center" flexDirection="row" gap={4}>
+          <ThemedView alignItems='center' flexDirection='row' gap={4}>
             <View style={{ width: 12, height: 12, backgroundColor: '#ff4d4f', borderRadius: 2 }} />
-            <ThemedText fontSize={10} color={Palette.textSecondary}>Voltage (V)</ThemedText>
+            <ThemedText fontSize={10} color={Palette.textSecondary}>
+              Voltage (V)
+            </ThemedText>
           </ThemedView>
         )}
       </ThemedView>
@@ -137,10 +146,10 @@ export const ChargingProfileChart: React.FC<ChargingProfileChartProps> = ({ tran
       <ThemedText fontFamily={FontFamily.semibold} fontSize={14} marginBottom={12} color={Palette.textPrimary}>
         Charging Profile
       </ThemedText>
-      
+
       {renderLegend()}
-      
-      <ThemedView flex={1} position="relative" justifyContent="center">
+
+      <ThemedView flex={1} position='relative' justifyContent='center'>
         {dataSet1 && (
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
             <LineChart
@@ -156,12 +165,12 @@ export const ChargingProfileChart: React.FC<ChargingProfileChartProps> = ({ tran
               initialSpacing={0}
               yAxisColor={Palette.borderSubtle}
               xAxisColor={Palette.borderSubtle}
-              color="#00b96b"
+              color='#00b96b'
             />
           </View>
         )}
         {dataSet2 && (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2 }} pointerEvents="none">
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2 }} pointerEvents='none'>
             <LineChart
               dataSet={dataSet2}
               width={width}
@@ -176,10 +185,10 @@ export const ChargingProfileChart: React.FC<ChargingProfileChartProps> = ({ tran
               xAxisLabelTextStyle={{ color: 'transparent', fontSize: 10 }} // Hide X labels for second chart
               spacing={Math.max((width - 40) / (dataSet2[0].data.length || 1), 5)}
               initialSpacing={0}
-              yAxisColor="transparent" // Hide axis line
-              xAxisColor="transparent"
+              yAxisColor='transparent' // Hide axis line
+              xAxisColor='transparent'
               hideAxesAndRules={true}
-              color="#ff4d4f"
+              color='#ff4d4f'
             />
           </View>
         )}

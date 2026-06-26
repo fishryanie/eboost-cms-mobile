@@ -8,6 +8,15 @@ import { FontFamily, Palette } from 'themes';
 import { adminProfile } from 'utils/auth/admin-profile';
 import { useDrawerStore } from 'utils/drawer-store';
 
+import { BlurView } from 'expo-blur';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import MaskedView from '@react-native-masked-view/masked-view';
+import { easeGradient } from 'react-native-easing-gradient';
+import { useSegments } from 'expo-router';
+import { useScrollStore } from 'utils/scroll-store';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
+
 const colors = {
   primary: '#24294A',
 };
@@ -15,19 +24,44 @@ const colors = {
 export function HomeHeader() {
   const { top } = useSafeAreaInsets();
   const openDrawer = useDrawerStore(state => state.openDrawer);
+  const segments = useSegments();
+  const currentTab = segments[segments.length - 1] || 'technical';
+  const isScrolled = useScrollStore(state => state.scrolledTabs[currentTab]);
+
+  const backgroundStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(isScrolled ? 1 : 0, { duration: 100 }),
+  }));
+
+  const mask = easeGradient({
+    colorStops: {
+      0: { color: 'rgba(255,255,255,1)' },
+      0.75: { color: 'rgba(255,255,255,1)' },
+      1: { color: 'rgba(255,255,255,0)' },
+    },
+    extraColorStopsPerTransition: 16,
+  });
 
   return (
     <ThemedView style={[styles.container, { paddingTop: top + 12 }]}>
+      <Animated.View style={[backgroundStyle, { position: 'absolute', top: 0, left: 0, right: 0, bottom: -40, zIndex: -1 }]}>
+        <MaskedView
+          maskElement={<LinearGradient colors={mask.colors as any} locations={mask.locations as any} style={StyleSheet.absoluteFill} />}
+          style={StyleSheet.absoluteFill}>
+          <LinearGradient colors={['rgba(255,255,255,0.85)', 'rgba(255,255,255,0.8)', 'rgba(255,255,255,0)']} style={StyleSheet.absoluteFill} />
+          <BlurView intensity={100} tint='light' style={StyleSheet.absoluteFill} />
+        </MaskedView>
+      </Animated.View>
+
       <Pressable
         accessibilityLabel='Open drawer'
         accessibilityRole='button'
         onPress={openDrawer}
         style={({ pressed }) => [styles.profileButton, pressed && styles.pressed]}>
-        <ThemedView alignItems='center' backgroundColor={colors.primary} borderRadius={'pill'} height={44} justifyContent='center' width={44}>
-          <ThemedText color={Palette.surfaceBase} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20}>
-            {adminProfile.initials}
-          </ThemedText>
-        </ThemedView>
+        <Image
+          source={{ uri: 'https://cdn-icons-png.flaticon.com/128/149/149071.png' }}
+          style={{ width: 44, height: 44, borderRadius: 22 }}
+          contentFit="cover"
+        />
         <ThemedView gap={2} minWidth={0}>
           <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={16}>
             Welcome 👋
@@ -58,11 +92,15 @@ function HeaderIcon({ accessibilityLabel, name }: { accessibilityLabel: string; 
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    backgroundColor: Palette.surfaceBase,
     flexDirection: 'row',
     gap: mhs(24),
     paddingBottom: mhs(4),
     paddingHorizontal: mhs(12),
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
   },
   iconButton: {
     alignItems: 'center',

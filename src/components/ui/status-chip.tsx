@@ -9,7 +9,8 @@ const toneStyles = {
   danger: { backgroundColor: '#FEE4E2', color: '#B42318' },
   muted: { backgroundColor: Palette.surfaceMuted, color: Palette.textSecondary },
   success: { backgroundColor: '#D1FADF', color: '#027A48' },
-  warning: { backgroundColor: '#FEF0C7', color: '#B54708' } };
+  warning: { backgroundColor: '#FEF0C7', color: '#B54708' },
+};
 
 export function StatusChip({ label, tone = 'muted' }: { label: string; tone?: StatusTone }) {
   const colors = toneStyles[tone];
@@ -29,8 +30,11 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     maxWidth: '100%',
     paddingHorizontal: 10,
-    paddingVertical: 5 },
+    paddingVertical: 5,
+  },
   label: {
     fontFamily: FontFamily.semibold,
     fontSize: 12,
-    lineHeight: 16 } });
+    lineHeight: 16,
+  },
+});

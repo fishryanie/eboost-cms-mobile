@@ -5,7 +5,8 @@ import {
   BottomSheetFooter,
   BottomSheetModal,
   BottomSheetTextInput,
-  type BottomSheetFooterProps } from '@gorhom/bottom-sheet';
+  type BottomSheetFooterProps,
+} from '@gorhom/bottom-sheet';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -97,12 +98,12 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
 
   function handleNext() {
     if (!selectedCharger) return;
-    
+
     close();
-    
+
     const chargerType = getChargerType(selectedCharger);
     const boxIdentifier = getUtilityChargerTriggerId(selectedCharger);
-    
+
     router.push({
       pathname: '/technical/replace-meter',
       params: {
@@ -111,7 +112,8 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
         partnerBoxId: String(selectedCharger.partnerBoxId || ''),
         partnerLocationId: String(selectedCharger.partnerLocationId || ''),
         uniqueId: selectedCharger.uniqueId || '',
-        vendorId: selectedCharger.vendorId || '' }
+        vendorId: selectedCharger.vendorId || '',
+      },
     });
   }
 
@@ -125,7 +127,8 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
               gap: metrics.footerGap,
               paddingBottom: Math.max(bottom, mhs(16)),
               paddingHorizontal: metrics.footerPaddingHorizontal,
-              paddingTop: metrics.footerPaddingTop },
+              paddingTop: metrics.footerPaddingTop,
+            },
           ]}>
           <ThemedView flex={1}>
             <AppButton block label='Cancel' onPress={close} variant='ghost' />
@@ -177,7 +180,8 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
                 gap: metrics.headerGap,
                 paddingBottom: metrics.headerPaddingBottom,
                 paddingHorizontal: metrics.headerPaddingHorizontal,
-                paddingTop: metrics.headerPaddingTop },
+                paddingTop: metrics.headerPaddingTop,
+              },
             ]}>
             <ThemedView gap={metrics.sectionGap}>
               <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={metrics.titleFontSize} lineHeight={metrics.titleLineHeight}>
@@ -205,7 +209,8 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
                 {
                   fontSize: metrics.inputFontSize,
                   minHeight: metrics.inputMinHeight,
-                  paddingHorizontal: metrics.inputPaddingHorizontal },
+                  paddingHorizontal: metrics.inputPaddingHorizontal,
+                },
               ]}
               value={query}
             />
@@ -224,7 +229,8 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
                 {
                   gap: metrics.itemGap,
                   paddingHorizontal: metrics.itemPaddingHorizontal,
-                  paddingVertical: metrics.itemPaddingVertical },
+                  paddingVertical: metrics.itemPaddingVertical,
+                },
                 selected && styles.chargerItemSelected,
                 pressed && styles.pressed,
               ]}>
@@ -263,14 +269,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: mhs(12),
     paddingHorizontal: mhs(12),
-    paddingVertical: 10 },
+    paddingVertical: 10,
+  },
   chargerItemSelected: {
-    opacity: 1 },
+    opacity: 1,
+  },
   content: {
-    paddingTop: mhs(4) },
+    paddingTop: mhs(4),
+  },
   flexInput: {
     flex: 1,
-    minWidth: 0 },
+    minWidth: 0,
+  },
   footer: {
     backgroundColor: Palette.surfaceRaised,
     borderTopColor: Palette.borderSubtle,
@@ -278,13 +288,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: mhs(8),
     paddingHorizontal: mhs(12),
-    paddingTop: mhs(8) },
+    paddingTop: mhs(8),
+  },
   header: {
     backgroundColor: Palette.surfaceRaised,
     gap: mhs(8),
     paddingBottom: mhs(12),
     paddingHorizontal: mhs(12),
-    paddingTop: mhs(8) },
+    paddingTop: mhs(8),
+  },
   input: {
     backgroundColor: Palette.surfaceMuted,
     borderColor: Palette.border,
@@ -294,16 +306,20 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.semibold,
     fontSize: 13,
     minHeight: 42,
-    paddingHorizontal: mhs(12) },
+    paddingHorizontal: mhs(12),
+  },
   notice: {
     backgroundColor: Palette.dangerSurface,
     borderRadius: mhs(12),
     paddingHorizontal: mhs(12),
-    paddingVertical: mhs(8) },
+    paddingVertical: mhs(8),
+  },
   noticeSuccess: {
-    backgroundColor: '#E8F4EF' },
+    backgroundColor: '#E8F4EF',
+  },
   pressed: {
-    opacity: 0.72 },
+    opacity: 0.72,
+  },
   radio: {
     alignItems: 'center',
     borderColor: Palette.border,
@@ -311,16 +327,21 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     height: 22,
     justifyContent: 'center',
-    width: 22 },
+    width: 22,
+  },
   radioDot: {
     backgroundColor: '#FFFFFF',
     borderRadius: 999,
     height: 8,
-    width: 8 },
+    width: 8,
+  },
   radioSelected: {
     backgroundColor: Palette.accent,
-    borderColor: Palette.accent },
+    borderColor: Palette.accent,
+  },
   separator: {
     backgroundColor: Palette.borderSubtle,
     height: StyleSheet.hairlineWidth,
-    marginLeft: mhs(16) } });
+    marginLeft: mhs(16),
+  },
+});

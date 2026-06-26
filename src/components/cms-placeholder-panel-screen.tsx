@@ -44,7 +44,8 @@ export function CmsSectionScreen({ section }: { section: CmsMobileSection }) {
             onPress={() =>
               router.push({
                 pathname: `/${section.key}/[panel]`,
-                params: { panel: item.key } } as never)
+                params: { panel: item.key },
+              } as never)
             }
           />
         )}
@@ -63,7 +64,11 @@ export function CmsPlaceholderPanelScreen({ accentColor, onBack, panel }: { acce
         keyExtractor={item => item.key}
         ListHeaderComponent={
           <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
-            <Pressable accessibilityLabel='Back' accessibilityRole='button' onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+            <Pressable
+              accessibilityLabel='Back'
+              accessibilityRole='button'
+              onPress={onBack}
+              style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
               <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
             </Pressable>
             <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={21} textAlign='center'>
@@ -122,18 +127,21 @@ const styles = StyleSheet.create({
     borderRadius: mhs(16),
     height: 34,
     justifyContent: 'center',
-    width: 34 },
+    width: 34,
+  },
   content: {
     gap: mhs(12),
     paddingBottom: 120,
     paddingHorizontal: screenHorizontalPadding,
-    paddingTop: mhs(8) },
+    paddingTop: mhs(8),
+  },
   headerIcon: {
     alignItems: 'center',
     borderRadius: mhs(21),
     height: 52,
     justifyContent: 'center',
-    width: 52 },
+    width: 52,
+  },
   panelCard: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceRaised,
@@ -143,20 +151,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: mhs(12),
     minHeight: 82,
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   panelIcon: {
     alignItems: 'center',
     borderRadius: mhs(16),
     height: 46,
     justifyContent: 'center',
-    width: 46 },
+    width: 46,
+  },
   placeholderCard: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
     borderRadius: mhs(21),
     borderWidth: 1,
     gap: mhs(12),
-    padding: mhs(16) },
+    padding: mhs(16),
+  },
   pressed: {
     opacity: 0.72,
-    transform: [{ scale: 0.99 }] } });
+    transform: [{ scale: 0.99 }],
+  },
+});

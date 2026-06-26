@@ -69,7 +69,8 @@ export function CircularProgress({ color, percent }: { color: string; percent: n
 function getBoxStatusItems(status: BoxStatusData, meta: BoxStatusMeta[]) {
   return meta.map(item => ({
     ...item,
-    value: Number(status[item.key] || 0) }));
+    value: Number(status[item.key] || 0),
+  }));
 }
 
 export function StatusMetadataLine({ segments }: { segments: BoxStatusSegment[] }) {
@@ -91,7 +92,8 @@ export function VehicleNetworkLane({
   query,
   summary,
   title,
-  vehicle }: {
+  vehicle,
+}: {
   accent: string;
   isFirst?: boolean;
   query: {
@@ -105,9 +107,7 @@ export function VehicleNetworkLane({
   vehicle: TechnicalVehicle;
 }) {
   if (query.isLoading) {
-    return (
-      <ThemedView accessibilityLabel={`Loading ${title.toLowerCase()}`} borderRadius={'medium'} height={42} loading style={styles.connectorStrip} />
-    );
+    return <ThemedView accessibilityLabel={`Loading ${title.toLowerCase()}`} borderRadius={'medium'} height={42} loading style={styles.connectorStrip} />;
   }
 
   if (query.error) {
@@ -173,7 +173,8 @@ export function NetworkStatusSection({
   bikeQuery,
   carBoxStatusQuery,
   carQuery,
-  onViewIssues }: {
+  onViewIssues,
+}: {
   bikeBoxStatusQuery: { data?: BoxStatusData; error: Error | null; isLoading: boolean; refetch: () => void };
   bikeQuery: { data?: { items: ConnectionLogRecord[] }; error: Error | null; isLoading: boolean; refetch: () => void };
   carBoxStatusQuery: { data?: BoxStatusData; error: Error | null; isLoading: boolean; refetch: () => void };
@@ -185,7 +186,8 @@ export function NetworkStatusSection({
   const total = {
     boxes: bike.boxes + car.boxes,
     online: bike.online + car.online,
-    offline: bike.offline + car.offline };
+    offline: bike.offline + car.offline,
+  };
   const totalPercent = total.boxes ? Math.round((total.online / total.boxes) * 100) : 0;
   const loading = bikeQuery.isLoading || carQuery.isLoading;
   const error = bikeQuery.error || carQuery.error;

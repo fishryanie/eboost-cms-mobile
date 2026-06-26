@@ -1,5 +1,5 @@
-import React, { createContext, memo, useContext, useState } from "react";
-import { View, Pressable, StyleSheet, Platform, ViewStyle } from "react-native";
+import React, { createContext, memo, useContext, useState } from 'react';
+import { View, Pressable, StyleSheet, Platform, ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,16 +9,10 @@ import Animated, {
   useAnimatedProps,
   Easing,
   withSpring,
-} from "react-native-reanimated";
-import { BlurView, type BlurViewProps } from "expo-blur";
-import * as Haptics from "expo-haptics";
-import type {
-  FlipCardBackProps,
-  FlipCardFrontProps,
-  FlipCardContextValue,
-  FlipCardProps,
-  FlipCardTriggerProps,
-} from "./types";
+} from 'react-native-reanimated';
+import { BlurView, type BlurViewProps } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import type { FlipCardBackProps, FlipCardFrontProps, FlipCardContextValue, FlipCardProps, FlipCardTriggerProps } from './types';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 const FlipCardContext = createContext<FlipCardContextValue | null>(null);
@@ -26,9 +20,7 @@ const FlipCardContext = createContext<FlipCardContextValue | null>(null);
 const useFlipCard = (): FlipCardContextValue => {
   const context = useContext<FlipCardContextValue | null>(FlipCardContext);
   if (!context) {
-    throw new Error(
-      "FlipCard compound components must be used within FlipCard",
-    );
+    throw new Error('FlipCard compound components must be used within FlipCard');
   }
   return context;
 };
@@ -49,9 +41,7 @@ export const FlipCard: React.FC<FlipCardProps> & {
   onFlip,
   blurTint,
   scaleOnPress = true,
-}: FlipCardProps):
-  | (React.ReactElement & React.ReactNode & React.JSX.Element)
-  | null => {
+}: FlipCardProps): (React.ReactElement & React.ReactNode & React.JSX.Element) | null => {
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const rotation = useSharedValue<number>(0);
   const scale = useSharedValue<number>(1);
@@ -84,113 +74,52 @@ export const FlipCard: React.FC<FlipCardProps> & {
         animationDuration,
         rotation,
         scale,
-        tint: blurTint || "light",
+        tint: blurTint || 'light',
         scaleEnabled: scaleOnPress,
-      }}
-    >
-      <View style={[styles.container, containerStyle, width !== undefined && { width }, height !== undefined && { height }]}>
-        {children}
-      </View>
+      }}>
+      <View style={[styles.container, containerStyle, width !== undefined && { width }, height !== undefined && { height }]}>{children}</View>
     </FlipCardContext.Provider>
   );
 };
 
-const Front: React.FC<FlipCardFrontProps> &
-  React.FunctionComponent<FlipCardFrontProps> = memo<FlipCardFrontProps>(
-  ({
-    children,
-    style,
-  }: FlipCardFrontProps):
-    | (React.ReactNode & React.JSX.Element & React.ReactElement)
-    | null => {
-    const {
-      isFlipped,
-      rotation,
-      scale,
-      width,
-      height,
-      borderRadius,
-      blurIntensity,
-      tint,
-    }: FlipCardContextValue = useFlipCard();
+const Front: React.FC<FlipCardFrontProps> & React.FunctionComponent<FlipCardFrontProps> = memo<FlipCardFrontProps>(
+  ({ children, style }: FlipCardFrontProps): (React.ReactNode & React.JSX.Element & React.ReactElement) | null => {
+    const { isFlipped, rotation, scale, width, height, borderRadius, blurIntensity, tint }: FlipCardContextValue = useFlipCard();
 
-    const frontAnimatedStylez = useAnimatedStyle<
-      Pick<ViewStyle, "transform" | "opacity">
-    >(() => {
-      const rotateY = interpolate(
-        rotation.value,
-        [0, 180],
-        [0, 180],
-        Extrapolation.CLAMP,
-      );
+    const frontAnimatedStylez = useAnimatedStyle<Pick<ViewStyle, 'transform' | 'opacity'>>(() => {
+      const rotateY = interpolate(rotation.value, [0, 180], [0, 180], Extrapolation.CLAMP);
 
-      const opacity = interpolate(
-        rotation.value,
-        [0, 90, 90.01, 180],
-        [1, 1, 0, 0],
-        Extrapolation.CLAMP,
-      );
+      const opacity = interpolate(rotation.value, [0, 90, 90.01, 180], [1, 1, 0, 0], Extrapolation.CLAMP);
 
       return {
-        transform: [
-          { perspective: 1000 },
-          { rotateY: `${rotateY}deg` },
-          { scale: scale.value },
-        ],
+        transform: [{ perspective: 1000 }, { rotateY: `${rotateY}deg` }, { scale: scale.value }],
         opacity,
       };
     });
 
-    const frontBlurPropz = useAnimatedProps<Pick<BlurViewProps, "intensity">>(
-      () => {
-        const intensity =
-          rotation.value <= 20
-            ? withSpring<number>(
-                interpolate(
-                  rotation.value,
-                  [0, 20],
-                  [0, blurIntensity],
-                  Extrapolation.CLAMP,
-                ),
-              )
-            : rotation.value >= 160
-              ? withSpring<number>(
-                  interpolate(
-                    rotation.value,
-                    [160, 180],
-                    [blurIntensity, 0],
-                    Extrapolation.CLAMP,
-                  ),
-                )
-              : blurIntensity;
+    const frontBlurPropz = useAnimatedProps<Pick<BlurViewProps, 'intensity'>>(() => {
+      const intensity =
+        rotation.value <= 20
+          ? withSpring<number>(interpolate(rotation.value, [0, 20], [0, blurIntensity], Extrapolation.CLAMP))
+          : rotation.value >= 160
+            ? withSpring<number>(interpolate(rotation.value, [160, 180], [blurIntensity, 0], Extrapolation.CLAMP))
+            : blurIntensity;
 
-        return {
-          intensity,
-        };
-      },
-    );
+      return {
+        intensity,
+      };
+    });
 
     return (
-      <Animated.View
-        pointerEvents={isFlipped ? "none" : "auto"}
-        style={[
-          styles.front,
-          { borderRadius },
-          frontAnimatedStylez,
-          style,
-        ]}
-      >
+      <Animated.View pointerEvents={isFlipped ? 'none' : 'auto'} style={[styles.front, { borderRadius }, frontAnimatedStylez, style]}>
         {children}
 
-        {Platform.OS === "ios" && (
+        {Platform.OS === 'ios' && (
           <AnimatedBlurView
-            pointerEvents="none"
+            pointerEvents='none'
             tint={tint as any}
             animatedProps={frontBlurPropz}
-            style={[
-              StyleSheet.absoluteFill,
-              { borderRadius, overflow: "hidden" },
-            ]}
+            style={[StyleSheet.absoluteFill, { borderRadius, overflow: 'hidden' }]}
           />
         )}
       </Animated.View>
@@ -198,99 +127,41 @@ const Front: React.FC<FlipCardFrontProps> &
   },
 );
 
-const Back: React.FC<FlipCardBackProps> &
-  React.FunctionComponent<FlipCardBackProps> = memo<FlipCardBackProps>(
-  ({
-    children,
-    style,
-  }: FlipCardBackProps):
-    | (React.ReactNode & React.JSX.Element & React.ReactElement)
-    | null => {
-    const {
-      isFlipped,
-      rotation,
-      scale,
-      width,
-      height,
-      borderRadius,
-      blurIntensity,
-      tint,
-    }: FlipCardContextValue = useFlipCard();
+const Back: React.FC<FlipCardBackProps> & React.FunctionComponent<FlipCardBackProps> = memo<FlipCardBackProps>(
+  ({ children, style }: FlipCardBackProps): (React.ReactNode & React.JSX.Element & React.ReactElement) | null => {
+    const { isFlipped, rotation, scale, width, height, borderRadius, blurIntensity, tint }: FlipCardContextValue = useFlipCard();
 
-    const backAnimatedStylez = useAnimatedStyle<
-      Pick<ViewStyle, "transform" | "opacity">
-    >(() => {
-      const rotateY = interpolate(
-        rotation.value,
-        [0, 180],
-        [180, 360],
-        Extrapolation.CLAMP,
-      );
+    const backAnimatedStylez = useAnimatedStyle<Pick<ViewStyle, 'transform' | 'opacity'>>(() => {
+      const rotateY = interpolate(rotation.value, [0, 180], [180, 360], Extrapolation.CLAMP);
 
-      const opacity = interpolate(
-        rotation.value,
-        [0, 89.99, 90, 180],
-        [0, 0, 1, 1],
-        Extrapolation.CLAMP,
-      );
+      const opacity = interpolate(rotation.value, [0, 89.99, 90, 180], [0, 0, 1, 1], Extrapolation.CLAMP);
       return {
-        transform: [
-          { perspective: 1000 },
-          { rotateY: `${rotateY}deg` },
-          { scale: scale.value },
-        ],
+        transform: [{ perspective: 1000 }, { rotateY: `${rotateY}deg` }, { scale: scale.value }],
         opacity,
       };
     });
-    const backBlurPropz = useAnimatedProps<Pick<BlurViewProps, "intensity">>(
-      () => {
-        const intensity =
-          rotation.value >= 160
-            ? withSpring(
-                interpolate(
-                  rotation.value,
-                  [180, 160],
-                  [0, blurIntensity],
-                  Extrapolation.CLAMP,
-                ),
-              )
-            : rotation.value <= 20
-              ? withSpring(
-                  interpolate(
-                    rotation.value,
-                    [20, 0],
-                    [blurIntensity, 0],
-                    Extrapolation.CLAMP,
-                  ),
-                )
-              : blurIntensity;
+    const backBlurPropz = useAnimatedProps<Pick<BlurViewProps, 'intensity'>>(() => {
+      const intensity =
+        rotation.value >= 160
+          ? withSpring(interpolate(rotation.value, [180, 160], [0, blurIntensity], Extrapolation.CLAMP))
+          : rotation.value <= 20
+            ? withSpring(interpolate(rotation.value, [20, 0], [blurIntensity, 0], Extrapolation.CLAMP))
+            : blurIntensity;
 
-        return {
-          intensity,
-        };
-      },
-    );
+      return {
+        intensity,
+      };
+    });
 
     return (
-      <Animated.View
-        pointerEvents={isFlipped ? "auto" : "none"}
-        style={[
-          styles.back,
-          { borderRadius },
-          backAnimatedStylez,
-          style,
-        ]}
-      >
+      <Animated.View pointerEvents={isFlipped ? 'auto' : 'none'} style={[styles.back, { borderRadius }, backAnimatedStylez, style]}>
         {children}
-        {Platform.OS === "ios" && (
+        {Platform.OS === 'ios' && (
           <AnimatedBlurView
-            pointerEvents="none"
+            pointerEvents='none'
             tint={tint as any}
             animatedProps={backBlurPropz}
-            style={[
-              StyleSheet.absoluteFill,
-              { borderRadius, overflow: "hidden" },
-            ]}
+            style={[StyleSheet.absoluteFill, { borderRadius, overflow: 'hidden' }]}
           />
         )}
       </Animated.View>
@@ -298,15 +169,8 @@ const Back: React.FC<FlipCardBackProps> &
   },
 );
 
-const Trigger: React.FC<FlipCardTriggerProps> &
-  React.FunctionComponent<FlipCardTriggerProps> = memo<FlipCardTriggerProps>(
-  ({
-    children,
-    asChild,
-    ...props
-  }: FlipCardTriggerProps):
-    | (React.ReactNode & React.JSX.Element & React.ReactElement)
-    | null => {
+const Trigger: React.FC<FlipCardTriggerProps> & React.FunctionComponent<FlipCardTriggerProps> = memo<FlipCardTriggerProps>(
+  ({ children, asChild, ...props }: FlipCardTriggerProps): (React.ReactNode & React.JSX.Element & React.ReactElement) | null => {
     const { flip, scale, scaleEnabled }: FlipCardContextValue = useFlipCard();
 
     const onPressIn = () => {
@@ -329,12 +193,7 @@ const Trigger: React.FC<FlipCardTriggerProps> &
     }
 
     return (
-      <Pressable
-        onPress={flip}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        {...props}
-      >
+      <Pressable onPress={flip} onPressIn={onPressIn} onPressOut={onPressOut} {...props}>
         {children}
       </Pressable>
     );
@@ -346,18 +205,17 @@ FlipCard.Back = Back;
 FlipCard.Trigger = Trigger;
 
 const styles = StyleSheet.create({
-  container: {
-  },
+  container: {},
   front: {
-    backfaceVisibility: "hidden",
-    width: "100%",
+    backfaceVisibility: 'hidden',
+    width: '100%',
   },
   back: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backfaceVisibility: "hidden",
+    backfaceVisibility: 'hidden',
   },
 });

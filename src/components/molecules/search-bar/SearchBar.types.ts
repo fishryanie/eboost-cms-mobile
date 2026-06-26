@@ -1,9 +1,4 @@
-import type {
-  DimensionValue,
-  StyleProp,
-  TextStyle,
-  ViewStyle
-} from "react-native";
+import type { DimensionValue, StyleProp, TextStyle, ViewStyle } from 'react-native';
 
 export interface SearchBarProps {
   /**

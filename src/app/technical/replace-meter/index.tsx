@@ -74,7 +74,8 @@ export default function ReplaceMeterScreen() {
         newMeterIndex: resolvedNewMeterIndex!,
         partnerBoxId: resolvedPartnerBoxId!,
         partnershipLocationId: resolvedPartnershipLocationId!,
-        replacementDate: replacementDate.trim() });
+        replacementDate: replacementDate.trim(),
+      });
       setIsSubmitting(false);
       Alert.alert('Success', `Created reports #${response.removeMeterReportId} and #${response.installMeterReportId}.`, [
         { text: 'OK', onPress: () => router.back() },
@@ -139,4 +140,5 @@ const styles = StyleSheet.create({
   content: {
     padding: mhs(16),
     paddingBottom: 100, // Make room for the BottomButton
-  } });
+  },
+});

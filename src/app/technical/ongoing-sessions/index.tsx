@@ -33,11 +33,13 @@ export default function OngoingSessionsRoute() {
           {
             id: 'bike',
             title: 'Xe máy',
-            contentComponent: <SessionList vehicle='bike' searchPlaceholder='Search bike session' /> },
+            contentComponent: <SessionList vehicle='bike' searchPlaceholder='Search bike session' />,
+          },
           {
             id: 'car',
             title: 'Ô tô',
-            contentComponent: <SessionList vehicle='car' searchPlaceholder='Search car session' /> },
+            contentComponent: <SessionList vehicle='car' searchPlaceholder='Search car session' />,
+          },
         ]}
         activeColor={Palette.accent}
         inactiveColor={Palette.textSecondary}
@@ -57,7 +59,8 @@ function useOngoingSessionsQuery({ page, search, vehicle }: { page: number; sear
       );
       return getCollectionResult(response);
     },
-    queryKey: ['technical', 'ongoing-sessions', vehicle, { page, search, status }] });
+    queryKey: ['technical', 'ongoing-sessions', vehicle, { page, search, status }],
+  });
 }
 
 function SessionList({ searchPlaceholder, vehicle }: { searchPlaceholder: string; vehicle: TechnicalVehicle }) {

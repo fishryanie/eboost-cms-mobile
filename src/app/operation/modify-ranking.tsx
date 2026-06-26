@@ -35,7 +35,7 @@ export default function ModifyRankingScreen() {
 
   const usersQuery = useInfiniteUsers(query);
   const users = useMemo(() => usersQuery.data?.pages.flatMap(page => page.items) || [], [usersQuery.data]);
-  
+
   const hasSearched = query.trim() !== '';
   const selectedUser = hasSearched ? users[0] : undefined;
   const selectedUserId = selectedUser?.id;
@@ -117,9 +117,7 @@ export default function ModifyRankingScreen() {
               value={queryInput}
             />
 
-            {usersQuery.isFetching && (
-              <ThemedView borderRadius={'large'} height={84} loading marginTop={16} />
-            )}
+            {usersQuery.isFetching && <ThemedView borderRadius={'large'} height={84} loading marginTop={16} />}
 
             {hasSearched && users.length === 0 && !usersQuery.isFetching && (
               <ThemedText color={Palette.textSecondary} fontSize={12} marginTop={8}>
@@ -142,13 +140,8 @@ export default function ModifyRankingScreen() {
               <ThemedView borderRadius={'large'} height={56} loading />
             ) : (
               <Pressable onPress={() => levelSheetRef.current?.present()}>
-                <ThemedView pointerEvents="none">
-                  <FloatingTextInput
-                    label='* Select Ranking Level'
-                    editable={false}
-                    value={selectedLevel?.name || ''}
-                    placeholder='Select a level'
-                  />
+                <ThemedView pointerEvents='none'>
+                  <FloatingTextInput label='* Select Ranking Level' editable={false} value={selectedLevel?.name || ''} placeholder='Select a level' />
                 </ThemedView>
               </Pressable>
             )}
@@ -241,11 +234,7 @@ export default function ModifyRankingScreen() {
         </ThemedView>
       </Modal>
 
-      <BottomSheetModal
-        ref={levelSheetRef}
-        backdropComponent={renderBackdrop}
-        enablePanDownToClose
-        snapPoints={['60%']}>
+      <BottomSheetModal ref={levelSheetRef} backdropComponent={renderBackdrop} enablePanDownToClose snapPoints={['60%']}>
         <BottomSheetScrollView contentContainerStyle={{ padding: 20 }}>
           <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={18} marginBottom={16}>
             Select Ranking Level

@@ -5,7 +5,8 @@ import {
   BottomSheetFooter,
   BottomSheetModal,
   BottomSheetTextInput,
-  type BottomSheetFooterProps } from '@gorhom/bottom-sheet';
+  type BottomSheetFooterProps,
+} from '@gorhom/bottom-sheet';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
@@ -24,7 +25,8 @@ import {
   requestTriggerBox,
   requestUnlockBox,
   stringifyTriggerBoxResponse,
-  type UtilityCharger } from './trigger-box-service';
+  type UtilityCharger,
+} from './trigger-box-service';
 
 type TriggerBoxSheetProps = {
   mode?: 'reset' | 'trigger' | 'unlock';
@@ -104,7 +106,9 @@ function formatTimestamp(timestamp?: unknown) {
       hour: '2-digit',
       minute: '2-digit',
       month: '2-digit',
-      year: 'numeric' }) };
+      year: 'numeric',
+    }),
+  };
 }
 
 function getTriggerResponseSummary(response: unknown): TriggerResponseSummary {
@@ -116,7 +120,8 @@ function getTriggerResponseSummary(response: unknown): TriggerResponseSummary {
   const phases = phaseLabels.map(phase => ({
     currentText: formatSample(getSampleValue(samples, 'Current.Import', phase)),
     phase,
-    voltageText: formatSample(getSampleValue(samples, 'Voltage', phase)) }));
+    voltageText: formatSample(getSampleValue(samples, 'Voltage', phase)),
+  }));
 
   return {
     chargePointID: typeof root.chargePointID === 'string' ? root.chargePointID : '--',
@@ -126,7 +131,8 @@ function getTriggerResponseSummary(response: unknown): TriggerResponseSummary {
     powerText: formatSample(getSampleValue(samples, 'Power.Active.Import')),
     rawTimestamp: timestamp.rawTimestamp,
     timestampText: timestamp.timestampText,
-    transactionID: root.transactionID !== undefined && root.transactionID !== null ? String(root.transactionID) : '--' };
+    transactionID: root.transactionID !== undefined && root.transactionID !== null ? String(root.transactionID) : '--',
+  };
 }
 
 function InfoPill({ label, metrics, value }: { label: string; metrics: ServiceSheetMetrics; value: string }) {
@@ -171,7 +177,8 @@ function TriggerResponseModal({
   onClose,
   response,
   responseText,
-  visible }: {
+  visible,
+}: {
   mode: BoxActionMode;
   onClose: () => void;
   response: unknown;
@@ -466,7 +473,8 @@ export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerB
             {
               gap: metrics.footerGap,
               paddingHorizontal: metrics.footerPaddingHorizontal,
-              paddingTop: metrics.footerPaddingTop },
+              paddingTop: metrics.footerPaddingTop,
+            },
             footerPadding,
           ]}>
           <ThemedView flex={1}>
@@ -519,7 +527,8 @@ export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerB
                 gap: metrics.headerGap,
                 paddingBottom: metrics.headerPaddingBottom,
                 paddingHorizontal: metrics.headerPaddingHorizontal,
-                paddingTop: metrics.headerPaddingTop },
+                paddingTop: metrics.headerPaddingTop,
+              },
               headerPadding,
             ]}>
             {toastMessage ? (
@@ -565,7 +574,8 @@ export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerB
                   fontSize: metrics.inputFontSize,
                   lineHeight: metrics.inputLineHeight,
                   paddingHorizontal: metrics.inputPaddingHorizontal,
-                  paddingVertical: metrics.inputPaddingVertical },
+                  paddingVertical: metrics.inputPaddingVertical,
+                },
               ]}
               value={query}
             />
@@ -589,7 +599,8 @@ export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerB
                 {
                   gap: metrics.itemGap,
                   paddingHorizontal: metrics.itemPaddingHorizontal,
-                  paddingVertical: metrics.itemPaddingVertical },
+                  paddingVertical: metrics.itemPaddingVertical,
+                },
                 selected && styles.chargerItemSelected,
                 pressed && styles.pressed,
               ]}>
@@ -635,15 +646,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: mhs(12),
     paddingHorizontal: mhs(12),
-    paddingVertical: 10 },
+    paddingVertical: 10,
+  },
   chargerItemSelected: {
-    opacity: 1 },
+    opacity: 1,
+  },
   chargerSeparator: {
     backgroundColor: Palette.borderSubtle,
     height: StyleSheet.hairlineWidth,
-    marginLeft: mhs(16) },
+    marginLeft: mhs(16),
+  },
   content: {
-    paddingTop: mhs(4) },
+    paddingTop: mhs(4),
+  },
   footer: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
@@ -651,17 +666,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: mhs(8),
     paddingHorizontal: mhs(12),
-    paddingTop: mhs(8) },
+    paddingTop: mhs(8),
+  },
   notice: {
     backgroundColor: '#FFF1F0',
     borderColor: '#FDA29B',
     borderRadius: mhs(16),
     borderWidth: 1,
     paddingHorizontal: mhs(12),
-    paddingVertical: mhs(8) },
+    paddingVertical: mhs(8),
+  },
   noticeSuccess: {
     backgroundColor: '#F0FAF4',
-    borderColor: '#CDEEDB' },
+    borderColor: '#CDEEDB',
+  },
   infoPill: {
     backgroundColor: Palette.surfaceMuted,
     borderColor: Palette.borderSubtle,
@@ -670,7 +688,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     gap: mhs(2),
     minWidth: 130,
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   metricCard: {
     backgroundColor: Palette.surfaceMuted,
     borderColor: Palette.borderSubtle,
@@ -680,19 +699,23 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     gap: mhs(4),
     minWidth: 150,
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   metricCardAccent: {
     backgroundColor: '#F0FAF4',
-    borderColor: '#CDEEDB' },
+    borderColor: '#CDEEDB',
+  },
   modalCloseButton: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceMuted,
     borderRadius: 999,
     height: 34,
     justifyContent: 'center',
-    width: 34 },
+    width: 34,
+  },
   pressed: {
-    opacity: 0.72 },
+    opacity: 0.72,
+  },
   radio: {
     alignItems: 'center',
     borderColor: Palette.border,
@@ -700,26 +723,32 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     height: 22,
     justifyContent: 'center',
-    width: 22 },
+    width: 22,
+  },
   radioDot: {
     backgroundColor: Palette.accent,
     borderRadius: 999,
     height: 10,
-    width: 10 },
+    width: 10,
+  },
   radioSelected: {
-    borderColor: Palette.accent },
+    borderColor: Palette.accent,
+  },
   responseModal: {
-    margin: 0 },
+    margin: 0,
+  },
   responseModalContent: {
     gap: mhs(16),
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   rawPanel: {
     backgroundColor: '#F8FAFC',
     borderColor: Palette.borderSubtle,
     borderRadius: mhs(16),
     borderWidth: 1,
     gap: mhs(8),
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   searchInput: {
     backgroundColor: Palette.surfaceMuted,
     borderRadius: mhs(21),
@@ -728,7 +757,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     paddingHorizontal: mhs(16),
-    paddingVertical: 10 },
+    paddingVertical: 10,
+  },
   stickyHeader: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
@@ -736,30 +766,36 @@ const styles = StyleSheet.create({
     gap: mhs(12),
     paddingBottom: mhs(12),
     paddingHorizontal: mhs(12),
-    paddingTop: mhs(8) },
+    paddingTop: mhs(8),
+  },
   successIcon: {
     alignItems: 'center',
     backgroundColor: '#E8F4EF',
     borderRadius: 999,
     height: 52,
     justifyContent: 'center',
-    width: 52 },
+    width: 52,
+  },
   phasePanel: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
     borderRadius: mhs(16),
     borderWidth: 1,
-    padding: mhs(12) },
+    padding: mhs(12),
+  },
   phaseRow: {
     borderColor: Palette.borderSubtle,
     borderTopWidth: 1,
     flexDirection: 'row',
     gap: mhs(8),
-    paddingVertical: mhs(8) },
+    paddingVertical: mhs(8),
+  },
   timestampPanel: {
     backgroundColor: '#F8FAFC',
     borderColor: Palette.borderSubtle,
     borderRadius: mhs(16),
     borderWidth: 1,
     gap: mhs(2),
-    padding: mhs(12) } });
+    padding: mhs(12),
+  },
+});

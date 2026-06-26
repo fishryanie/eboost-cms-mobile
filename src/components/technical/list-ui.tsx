@@ -9,7 +9,14 @@ export function SectionTitle({ actionLabel, onAction, subtitle, title }: { actio
   return (
     <ThemedView gap={'one'} minWidth={0}>
       <ThemedView alignItems='center' flexDirection='row' gap={'two'} justifyContent='space-between'>
-        <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.bold} fontSize={12} letterSpacing={1.8} lineHeight={17} textTransform='uppercase'>
+        <ThemedText
+          color={Palette.textPrimary}
+          flex={1}
+          fontFamily={FontFamily.bold}
+          fontSize={12}
+          letterSpacing={1.8}
+          lineHeight={17}
+          textTransform='uppercase'>
           {title}
         </ThemedText>
         {actionLabel && onAction ? (
@@ -78,7 +85,8 @@ export function ListFooter({
   isFetching,
   onLoadMore,
   page,
-  total }: {
+  total,
+}: {
   canLoadMore: boolean;
   isFetching: boolean;
   onLoadMore: () => void;
@@ -140,7 +148,8 @@ export function getNetworkSummary(items: ConnectionLogRecord[]): NetworkSummary 
     logs: items.length,
     offline,
     online,
-    percent: latest.length ? Math.round((online / latest.length) * 100) : 0 };
+    percent: latest.length ? Math.round((online / latest.length) * 100) : 0,
+  };
 }
 
 export function getNetworkIssues(items: ConnectionLogRecord[], vehicle: TechnicalVehicle): (ConnectionLogRecord & { vehicle: TechnicalVehicle })[] {

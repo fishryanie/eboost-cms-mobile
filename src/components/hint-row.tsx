@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { ThemedText, ThemedView } from 'components/base';
 
-
 type HintRowProps = {
   title?: string;
   hint?: ReactNode;

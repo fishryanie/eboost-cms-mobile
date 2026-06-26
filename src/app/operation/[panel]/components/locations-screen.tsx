@@ -54,7 +54,8 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
           }
           setNewLocationName('');
           router.push({ pathname: '/location/[id]', params: { id: location.id } });
-        } },
+        },
+      },
     );
   }, [createLocation, newLocationName, params.action, router]);
 
@@ -71,7 +72,8 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
       const result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
         mediaTypes: ['images'],
-        quality: 0.85 });
+        quality: 0.85,
+      });
 
       if (result.canceled || !result.assets[0]) return;
 
@@ -81,12 +83,15 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
           file: {
             name: asset.fileName || `location-${location.id}.jpg`,
             type: asset.mimeType || 'image/jpeg',
-            uri: asset.uri },
-          id: location.id },
+            uri: asset.uri,
+          },
+          id: location.id,
+        },
         {
           onError: error => {
             Alert.alert('Upload failed', error.message || 'The location image could not be uploaded.');
-          } },
+          },
+        },
       );
     },
     [uploadLocationImage],
@@ -128,7 +133,11 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
           <ThemedView gap={'three'} padding={'four'}>
             <ThemedView alignItems='center' flexDirection='row' gap={'three'} justifyContent='space-between'>
               {onBack ? (
-                <Pressable accessibilityLabel='Back' accessibilityRole='button' onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && styles.filterChipPressed]}>
+                <Pressable
+                  accessibilityLabel='Back'
+                  accessibilityRole='button'
+                  onPress={onBack}
+                  style={({ pressed }) => [styles.backButton, pressed && styles.filterChipPressed]}>
                   <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
                 </Pressable>
               ) : null}
@@ -235,17 +244,22 @@ const styles = StyleSheet.create({
     borderRadius: mhs(16),
     height: 34,
     justifyContent: 'center',
-    width: 34 },
+    width: 34,
+  },
   bottomModal: {
     justifyContent: 'flex-end',
-    margin: 0 },
+    margin: 0,
+  },
   closeButton: {
     paddingHorizontal: mhs(8),
-    paddingVertical: mhs(4) },
+    paddingVertical: mhs(4),
+  },
   content: {
-    paddingBottom: 120 },
+    paddingBottom: 120,
+  },
   createButton: {
-    minHeight: 42 },
+    minHeight: 42,
+  },
   filterChip: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
@@ -253,21 +267,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: 'center',
     minHeight: 32,
-    paddingHorizontal: mhs(12) },
+    paddingHorizontal: mhs(12),
+  },
   filterChipActive: {
     backgroundColor: Palette.textPrimary,
-    borderColor: Palette.textPrimary },
+    borderColor: Palette.textPrimary,
+  },
   filterChipPressed: {
-    opacity: 0.72 },
+    opacity: 0.72,
+  },
   filterChipText: {
     color: Palette.textSecondary,
     fontFamily: FontFamily.semibold,
     fontSize: 12,
-    lineHeight: 16 },
+    lineHeight: 16,
+  },
   filterChipTextActive: {
-    color: Palette.surfaceBase },
+    color: Palette.surfaceBase,
+  },
   filters: {
-    gap: mhs(8) },
+    gap: mhs(8),
+  },
   modalInput: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.border,
@@ -277,7 +297,8 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.medium,
     fontSize: 16,
     minHeight: 54,
-    paddingHorizontal: mhs(16) },
+    paddingHorizontal: mhs(16),
+  },
 
   search: {
     backgroundColor: Palette.surfaceRaised,
@@ -288,4 +309,6 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.medium,
     fontSize: 15,
     minHeight: 48,
-    paddingHorizontal: mhs(16) } });
+    paddingHorizontal: mhs(16),
+  },
+});

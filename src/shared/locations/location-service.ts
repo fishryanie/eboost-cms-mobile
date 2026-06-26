@@ -1,6 +1,5 @@
 import { apiRequest } from 'utils/api/client';
 
-
 export type CreateLocationInput = {
   name: string;
 };

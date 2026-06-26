@@ -130,15 +130,11 @@ export default function FloatingTextInput({
         />
       </Pressable>
       {isPassword && Boolean(value) ? (
-        <Pressable
-          onPress={() => setShowPassword(p => !p)}
-          style={styles.clearButton}>
+        <Pressable onPress={() => setShowPassword(p => !p)} style={styles.clearButton}>
           {showPassword ? <Eye color={Palette.textTertiary} size={18} /> : <EyeOff color={Palette.textTertiary} size={18} />}
         </Pressable>
       ) : onClear && Boolean(value) ? (
-        <Pressable
-          onPress={onClear}
-          style={styles.clearButton}>
+        <Pressable onPress={onClear} style={styles.clearButton}>
           <SymbolView name='xmark.circle.fill' resizeMode='scaleAspectFit' size={18} tintColor={Palette.textTertiary} />
         </Pressable>
       ) : null}

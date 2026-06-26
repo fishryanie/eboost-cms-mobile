@@ -1,6 +1,5 @@
 import type { ApiRequestOptions } from 'utils/api/types';
 
-
 type RequestLike = <T>(url: string, options?: ApiRequestOptions) => Promise<T>;
 
 const hiddenAllowedStatuses = new Set(['Temporarily Stop', 'Temp Uninstalled', 'Uninstalled', 'Terminated']);

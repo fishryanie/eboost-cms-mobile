@@ -1,4 +1,3 @@
-
 export function getLocationStatus(location: LocationRecord) {
   return location.operationStatus?.label || 'Unknown';
 }

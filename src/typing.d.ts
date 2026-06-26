@@ -258,4 +258,3 @@ type UserProfile = UserListItem & {
   userIdentifier?: string | null;
   userVehicles?: unknown[];
 };
-

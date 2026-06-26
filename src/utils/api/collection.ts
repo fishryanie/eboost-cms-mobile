@@ -10,7 +10,7 @@ export function getCollectionResult<T>(response: ApiListResponse<T>): TechnicalL
   const items = getCollectionItems(response);
   const total = Array.isArray(response)
     ? response.length
-    : response['hydra:totalItems'] ?? response.meta?.total_count ?? response.pagination?.total_items ?? response.total ?? items.length;
+    : (response['hydra:totalItems'] ?? response.meta?.total_count ?? response.pagination?.total_items ?? response.total ?? items.length);
 
   return { items, total };
 }

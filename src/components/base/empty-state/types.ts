@@ -1,14 +1,14 @@
-import type { ReactNode, ReactElement } from "react";
-import { ViewStyle, TextStyle, StyleProp } from "react-native";
+import type { ReactNode, ReactElement } from 'react';
+import { ViewStyle, TextStyle, StyleProp } from 'react-native';
 
 interface IEmptyContextValue {
-  variant?: "default" | "outline";
-  iconVariant?: "icon" | "illustration";
+  variant?: 'default' | 'outline';
+  iconVariant?: 'icon' | 'illustration';
 }
 
 interface IEmptyProps {
   children: ReactNode;
-  variant?: "default" | "outline";
+  variant?: 'default' | 'outline';
   style?: StyleProp<ViewStyle>;
 }
 
@@ -19,7 +19,7 @@ interface IEmptyHeader {
 
 interface IEmptyMedia {
   children: ReactNode;
-  variant?: "icon" | "illustration";
+  variant?: 'icon' | 'illustration';
   style?: StyleProp<ViewStyle>;
 }
 
@@ -40,19 +40,10 @@ interface IEmptyContent {
 
 interface IButton {
   children: ReactNode;
-  variant?: "default" | "outline";
-  size?: "sm" | "md" | "lg";
+  variant?: 'default' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
 }
 
-export type {
-  IEmptyContextValue,
-  IEmptyProps,
-  IEmptyHeader,
-  IEmptyMedia,
-  IEmptyTitle,
-  IEmptyDescription,
-  IEmptyContent,
-  IButton,
-};
+export type { IEmptyContextValue, IEmptyProps, IEmptyHeader, IEmptyMedia, IEmptyTitle, IEmptyDescription, IEmptyContent, IButton };

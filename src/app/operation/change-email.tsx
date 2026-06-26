@@ -77,7 +77,7 @@ export default function ChangeEmailScreen() {
         userId: selectedUser.id,
       });
     },
-    onSuccess: (response) => {
+    onSuccess: response => {
       if (response?.success === false) {
         Toast.show({ type: 'error', text1: 'Change Email Failed', text2: response.message || 'Failed to process transaction' });
         return;
@@ -98,9 +98,10 @@ export default function ChangeEmailScreen() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled'>
         <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={20}>
-          Update a user's registered email address. This will replace their old email for login and communications. You must provide your admin password to confirm.
+          Update a user's registered email address. This will replace their old email for login and communications. You must provide your admin password to
+          confirm.
         </ThemedText>
-        
+
         <ThemedView gap={'six'} marginTop={24}>
           {/* User Search Input & Results */}
           <ThemedView>
@@ -203,7 +204,15 @@ export default function ChangeEmailScreen() {
             Email Updated Successfully
           </ThemedText>
           <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} textAlign='center' marginTop={2} lineHeight={20}>
-            The email address for <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold}>{selectedUser?.name || selectedUser?.username}</ThemedText> has been updated to <ThemedText color={Palette.accent} fontFamily={FontFamily.bold}>{email}</ThemedText>.
+            The email address for{' '}
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold}>
+              {selectedUser?.name || selectedUser?.username}
+            </ThemedText>{' '}
+            has been updated to{' '}
+            <ThemedText color={Palette.accent} fontFamily={FontFamily.bold}>
+              {email}
+            </ThemedText>
+            .
           </ThemedText>
 
           <ThemedView flexDirection='row' gap={'four'} marginTop={20} width='100%'>

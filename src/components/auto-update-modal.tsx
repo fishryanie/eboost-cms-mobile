@@ -9,7 +9,7 @@ import { Colors, Palette } from 'themes/colors';
 
 export function AutoUpdateModal() {
   const { downloadProgress, isUpdatePending } = Updates.useUpdates();
-  
+
   // Quản lý các trạng thái của Modal: ẩn, đang hỏi, đang tải, đã sẵn sàng khởi động lại
   const [modalState, setModalState] = useState<'hidden' | 'asking' | 'downloading' | 'ready'>('hidden');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -91,35 +91,35 @@ export function AutoUpdateModal() {
         </ThemedView>
 
         <ThemedText type='title' fontSize={22} fontWeight='bold' textAlign='center' marginBottom={8} color={Palette.textPrimary}>
-          {modalState === 'asking' 
-            ? 'Đã có bản cập nhật mới!' 
-            : modalState === 'downloading' 
-            ? 'Đang tải bản cập nhật...' 
-            : 'Sẵn sàng khởi động!'}
+          {modalState === 'asking' ? 'Đã có bản cập nhật mới!' : modalState === 'downloading' ? 'Đang tải bản cập nhật...' : 'Sẵn sàng khởi động!'}
         </ThemedText>
 
         <ThemedText type='default' color={Palette.textSecondary} textAlign='center' marginBottom={24} fontSize={15} lineHeight={22}>
           {modalState === 'asking'
             ? 'Chúng tôi vừa ra mắt phiên bản mới nhất với nhiều tính năng và cải tiến. Bạn có muốn tải về ngay không?'
             : modalState === 'downloading'
-            ? 'Vui lòng không tắt ứng dụng trong quá trình này nhé.'
-            : 'Đã tải xong! Bạn hãy khởi động lại ứng dụng để trải nghiệm ngay nhé!'}
+              ? 'Vui lòng không tắt ứng dụng trong quá trình này nhé.'
+              : 'Đã tải xong! Bạn hãy khởi động lại ứng dụng để trải nghiệm ngay nhé!'}
         </ThemedText>
 
         {modalState === 'downloading' && (
-          <ThemedView width="100%" marginBottom={8}>
-            <ThemedView rowCenter justifyContent="space-between" marginBottom={8}>
-              <ThemedText color={Palette.textPrimary} fontWeight="600">Tiến trình</ThemedText>
-              <ThemedText color={Palette.accent} fontWeight="bold">{Math.round((downloadProgress ?? 0) * 100)}%</ThemedText>
+          <ThemedView width='100%' marginBottom={8}>
+            <ThemedView rowCenter justifyContent='space-between' marginBottom={8}>
+              <ThemedText color={Palette.textPrimary} fontWeight='600'>
+                Tiến trình
+              </ThemedText>
+              <ThemedText color={Palette.accent} fontWeight='bold'>
+                {Math.round((downloadProgress ?? 0) * 100)}%
+              </ThemedText>
             </ThemedView>
-            <ThemedView width="100%" height={8} backgroundColor={Colors.light.backgroundSelected} radius={4} style={{ overflow: 'hidden' }}>
-              <ThemedView height="100%" backgroundColor={Palette.accent} style={{ width: `${Math.round((downloadProgress ?? 0) * 100)}%` }} />
+            <ThemedView width='100%' height={8} backgroundColor={Colors.light.backgroundSelected} radius={4} style={{ overflow: 'hidden' }}>
+              <ThemedView height='100%' backgroundColor={Palette.accent} style={{ width: `${Math.round((downloadProgress ?? 0) * 100)}%` }} />
             </ThemedView>
           </ThemedView>
         )}
 
         {modalState === 'asking' && (
-          <ThemedView width="100%" row columnGap={12}>
+          <ThemedView width='100%' row columnGap={12}>
             <ThemedView flex={1}>
               <AppButton label='Để sau' onPress={handleCancel} variant='ghost' block />
             </ThemedView>

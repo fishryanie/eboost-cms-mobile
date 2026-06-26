@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { ArrowRightLeft, ChevronLeft, ChevronsRight, CreditCard, Lock, Mail, ShieldCheck, Star, Wallet } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BarChart, LineChart } from 'react-native-gifted-charts';
 import { mhs } from 'themes/scaling';
@@ -261,20 +261,37 @@ export default function OperationScreen() {
   return (
     <>
       <ThemedView safePaddingBottom flex={1} backgroundColor={Palette.surfaceBase}>
-        <FlatList
-          contentContainerStyle={styles.content}
-          data={[]}
-          keyExtractor={(_, index) => String(index)}
-          ListEmptyComponent={
-            <ThemedView gap={'five'} marginTop={12} paddingHorizontal={screenHorizontalPadding}>
-              <ThemedView>
-                <ThemedText fontFamily='bold' fontSize={34} lineHeight={40} letterSpacing={-0.5}>
-                  Operation
-                </ThemedText>
-                <ThemedText fontSize={16} color={Palette.textSecondary} marginTop={mhs(4)}>
-                  Manage user accounts and monitor key operational metrics.
-                </ThemedText>
-              </ThemedView>
+        <ScrollView
+          onScroll={e => {
+            const offsetY = e.nativeEvent.contentOffset.y;
+            useScrollStore.getState().setTabScrolled('operation', offsetY > 20);
+          }}
+          scrollEventThrottle={16}
+          contentContainerStyle={[styles.content, { paddingTop: 60 + (useSafeAreaInsets().top || 0) }]}
+          refreshControl={
+            <RefreshControl
+              onRefresh={() => {
+                void topUsersQuery.refetch();
+                void topStationsQuery.refetch();
+                void growthQuery.refetch();
+                void growthChartQuery.refetch();
+              }}
+              refreshing={isRefreshing}
+              tintColor={Palette.accent}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          <ThemedView gap={'five'} marginTop={12} paddingHorizontal={screenHorizontalPadding}>
+            <ThemedView>
+              <ThemedText fontFamily='bold' fontSize={34} lineHeight={40} letterSpacing={-0.5}>
+                Operation
+              </ThemedText>
+              <ThemedText fontSize={16} color={Palette.textSecondary} marginTop={mhs(4)}>
+                Manage user accounts and monitor key operational metrics.
+              </ThemedText>
+            </ThemedView>
+            <ThemedView gap={'seven'}>
               <OperationServicesSection onSelectService={openService} tileWidth={tileWidth} />
               <OperationStatsSection
                 growth={getCollectionData(growthChartQuery.data) || emptyGrowth}
@@ -288,22 +305,8 @@ export default function OperationScreen() {
                 topUsers={getCollectionData(topUsersQuery.data) || emptyTopUsers}
               />
             </ThemedView>
-          }
-          refreshControl={
-            <RefreshControl
-              onRefresh={() => {
-                void topUsersQuery.refetch();
-                void topStationsQuery.refetch();
-                void growthQuery.refetch();
-                void growthChartQuery.refetch();
-              }}
-              refreshing={isRefreshing}
-              tintColor={Palette.accent}
-            />
-          }
-          renderItem={null}
-          showsVerticalScrollIndicator={false}
-        />
+          </ThemedView>
+        </ScrollView>
       </ThemedView>
       <UserPickerSheet
         onClose={() => setIsPickerOpen(false)}

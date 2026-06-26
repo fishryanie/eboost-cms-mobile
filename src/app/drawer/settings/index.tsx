@@ -93,7 +93,8 @@ export default function DrawerSettingsScreen() {
       setLastUsername(username);
       setPassword('');
       setShowPasswordForm(false);
-    } });
+    },
+  });
 
   const handleSwitchChange = (enabled: boolean) => {
     setErrorMessage('');
@@ -235,12 +236,13 @@ export default function DrawerSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-
   content: {
     gap: mhs(24),
-    padding: mhs(24) },
+    padding: mhs(24),
+  },
   disabled: {
-    opacity: 0.72 },
+    opacity: 0.72,
+  },
   input: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.border,
@@ -250,17 +252,20 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.medium,
     fontSize: 16,
     minHeight: 52,
-    paddingHorizontal: mhs(16) },
+    paddingHorizontal: mhs(16),
+  },
   pressed: {
     opacity: 0.78,
-    transform: [{ scale: 0.99 }] },
+    transform: [{ scale: 0.99 }],
+  },
   primaryButton: {
     alignItems: 'center',
     backgroundColor: Palette.accent,
     borderRadius: 999,
     flex: 1,
     justifyContent: 'center',
-    minHeight: 48 },
+    minHeight: 48,
+  },
   secondaryButton: {
     alignItems: 'center',
     backgroundColor: Palette.surfaceMuted,
@@ -269,4 +274,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flex: 1,
     justifyContent: 'center',
-    minHeight: 48 } });
+    minHeight: 48,
+  },
+});

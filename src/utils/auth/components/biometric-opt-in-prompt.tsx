@@ -95,14 +95,7 @@ export function BiometricOptInPrompt() {
       style={styles.centerModal}>
       <ThemedView alignItems='center' flex={1} justifyContent='center' padding={'five'}>
         <ThemedView backgroundColor={Palette.surfaceRaised} borderRadius={'large'} gap={'four'} maxWidth={420} padding={'five'} width='88%'>
-          <ThemedView
-            alignItems='center'
-            alignSelf='flex-start'
-            backgroundColor='#E8F4EF'
-            borderRadius={'pill'}
-            height={52}
-            justifyContent='center'
-            width={52}>
+          <ThemedView alignItems='center' alignSelf='flex-start' backgroundColor='#E8F4EF' borderRadius={'pill'} height={52} justifyContent='center' width={52}>
             <SymbolView name={biometricIcon as never} resizeMode='scaleAspectFit' size={28} tintColor={Palette.accent} />
           </ThemedView>
           <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
@@ -158,13 +151,18 @@ export function BiometricOptInPrompt() {
 
 const styles = StyleSheet.create({
   centerModal: {
-    margin: 0 },
+    margin: 0,
+  },
   disabled: {
-    opacity: 0.72 },
+    opacity: 0.72,
+  },
   pressed: {
-    opacity: 0.72 },
+    opacity: 0.72,
+  },
   skipButton: {
     alignItems: 'center',
     borderRadius: 999,
     justifyContent: 'center',
-    minHeight: 44 } });
+    minHeight: 44,
+  },
+});

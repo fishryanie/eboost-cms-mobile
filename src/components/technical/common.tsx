@@ -10,7 +10,8 @@ export const shortDateTimeFormatter = new Intl.DateTimeFormat('en-GB', {
   day: '2-digit',
   hour: '2-digit',
   minute: '2-digit',
-  month: '2-digit' });
+  month: '2-digit',
+});
 
 export function formatShortTime(value?: string) {
   if (!value) return '-';
@@ -68,10 +69,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     height: 24,
     justifyContent: 'center',
-    paddingHorizontal: 8 },
+    paddingHorizontal: 8,
+  },
   statusPillDanger: {
     backgroundColor: Palette.dangerSurface,
-    borderColor: '#FEE2E2' },
+    borderColor: '#FEE2E2',
+  },
   statusPillSuccess: {
     backgroundColor: '#F0FDF4',
-    borderColor: '#DCFCE7' } });
+    borderColor: '#DCFCE7',
+  },
+});

@@ -120,7 +120,8 @@ export default function TransferMoneyScreen() {
         <ThemedView gap={'six'}>
           <ThemedView backgroundColor={Palette.surfaceBase}>
             <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={20}>
-              Securely move funds from a sender's wallet to a receiver's wallet. This action transfers the actual wallet balance and requires Admin verification to complete. Leaving the amount empty will transfer the sender's entire balance.
+              Securely move funds from a sender's wallet to a receiver's wallet. This action transfers the actual wallet balance and requires Admin verification
+              to complete. Leaving the amount empty will transfer the sender's entire balance.
             </ThemedText>
           </ThemedView>
           {/* Sender Search Input & Results */}
@@ -343,13 +344,21 @@ export default function TransferMoneyScreen() {
         style={{ margin: mhs(20), justifyContent: 'center' }}>
         <ThemedView backgroundColor={Palette.surfaceBase} borderRadius={16} gap={'six'} padding={24} alignItems='center'>
           <ThemedView width={64} height={64} borderRadius={32} backgroundColor='#D1FAE5' alignItems='center' justifyContent='center' marginBottom={8}>
-             <CheckCircle2 color='#10B981' size={32} />
+            <CheckCircle2 color='#10B981' size={32} />
           </ThemedView>
           <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={18} textAlign='center'>
             Transaction Successful
           </ThemedText>
           <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} textAlign='center' marginTop={2} lineHeight={20}>
-            You have successfully transferred <ThemedText color={Palette.accent} fontFamily={FontFamily.bold}>{amount ? `${amount} đ` : 'Full Balance'}</ThemedText> to <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold}>{receiverUser?.name || receiverUser?.username}</ThemedText>.
+            You have successfully transferred{' '}
+            <ThemedText color={Palette.accent} fontFamily={FontFamily.bold}>
+              {amount ? `${amount} đ` : 'Full Balance'}
+            </ThemedText>{' '}
+            to{' '}
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold}>
+              {receiverUser?.name || receiverUser?.username}
+            </ThemedText>
+            .
           </ThemedText>
 
           <ThemedView flexDirection='row' gap={'four'} marginTop={20} width='100%'>

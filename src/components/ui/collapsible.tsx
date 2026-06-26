@@ -5,10 +5,10 @@ import { Pressable, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { ThemedView, ThemedText } from 'components/base';
 
+import { useTheme } from 'hooks/use-theme';
+
 const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
 const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
-
-import { useTheme } from 'hooks/use-theme';
 
 export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,6 +44,9 @@ const styles = StyleSheet.create({
   heading: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: mhs(8) },
+    gap: mhs(8),
+  },
   pressedHeading: {
-    opacity: 0.7 } });
+    opacity: 0.7,
+  },
+});

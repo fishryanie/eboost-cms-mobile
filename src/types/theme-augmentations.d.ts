@@ -29,7 +29,7 @@ declare module 'react-native' {
     borderBottomLeftRadius?: number | string | undefined;
     borderBottomRightRadius?: number | string | undefined;
   }
-  
+
   export interface TextStyle {
     gap?: number | string | undefined;
     rowGap?: number | string | undefined;
@@ -61,6 +61,5 @@ declare module 'react-native' {
 }
 
 declare module 'react-native' {
-  export interface ViewStyle {
-  }
+  export interface ViewStyle {}
 }

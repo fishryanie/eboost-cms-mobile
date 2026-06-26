@@ -200,4 +200,3 @@ export function fetchAlePayHistory(params: { orderCode?: string; transactionCode
     method: 'GET',
   });
 }
-
