@@ -53,15 +53,9 @@ export const quickServiceGroups: QuickServiceGroup[] = [
       },
       {
         icon: 'circlePlus',
-        labelLines: ['Add', 'Charger'],
+        labelLines: ['New', 'Charger'],
         name: 'Add Charger',
         slug: 'add-charger',
-      },
-      {
-        icon: 'qrCode',
-        labelLines: ['Download', 'QR Code'],
-        name: 'Download QR Code',
-        slug: 'download-qr-code',
       },
       {
         icon: 'mapPin',

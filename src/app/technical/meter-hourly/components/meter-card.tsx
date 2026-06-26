@@ -1,18 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Pressable, RefreshControl } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft } from 'lucide-react-native';
-
 import { ThemedText, ThemedView } from 'components/base';
-import { SearchBar } from 'components/molecules/search-bar';
-import { AppScreen } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 
-
-import { formatShortTime, screenHorizontalPadding } from 'components/technical/common';
-import { ListState, ListFooter, formatNumber, getItemKey } from 'components/technical/list-ui';
+import { formatShortTime } from 'components/technical/common';
+import { formatNumber } from 'components/technical/list-ui';
 import { styles } from 'components/technical/styles';
-import { VehicleSwitch } from 'components/technical/vehicle-switch';
 
 function getCarMeterSummary(record: MeterValueRecord) {
   const energy = record.sampledValues?.find(item => item.measurand === 'Energy.Active.Import.Register');

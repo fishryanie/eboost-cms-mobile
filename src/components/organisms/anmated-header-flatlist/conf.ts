@@ -7,7 +7,7 @@ export const Colors = {
   gray: {
     400: '#9ca3af',
     500: '#6b7280',
-  }
+  },
 };
 
 export const spacing = {

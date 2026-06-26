@@ -1,16 +1,15 @@
-import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
-import { ActionSheet, AppButton, AppScreen, EmptyState } from 'components/ui';
+import { ActionSheet, AppButton, EmptyState } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 import { mhs } from 'themes/scaling';
-import { staffKeys, useInfiniteStaff, useStaffActivities, useStaffMember } from 'shared/staff/hooks';
+import { staffKeys, useInfiniteStaff } from 'shared/staff/hooks';
 import {
   archiveStaffMember,
   createStaffMember,
@@ -20,7 +19,6 @@ import {
   restoreStaffMember,
   staffRoles,
   updateStaffMember,
-  updateStaffPassword,
 } from 'shared/staff/staff-service';
 import type { StaffCreateInput, StaffListFilters, StaffMember, StaffRole } from 'shared/staff/types';
 
@@ -106,46 +104,33 @@ function StaffRow({ member, onPress }: { member: StaffMember; onPress: (member: 
 }
 
 function StaffRowSkeleton() {
-  const opacity = useSharedValue(0.3);
-
-  useEffect(() => {
-    opacity.value = withRepeat(withTiming(0.7, { duration: 800 }), -1, true);
-  }, [opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
   return (
-    <Animated.View style={[styles.rowPressable, animatedStyle]}>
+    <ThemedView style={styles.rowPressable}>
       <ThemedView alignItems='center' flexDirection='row' gap={'three'} paddingHorizontal={'four'} paddingVertical={'three'}>
         <ThemedView alignItems='center' gap={'half'}>
-          <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={'pill'} height={46} width={46} />
-          <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={4} height={12} width={24} />
+          <ThemedView borderRadius={'pill'} height={46} loading width={46} />
+          <ThemedView borderRadius={4} height={12} loading width={24} />
         </ThemedView>
 
         <ThemedView flex={1} gap={'half'} minWidth={0} justifyContent='center'>
-          <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={4} height={18} width={'60%'} />
-          <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={4} height={14} width={'40%'} />
-          <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={4} height={12} width={'30%'} />
+          <ThemedView borderRadius={4} height={18} loading width={'60%'} />
+          <ThemedView borderRadius={4} height={14} loading width={'40%'} />
+          <ThemedView borderRadius={4} height={12} loading width={'30%'} />
         </ThemedView>
 
         <ThemedView alignItems='flex-end' gap={'two'}>
-          <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={'pill'} height={24} width={60} />
+          <ThemedView borderRadius={'pill'} height={24} loading width={60} />
         </ThemedView>
       </ThemedView>
-    </Animated.View>
+    </ThemedView>
   );
 }
 
-function FilterStrip({
-  setFilters,
-}: {
-  setFilters: (update: (prev: StaffListFilters) => StaffListFilters) => void;
-}) {
+function FilterStrip({ setFilters }: { setFilters: (update: (prev: StaffListFilters) => StaffListFilters) => void }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [enabledStatus, setEnabledStatus] = useState<"0" | "1" | undefined>();
+  const [enabledStatus, setEnabledStatus] = useState<'0' | '1' | undefined>();
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const timeout = setTimeout(() => {
       const term = searchQuery.trim();
@@ -265,6 +250,7 @@ function StaffFormSheet({
       isPresented.current = false;
     }
   }, [member, visible]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -304,8 +290,8 @@ function StaffFormSheet({
     <BottomSheetModal
       backdropComponent={renderBackdrop}
       enableDynamicSizing
-      keyboardBehavior="interactive"
-      keyboardBlurBehavior="restore"
+      keyboardBehavior='interactive'
+      keyboardBlurBehavior='restore'
       onDismiss={() => {
         isPresented.current = false;
         onClose();
@@ -331,36 +317,36 @@ function StaffFormSheet({
         <>
           <BottomSheetTextInput onChangeText={setName} placeholder='Name' placeholderTextColor={Palette.textTertiary} style={styles.input} value={name} />
           <BottomSheetTextInput
-              autoCapitalize='none'
-              editable={isCreate}
-              onChangeText={setUsername}
-              placeholder='Username'
-              placeholderTextColor={Palette.textTertiary}
-              style={[styles.input, !isCreate && styles.inputDisabled]}
-              value={username}
-            />
+            autoCapitalize='none'
+            editable={isCreate}
+            onChangeText={setUsername}
+            placeholder='Username'
+            placeholderTextColor={Palette.textTertiary}
+            style={[styles.input, !isCreate && styles.inputDisabled]}
+            value={username}
+          />
+          <BottomSheetTextInput
+            autoCapitalize='none'
+            editable={isCreate}
+            keyboardType='email-address'
+            onChangeText={setEmail}
+            placeholder='Email'
+            placeholderTextColor={Palette.textTertiary}
+            style={[styles.input, !isCreate && styles.inputDisabled]}
+            value={email}
+          />
+          {isCreate ? (
             <BottomSheetTextInput
-              autoCapitalize='none'
-              editable={isCreate}
-              keyboardType='email-address'
-              onChangeText={setEmail}
-              placeholder='Email'
+              onChangeText={setPassword}
+              placeholder='Temporary password'
               placeholderTextColor={Palette.textTertiary}
-              style={[styles.input, !isCreate && styles.inputDisabled]}
-              value={email}
+              secureTextEntry
+              style={styles.input}
+              value={password}
             />
-            {isCreate ? (
-              <BottomSheetTextInput
-                onChangeText={setPassword}
-                placeholder='Temporary password'
-                placeholderTextColor={Palette.textTertiary}
-                secureTextEntry
-                style={styles.input}
-                value={password}
-              />
-            ) : null}
-            <RoleSelector roles={roles} setRoles={setRoles} />
-          </>
+          ) : null}
+          <RoleSelector roles={roles} setRoles={setRoles} />
+        </>
 
         <AppButton block label='Save' loading={mutation.isPending} onPress={() => mutation.mutate()} />
       </BottomSheetScrollView>
@@ -369,6 +355,7 @@ function StaffFormSheet({
 }
 
 export default function StaffManagementsScreen() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<StaffListFilters>({});
   const [selectedMember, setSelectedMember] = useState<StaffMember | null>(null);
@@ -376,7 +363,6 @@ export default function StaffManagementsScreen() {
   const [sheetMode, setSheetMode] = useState<SheetMode | null>(null);
   const staffQuery = useInfiniteStaff(filters);
   const staff = useMemo(() => staffQuery.data?.pages.flatMap(page => page.items) ?? emptyStaff, [staffQuery.data]);
-  const activeFilterCount = [filters.username, filters.email, filters.id, filters.enabled].filter(Boolean).length;
 
   const loadMore = useCallback(() => {
     if (staffQuery.hasNextPage && !staffQuery.isFetchingNextPage) {
@@ -416,62 +402,76 @@ export default function StaffManagementsScreen() {
     }
   };
 
-  const searchBarElement = useMemo(() => (
-    <FilterStrip setFilters={setFilters} />
-  ), [setFilters]);
+  const searchBarElement = useMemo(() => <FilterStrip setFilters={setFilters} />, [setFilters]);
 
   return (
     <>
-      <AppScreen
-        canGoBack
-        title='Staff List'
-        // subtitle={activeFilterCount ? `${activeFilterCount} active filters` : 'Administrators, roles, passwords, and activity logs.'}
-        rightComponent={
-          <Pressable hitSlop={12} accessibilityRole='button' onPress={() => openSheet('create')} style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}>
-            <SymbolView name='person.badge.plus' resizeMode='scaleAspectFit' size={20} tintColor='#FFFFFF' />
-          </Pressable>
-        }
-        searchBar={searchBarElement}
-        isFlatList
-        flatListProps={{
-          contentContainerStyle: styles.listContent,
-          data: staff,
-          keyExtractor: (item: StaffMember) => String(item.id),
-          ListEmptyComponent: staffQuery.isLoading ? (
-            <ThemedView>
-              {[1, 2, 3, 4, 5, 6, 7].map(key => (
-                <StaffRowSkeleton key={key} />
-              ))}
-            </ThemedView>
-          ) : staffQuery.isError ? (
-            <EmptyState message='The administrators list could not be loaded.' title='Staff unavailable' />
-          ) : (
-            <EmptyState message='Try a different name, email, or status filter.' title='No administrators found' />
-          ),
-          ListFooterComponent: staffQuery.isFetchingNextPage ? (
-            <ThemedView alignSelf='center' borderRadius={'pill'} height={18} loading marginVertical={24} width={132} />
-          ) : null,
-          onEndReached: loadMore,
-          onEndReachedThreshold: 0.55,
-          refreshControl: <RefreshControl onRefresh={() => staffQuery.refetch()} refreshing={staffQuery.isRefetching} tintColor={Palette.accent} />,
-          renderItem: ({ item }: { item: StaffMember }) => (
-            <StaffRow
-              member={item}
-              onPress={member => {
-                setSelectedMember(member);
-                setActionsOpen(true);
-              }}
-            />
-          ),
-          showsVerticalScrollIndicator: false,
-        }}
-      />
+      <ThemedView flex={1} backgroundColor={Palette.surfaceBase} safePaddingTop>
+        <FlatList
+          {...{
+            contentContainerStyle: styles.listContent,
+            data: staff,
+            keyExtractor: (item: StaffMember) => String(item.id),
+            ListHeaderComponent: (
+              <ThemedView gap={'three'} paddingHorizontal={'four'} paddingTop={'three'}>
+                <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
+                  <Pressable
+                    hitSlop={12}
+                    accessibilityRole='button'
+                    onPress={() => router.back()}
+                    style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}>
+                    <SymbolView name='chevron.left' resizeMode='scaleAspectFit' size={20} tintColor={Palette.textPrimary} />
+                  </Pressable>
+                  <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={24} lineHeight={30}>
+                    Staff List
+                  </ThemedText>
+                  <Pressable
+                    hitSlop={12}
+                    accessibilityRole='button'
+                    onPress={() => openSheet('create')}
+                    style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}>
+                    <SymbolView name='person.badge.plus' resizeMode='scaleAspectFit' size={20} tintColor='#FFFFFF' />
+                  </Pressable>
+                </ThemedView>
+                {searchBarElement}
+              </ThemedView>
+            ),
+            ListEmptyComponent: staffQuery.isLoading ? (
+              <ThemedView>
+                {[1, 2, 3, 4, 5, 6, 7].map(key => (
+                  <StaffRowSkeleton key={key} />
+                ))}
+              </ThemedView>
+            ) : staffQuery.isError ? (
+              <EmptyState message='The administrators list could not be loaded.' title='Staff unavailable' />
+            ) : (
+              <EmptyState message='Try a different name, email, or status filter.' title='No administrators found' />
+            ),
+            ListFooterComponent: staffQuery.isFetchingNextPage ? (
+              <ThemedView alignSelf='center' borderRadius={'pill'} height={18} loading marginVertical={24} width={132} />
+            ) : null,
+            onEndReached: loadMore,
+            onEndReachedThreshold: 0.55,
+            refreshControl: <RefreshControl onRefresh={() => staffQuery.refetch()} refreshing={staffQuery.isRefetching} tintColor={Palette.accent} />,
+            renderItem: ({ item }: { item: StaffMember }) => (
+              <StaffRow
+                member={item}
+                onPress={member => {
+                  setSelectedMember(member);
+                  setActionsOpen(true);
+                }}
+              />
+            ),
+            showsVerticalScrollIndicator: false,
+          }}
+        />
+      </ThemedView>
 
       <ActionSheet
         avatar={
           <ThemedView alignItems='center' backgroundColor='#E8F4EF' borderRadius={'pill'} height={72} justifyContent='center' width={72}>
             <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={24} lineHeight={30}>
-              {selectedMember ? (getInitials(selectedMember) || '#') : '#'}
+              {selectedMember ? getInitials(selectedMember) || '#' : '#'}
             </ThemedText>
           </ThemedView>
         }
@@ -542,7 +542,12 @@ export default function StaffManagementsScreen() {
         title={selectedMember?.name || selectedMember?.username || 'Staff actions'}
       />
 
-      <StaffFormSheet member={selectedMember} mode={sheetMode === 'roles' ? 'roles' : 'create'} onClose={() => setSheetMode(null)} visible={sheetMode === 'create' || sheetMode === 'roles'} />
+      <StaffFormSheet
+        member={selectedMember}
+        mode={sheetMode === 'roles' ? 'roles' : 'create'}
+        onClose={() => setSheetMode(null)}
+        visible={sheetMode === 'create' || sheetMode === 'roles'}
+      />
       <ChangePasswordSheet member={selectedMember} onClose={() => setSheetMode(null)} visible={sheetMode === 'password'} />
       <StaffLogsSheet member={selectedMember} onClose={() => setSheetMode(null)} visible={sheetMode === 'logs'} />
     </>
@@ -596,6 +601,12 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: mhs(120),
+  },
+  navButton: {
+    alignItems: 'center',
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
   },
   logList: {
     paddingHorizontal: mhs(16),

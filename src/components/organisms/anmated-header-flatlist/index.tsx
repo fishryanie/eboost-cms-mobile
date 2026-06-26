@@ -23,7 +23,7 @@ import { ThemedText, ThemedView } from 'components/base';
 
 import { useRouter } from 'expo-router';
 import { Palette } from 'themes';
-import { Colors, HEADER_HEIGHT, MAX_BLUR_INTENSITY, spacing } from '../animated-header-scrollview/conf';
+import { Colors, HEADER_HEIGHT, MAX_BLUR_INTENSITY, spacing } from './conf';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 

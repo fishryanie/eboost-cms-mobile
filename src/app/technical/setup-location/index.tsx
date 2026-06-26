@@ -2,11 +2,10 @@ import { mhs } from 'themes/scaling';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 
 import { BottomButton, ThemedText, ThemedView } from 'components/base';
 import { useLocationDetail } from 'shared/locations/hooks';
-import { AppScreen } from 'components/ui';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
 import { FontFamily, Palette } from 'themes';
 
@@ -15,7 +14,7 @@ export default function SetupLocationScreen() {
   const router = useRouter();
   const locationId = params.id ? parseInt(params.id, 10) : 0;
 
-  const { data: location, isLoading, isError } = useLocationDetail(locationId);
+  const { data: location, isLoading, isError, isRefetching, refetch } = useLocationDetail(locationId);
 
   const [nameEn, setNameEn] = useState('EBOOST');
   const [nameVn, setNameVn] = useState('EBOOST');
@@ -31,6 +30,7 @@ export default function SetupLocationScreen() {
   const [descVn, setDescVn] = useState('');
   const [visibleOnMap, setVisibleOnMap] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (location) {
       setNameEn(location.name || 'EBOOST');
@@ -38,10 +38,23 @@ export default function SetupLocationScreen() {
       setAddressEn(location.displayAddress || location.address || '');
     }
   }, [location]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <ThemedView flex={1}>
-      <AppScreen canGoBack onBack={() => router.back()} title='Setup Location' contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps='handled'
+        refreshControl={<RefreshControl onRefresh={() => refetch()} refreshing={isRefetching} tintColor={Palette.accent} />}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
+            Back
+          </ThemedText>
+        </Pressable>
+        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={26} lineHeight={32}>
+          Setup Location
+        </ThemedText>
+
         {isLoading ? (
           <ThemedView gap={'four'} marginTop={100}>
             <ThemedView borderRadius={'large'} height={88} loading />
@@ -130,7 +143,7 @@ export default function SetupLocationScreen() {
             </Pressable>
           </ThemedView>
         ) : null}
-      </AppScreen>
+      </ScrollView>
 
       {location && !isLoading && !isError && <BottomButton onPress={() => router.back()} title='Submit' />}
     </ThemedView>
@@ -138,6 +151,10 @@ export default function SetupLocationScreen() {
 }
 
 const styles = StyleSheet.create({
+  backButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: mhs(4),
+  },
   content: {
     padding: mhs(16),
     paddingBottom: 100, // Make room for the BottomButton
@@ -151,12 +168,14 @@ const styles = StyleSheet.create({
     borderRadius: mhs(12),
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4 },
+    gap: 4,
+  },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: mhs(8),
-    marginTop: mhs(8) },
+    marginTop: mhs(8),
+  },
   checkbox: {
     width: 20,
     height: 20,
@@ -164,7 +183,10 @@ const styles = StyleSheet.create({
     borderColor: Palette.border,
     borderRadius: 4,
     alignItems: 'center',
-    justifyContent: 'center' },
+    justifyContent: 'center',
+  },
   checkboxChecked: {
     backgroundColor: Palette.accent,
-    borderColor: Palette.accent } });
+    borderColor: Palette.accent,
+  },
+});

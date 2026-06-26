@@ -1194,12 +1194,20 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
   const maxValue = Math.max(...growth.map(item => Number(item.total_users) || 0), 10);
   const chartItems = growth.slice(-12);
 
-  const lineData = chartItems.map(item => {
-    return {
+  const barData = chartItems.flatMap(item => [
+    {
       value: Number(item.total_users) || 0,
+      frontColor: '#059669', // Stronger green
+      gradientColor: '#05C75A', // Eboost green
+      spacing: 6,
       label: formatGrowthMonth(item.time),
-    };
-  });
+    },
+    {
+      value: Number(item.new_users) || 0,
+      frontColor: '#1D4ED8', // Stronger blue
+      gradientColor: '#3B82F6', // Normal blue
+    },
+  ]);
 
   return (
     <ThemedView gap={'three'}>
@@ -1240,36 +1248,32 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
             Trend - Last 12 months
           </ThemedText>
           {chartItems.length ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
-              <LineChart
-                data={lineData}
-                curved
-                isAnimated
-                animationDuration={1200}
-                color="#3B82F6"
-                thickness={3}
-                hideDataPoints={false}
-                dataPointsColor="#3B82F6"
-                dataPointsRadius={4}
-                startFillColor="#3B82F6"
-                endFillColor="#3B82F6"
-                startOpacity={0.2}
-                endOpacity={0.01}
-                areaChart
-                hideRules
-                xAxisThickness={1}
-                xAxisColor={Palette.borderSubtle}
-                yAxisThickness={0}
-                yAxisTextStyle={{ color: Palette.textTertiary, fontSize: 10, fontFamily: FontFamily.medium }}
-                noOfSections={4}
-                maxValue={maxValue * 1.1}
-                labelWidth={40}
-                xAxisLabelTextStyle={{ color: Palette.textSecondary, fontSize: 10, fontFamily: FontFamily.medium, textAlign: 'center' }}
-                initialSpacing={20}
-                endSpacing={20}
-                yAxisLabelContainerStyle={{ paddingRight: 12 }}
-              />
-            </ScrollView>
+            <BarChart
+              data={barData}
+              barWidth={16}
+              initialSpacing={10}
+              endSpacing={20}
+              spacing={14}
+              barBorderRadius={4}
+              showGradient
+              yAxisThickness={0}
+              xAxisType={'dashed'}
+              xAxisColor={Palette.borderSubtle}
+              yAxisTextStyle={{color: Palette.textTertiary, fontSize: 10, fontFamily: FontFamily.medium}}
+              maxValue={maxValue * 1.1}
+              noOfSections={4}
+              labelWidth={40}
+              xAxisLabelTextStyle={{color: Palette.textSecondary, textAlign: 'center', fontSize: 10, fontFamily: FontFamily.medium}}
+              showLine
+              lineConfig={{
+                color: operationAccent,
+                thickness: 3,
+                curved: true,
+                hideDataPoints: true,
+                shiftY: 20,
+                initialSpacing: -30,
+              }}
+            />
           ) : (
             <EmptyState message='No growth data returned.' title='No data' />
           )}
@@ -1284,22 +1288,23 @@ function PremiumGrowthCard({ change, label, value, icon, color }: { change?: num
   const changeColor = isPositive ? '#10B981' : '#F43F5E';
   
   return (
-    <ThemedView flex={1} minWidth={0} backgroundColor={Palette.surfaceBase} borderColor={Palette.borderSubtle} borderRadius={mhs(12)} borderWidth={1} padding={mhs(8)} style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 }}>
-      <ThemedView flexDirection='row' alignItems='center' gap={mhs(4)} marginBottom={mhs(6)}>
-        <ThemedView backgroundColor={`${color}15`} borderRadius={mhs(6)} padding={mhs(4)}>
-          <SymbolView name={icon} size={10} tintColor={color} />
-        </ThemedView>
-        <ThemedText flex={1} numberOfLines={1} color={Palette.textTertiary} fontFamily={FontFamily.bold} fontSize={9} textTransform='uppercase' lineHeight={13}>
+    <ThemedView flex={1} minWidth={0} gap={mhs(4)}>
+      <ThemedView flexDirection='row' alignItems='center' gap={mhs(4)}>
+        <SymbolView name={icon} size={10} tintColor={Palette.textTertiary} />
+        <ThemedText flex={1} numberOfLines={1} color={Palette.textTertiary} fontFamily={FontFamily.bold} fontSize={9} textTransform='uppercase'>
           {label}
         </ThemedText>
       </ThemedView>
-      <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20} adjustsFontSizeToFit>
+      <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={16} adjustsFontSizeToFit>
         {value}
       </ThemedText>
       {change !== undefined && (
-        <ThemedText numberOfLines={1} color={changeColor} fontFamily={FontFamily.bold} fontSize={11} marginTop={2}>
-          {formatPercent(change)}
-        </ThemedText>
+        <ThemedView flexDirection='row' alignItems='center' gap={2}>
+          <SymbolView name={isPositive ? 'arrow.up.right' : 'arrow.down.right'} size={10} tintColor={changeColor} />
+          <ThemedText numberOfLines={1} color={changeColor} fontFamily={FontFamily.semibold} fontSize={11}>
+            {Math.abs(change).toFixed(1)}%
+          </ThemedText>
+        </ThemedView>
       )}
     </ThemedView>
   );

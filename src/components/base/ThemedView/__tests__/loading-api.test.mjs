@@ -8,9 +8,8 @@ const shimmerSource = readFileSync(new URL('../skeleton-shimmer.tsx', import.met
 describe('ThemedView loading API', () => {
   it('exposes skeleton loading props on ThemedViewProps', () => {
     assert.match(source, /loading\?: boolean/);
-    assert.match(source, /skeletonBaseColor\?: string/);
-    assert.match(source, /skeletonShimmerColor\?: string/);
     assert.match(source, /skeletonDuration\?: number/);
+    assert.match(source, /skeletonReduceMotion\?: SkeletonReduceMotion/);
   });
 
   it('renders skeleton shimmer instead of children while loading', () => {
@@ -24,5 +23,6 @@ describe('ThemedView loading API', () => {
     assert.doesNotMatch(source, /expo-linear-gradient/);
     assert.match(shimmerSource, /expo-linear-gradient/);
     assert.match(shimmerSource, /react-native-reanimated/);
+    assert.match(shimmerSource, /'#E6E6E6', '#f5f5f5', '#f5f5f5', '#E6E6E6'/);
   });
 });

@@ -1,18 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Pressable, RefreshControl } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft } from 'lucide-react-native';
-
 import { ThemedText, ThemedView } from 'components/base';
-import { SearchBar } from 'components/molecules/search-bar';
-import { AppScreen } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 
-
-import { StatusPill, screenHorizontalPadding } from 'components/technical/common';
-import { ListState, ListFooter, getItemKey } from 'components/technical/list-ui';
+import { StatusPill } from 'components/technical/common';
 import { styles } from 'components/technical/styles';
-import { VehicleSwitch } from 'components/technical/vehicle-switch';
 
 export function ChargerCard({ item }: { item: ChargerRecord }) {
   const station = typeof item.station === 'string' ? item.station : item.station?.name || item.stationName || '-';

@@ -204,6 +204,66 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: mhs(12),
   },
+  peakUsageCell: {
+    borderRadius: mhs(7),
+    height: 28,
+    width: 34,
+  },
+  peakUsageCellText: {
+    fontVariant: ['tabular-nums'],
+  },
+  peakUsageChip: {
+    alignItems: 'center',
+    backgroundColor: Palette.surfaceRaised,
+    borderColor: '#E4EAF0',
+    borderRadius: 999,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 28,
+    paddingHorizontal: mhs(10),
+  },
+  peakUsageChipActive: {
+    backgroundColor: '#E8F7EF',
+    borderColor: '#BFEBCF',
+  },
+  peakUsageDayHeader: {
+    width: 34,
+  },
+  peakUsageEmpty: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#EEF2F6',
+    borderRadius: mhs(12),
+    borderWidth: 1,
+    minHeight: 78,
+  },
+  peakUsageGrid: {
+    minWidth: 310,
+  },
+  peakUsageHourHeader: {
+    textAlign: 'right',
+    width: 44,
+  },
+  peakUsageIconSurface: {
+    backgroundColor: '#E8F7EF',
+    borderRadius: mhs(14),
+    height: 44,
+    width: 44,
+  },
+  peakUsageLegendDot: {
+    borderRadius: 999,
+    height: 9,
+    width: 9,
+  },
+  peakUsagePanel: {
+    backgroundColor: '#FBFCF8',
+    borderColor: '#E6EAD8',
+    borderRadius: mhs(16),
+    borderWidth: 1,
+    padding: mhs(12),
+  },
+  peakUsageTotal: {
+    fontVariant: ['tabular-nums'],
+  },
   pressed: {
     opacity: 0.72,
   },
@@ -242,9 +302,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Palette.antiFlashWhite,
     borderRadius: mhs(16),
-    height: mhs(56),
+    height: mhs(60),
     justifyContent: 'center',
-    width: mhs(56),
+    width: mhs(60),
   },
   serviceShortcut: {
     alignItems: 'center',

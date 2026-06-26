@@ -2,15 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, RefreshControl } from 'react-native';
+import { FlatList, Pressable, RefreshControl } from 'react-native';
 
-import { ThemedView } from 'components/base';
+import { ThemedText, ThemedView } from 'components/base';
 import { screenHorizontalPadding } from 'components/technical/common';
 import { getItemKey } from 'components/technical/list-ui';
 import { styles } from 'components/technical/styles';
 import { VehicleSwitch } from 'components/technical/vehicle-switch';
-import { AppScreen } from 'components/ui';
-import { Palette } from 'themes';
+import { FontFamily, Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
 import { getCollectionResult } from 'utils/api/collection';
 
@@ -34,40 +33,45 @@ export default function EnergyDifferScreen() {
           limit: 100,
           page: 1,
           start_date: formatDateParam(new Date(now.getFullYear(), now.getMonth(), 1)),
-          type: vehicle },
-        service: 'hub' });
+          type: vehicle,
+        },
+        service: 'hub',
+      });
       return getCollectionResult(response);
     },
-    queryKey: ['technical', 'energy-differ', vehicle] });
+    queryKey: ['technical', 'energy-differ', vehicle],
+  });
 
   return (
-    <AppScreen
-      title='Energy Differ'
-      isFlatList
-      flatListProps={{
-        contentContainerStyle: styles.content,
-        data: query.data?.items || [],
-        keyExtractor: (item, index) => getItemKey(item, index),
-        ListHeaderComponent: (
-          <ThemedView gap={'three'} paddingHorizontal={screenHorizontalPadding} paddingTop={'one'}>
-            <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
-              <Pressable
-                accessibilityLabel='Back'
-                accessibilityRole='button'
-                onPress={() => router.back()}
-                style={({ pressed }) => [styles.issueNavButton, pressed && styles.pressed]}>
-                <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
-              </Pressable>
+    <ThemedView flex={1} backgroundColor={Palette.surfaceBase} safePaddingTop>
+      <FlatList
+        {...{
+          contentContainerStyle: styles.content,
+          data: query.data?.items || [],
+          keyExtractor: (item, index) => getItemKey(item, index),
+          ListHeaderComponent: (
+            <ThemedView gap={'three'} paddingHorizontal={screenHorizontalPadding} paddingTop={'one'}>
+              <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
+                <Pressable
+                  accessibilityLabel='Back'
+                  accessibilityRole='button'
+                  onPress={() => router.back()}
+                  style={({ pressed }) => [styles.issueNavButton, pressed && styles.pressed]}>
+                  <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
+                </Pressable>
+                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={24} lineHeight={30}>
+                  Energy Differ
+                </ThemedText>
+              </ThemedView>
+              <VehicleSwitch vehicle={vehicle} onChange={setVehicle} />
             </ThemedView>
-            <VehicleSwitch vehicle={vehicle} onChange={setVehicle} />
-          </ThemedView>
-        ),
-        ListEmptyComponent: (
-          <EnergyDifferState query={{ data: query.data, error: query.error, isLoading: query.isLoading, refetch: query.refetch }} />
-        ),
-        refreshControl: <RefreshControl onRefresh={query.refetch} refreshing={query.isRefetching} tintColor={Palette.accent} />,
-        renderItem: ({ item }) => <EnergyDifferCard item={item as EnergyDifferRecord} vehicle={vehicle} />,
-        showsVerticalScrollIndicator: false }}
-    />
+          ),
+          ListEmptyComponent: <EnergyDifferState query={{ data: query.data, error: query.error, isLoading: query.isLoading, refetch: query.refetch }} />,
+          refreshControl: <RefreshControl onRefresh={query.refetch} refreshing={query.isRefetching} tintColor={Palette.accent} />,
+          renderItem: ({ item }) => <EnergyDifferCard item={item as EnergyDifferRecord} vehicle={vehicle} />,
+          showsVerticalScrollIndicator: false,
+        }}
+      />
+    </ThemedView>
   );
 }

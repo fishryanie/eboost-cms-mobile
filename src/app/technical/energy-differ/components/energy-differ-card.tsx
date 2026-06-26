@@ -1,25 +1,18 @@
-import { useState } from 'react';
-import { Pressable, RefreshControl } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft } from 'lucide-react-native';
-
 import { ThemedText, ThemedView } from 'components/base';
-import { AppScreen, EmptyState } from 'components/ui';
+import { EmptyState } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 
-
-import { screenHorizontalPadding } from 'components/technical/common';
-import { LoadingBlock, RetryBlock, formatNumber, getItemKey } from 'components/technical/list-ui';
+import { LoadingBlock, RetryBlock, formatNumber } from 'components/technical/list-ui';
 import { styles } from 'components/technical/styles';
-import { VehicleSwitch } from 'components/technical/vehicle-switch';
 
 export function EnergyDifferState({
-  query }: {
+  query,
+}: {
   query: { data?: { items: EnergyDifferRecord[] }; error: Error | null; isLoading: boolean; refetch: () => void };
 }) {
-  if (query.isLoading) return <LoadingBlock label="Loading energy differ" />;
-  if (query.error) return <RetryBlock message={query.error.message} onRetry={query.refetch} title="Energy differ unavailable" />;
-  if (!query.data?.items.length) return <EmptyState message="This month has no energy differ rows." title="No energy differ data" />;
+  if (query.isLoading) return <LoadingBlock label='Loading energy differ' />;
+  if (query.error) return <RetryBlock message={query.error.message} onRetry={query.refetch} title='Energy differ unavailable' />;
+  if (!query.data?.items.length) return <EmptyState message='This month has no energy differ rows.' title='No energy differ data' />;
   return null;
 }
 

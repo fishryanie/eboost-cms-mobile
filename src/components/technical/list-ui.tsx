@@ -21,7 +21,7 @@ export function SectionTitle({ actionLabel, onAction, subtitle, title }: { actio
           </Pressable>
         ) : null}
       </ThemedView>
-      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={17} marginTop={2}>
+      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={16} marginTop={1}>
         {subtitle}
       </ThemedText>
     </ThemedView>

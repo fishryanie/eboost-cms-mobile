@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Palette, type ThemeColor } from 'themes';
+import { Colors, type ThemeColor } from 'themes';
 import { Radius, Spacing } from 'themes/layout';
 import { handleFlex, handleFlexGrow, handleFlexShrink, handleRound, handleSquare, mhs, mvs } from 'themes/scaling';
 
@@ -92,11 +92,11 @@ export type ThemedViewProps = ViewProps &
     safeTop?: boolean | number | SpacingKey;
     safeBottom?: boolean | number | SpacingKey;
     loading?: boolean;
-    skeletonBaseColor?: string;
-    skeletonShimmerColor?: string;
     skeletonDuration?: number;
     skeletonReduceMotion?: SkeletonReduceMotion;
   };
+
+const SKELETON_BASE_COLOR = '#E6E6E6';
 
 const HORIZONTAL_VIEW_KEYS = new Set([
   'left',
@@ -273,8 +273,6 @@ export const ThemedView = forwardRef<View, ThemedViewProps>(function ThemedView(
     flexGrow,
     flexShrink,
     loading = false,
-    skeletonBaseColor,
-    skeletonShimmerColor = Palette.surfaceBase,
     skeletonDuration = 1000,
     skeletonReduceMotion = 'system',
     ...rest
@@ -284,13 +282,12 @@ export const ThemedView = forwardRef<View, ThemedViewProps>(function ThemedView(
   const safeInsets = useSafeAreaInsets();
   const { viewProps, viewStyle } = splitViewProps(rest as Record<string, unknown>);
   const themedBackgroundColor = lightColor ?? (type ? Colors.light[type] : undefined);
-  const loadingBackgroundColor = skeletonBaseColor ?? themedBackgroundColor ?? Palette.surfaceMuted;
 
   return (
     <View
       ref={ref}
       style={[
-        loading ? { backgroundColor: loadingBackgroundColor } : themedBackgroundColor ? { backgroundColor: themedBackgroundColor } : undefined,
+        !loading && themedBackgroundColor ? { backgroundColor: themedBackgroundColor } : undefined,
         flex !== undefined ? handleFlex(flex) : undefined,
         flexGrow !== undefined ? handleFlexGrow(flexGrow) : undefined,
         flexShrink !== undefined ? handleFlexShrink(flexShrink) : undefined,
@@ -329,17 +326,11 @@ export const ThemedView = forwardRef<View, ThemedViewProps>(function ThemedView(
         viewStyle,
         loading ? styles.loadingContainer : undefined,
         scaleStyleProp(style),
+        loading ? { backgroundColor: SKELETON_BASE_COLOR } : undefined,
       ]}
       {...viewProps}>
       {loading ? undefined : children}
-      {loading && (
-        <SkeletonShimmer
-          baseColor={loadingBackgroundColor}
-          shimmerColor={skeletonShimmerColor}
-          duration={skeletonDuration}
-          reduceMotion={skeletonReduceMotion}
-        />
-      )}
+      {loading && <SkeletonShimmer duration={skeletonDuration} reduceMotion={skeletonReduceMotion} />}
     </View>
   );
 });

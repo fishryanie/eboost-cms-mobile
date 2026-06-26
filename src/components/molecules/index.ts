@@ -1,2 +1,1 @@
-export * from './search-bar'
-export * from './shimmer'
+export * from './search-bar';

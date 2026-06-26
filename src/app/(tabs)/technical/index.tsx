@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, RefreshControl, useWindowDimensions } from 'react-native';
@@ -18,6 +18,7 @@ import { styles } from 'components/technical/styles';
 import { ChargerServicesSection } from './components/charger-services-section';
 import { DomainAnalyzeSection } from './components/domain-analyze-section';
 import { NetworkStatusSection } from './components/network-status-section';
+import { PeakUsageHoursSection } from './components/peak-usage-hours-section';
 
 export const technicalDetailPanels: TechnicalPanel[] = ['chargers', 'meter-hourly', 'status-logs', 'energy-differ'];
 
@@ -34,6 +35,7 @@ async function getNetworkStatus(vehicle: TechnicalVehicle) {
 
 export default function TechnicalScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { width } = useWindowDimensions();
   const [boxActionMode, setBoxActionMode] = useState<'reset' | 'trigger' | 'unlock' | null>(null);
   const [replaceMeterVisible, setReplaceMeterVisible] = useState(false);
@@ -113,6 +115,13 @@ export default function TechnicalScreen() {
                 onReplaceMeter={() => setReplaceMeterVisible(true)}
                 onSetupLocation={() => setSetupLocationVisible(true)}
               />
+              <PeakUsageHoursSection
+                onViewMore={() =>
+                  router.push({
+                    pathname: '/technical/peak-usage-hours',
+                  } as never)
+                }
+              />
               <NetworkStatusSection
                 bikeQuery={{
                   data: bikeNetworkData,
@@ -167,6 +176,7 @@ export default function TechnicalScreen() {
                 void refetchCarBoxStatus();
                 void refetchCarNetwork();
                 void refetchDomain();
+                void queryClient.invalidateQueries({ queryKey: ['technical', 'peak-usage-hours'] });
               }}
               refreshing={bikeNetworkRefetching || bikeBoxStatusRefetching || carBoxStatusRefetching || carNetworkRefetching || domainRefetching}
               tintColor={Palette.accent}

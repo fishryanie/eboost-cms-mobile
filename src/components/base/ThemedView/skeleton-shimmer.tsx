@@ -15,15 +15,14 @@ import Animated, {
 export type SkeletonReduceMotion = 'always' | 'never' | 'system';
 
 type SkeletonShimmerProps = {
-  baseColor: string;
-  shimmerColor: string;
   duration: number;
   reduceMotion: SkeletonReduceMotion;
 };
 
 const GRADIENT_WIDTH_PERCENTAGE = 1;
+const SKELETON_GRADIENT_COLORS = ['#E6E6E6', '#f5f5f5', '#f5f5f5', '#E6E6E6'] as const;
 
-export function SkeletonShimmer({ baseColor, shimmerColor, duration, reduceMotion }: SkeletonShimmerProps) {
+export function SkeletonShimmer({ duration, reduceMotion }: SkeletonShimmerProps) {
   const sharedValue = useSharedValue(0);
   const componentWidth = useSharedValue(0);
   const motion = reduceMotion === 'never' ? ReduceMotion.Never : reduceMotion === 'always' ? ReduceMotion.Always : ReduceMotion.System;
@@ -66,7 +65,7 @@ export function SkeletonShimmer({ baseColor, shimmerColor, duration, reduceMotio
   return (
     <View pointerEvents='none' style={StyleSheet.absoluteFill} onLayout={handleLayout}>
       <Animated.View style={[styles.gradientContainer, animatedStyle]}>
-        <LinearGradient colors={['#E6E6E6', '#f5f5f5', '#f5f5f5', '#E6E6E6']} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={styles.gradient} />
+        <LinearGradient colors={SKELETON_GRADIENT_COLORS} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={styles.gradient} />
       </Animated.View>
     </View>
   );

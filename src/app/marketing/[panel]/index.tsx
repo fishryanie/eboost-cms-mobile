@@ -3,10 +3,10 @@ import { SubscriptionStatsCard } from 'app/(tabs)/marketing/components/subscript
 import { getMenuPanel, getMenuSection } from 'components/animated-tab-bar/constants';
 import { ThemedView } from 'components/base';
 import { CmsPlaceholderPanelScreen } from 'components/cms-placeholder-panel-screen';
-import { AppScreen } from 'components/ui';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { FlatList, RefreshControl, useWindowDimensions } from 'react-native';
+import { Palette } from 'themes';
 import { mhs } from 'themes/scaling';
 import { apiRequest } from 'utils/api/client';
 import { getCurrentMonthRange, ShareMetric, SubscriptionStatsResponse, toSubscriptionStatsSummary } from 'utils/marketing';
@@ -31,31 +31,30 @@ export default function MarketingPanelRoute() {
 
   if (panel.key === 'subscriptions') {
     return (
-      <AppScreen
-        canGoBack
-        onBack={() => router.back()}
-        title='Subscription Package Stats'
-        isFlatList
-        flatListProps={{
-          contentContainerStyle: { paddingBottom: mhs(64) },
-          data: [],
-          ListEmptyComponent: (
-            <ThemedView gap={'three'} paddingHorizontal={18}>
-              <SubscriptionStatsCard
-                isFetching={statsQuery.isFetching}
-                isLoading={statsQuery.isLoading}
-                monthRange={monthRange}
-                onMetricChange={setShareMetric}
-                onRefresh={statsQuery.refetch}
-                shareMetric={shareMetric}
-                summary={summary}
-                width={width}
-              />
-            </ThemedView>
-          ),
-          renderItem: null,
-        }}
-      />
+      <ThemedView flex={1} backgroundColor={Palette.surfaceBase} safePaddingTop>
+        <FlatList
+          {...{
+            contentContainerStyle: { paddingBottom: mhs(64) },
+            data: [],
+            ListEmptyComponent: (
+              <ThemedView gap={'three'} paddingHorizontal={18}>
+                <SubscriptionStatsCard
+                  isFetching={statsQuery.isFetching}
+                  isLoading={statsQuery.isLoading}
+                  monthRange={monthRange}
+                  onMetricChange={setShareMetric}
+                  onRefresh={statsQuery.refetch}
+                  shareMetric={shareMetric}
+                  summary={summary}
+                  width={width}
+                />
+              </ThemedView>
+            ),
+            refreshControl: <RefreshControl onRefresh={() => statsQuery.refetch()} refreshing={statsQuery.isRefetching} tintColor={Palette.accent} />,
+            renderItem: null,
+          }}
+        />
+      </ThemedView>
     );
   }
 
