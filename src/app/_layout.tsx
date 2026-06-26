@@ -9,10 +9,29 @@ import { AppDrawer } from 'components/app-drawer';
 import { AutoUpdateModal } from 'components/auto-update-modal';
 import { AppQueryProvider } from 'utils/query-provider';
 import { bootstrapSession } from 'utils/session/bootstrap';
+import * as Sentry from '@sentry/react-native';
+import * as Notifications from 'expo-notifications';
+import { useNotifications } from 'hooks/use-notifications';
 
 bootstrapSession();
 
-export default function TabLayout() {
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  debug: __DEV__,
+});
+
+function TabLayout() {
+  useNotifications();
   useFonts({
     Inter_100Thin,
     Inter_400Regular,
@@ -54,3 +73,6 @@ export default function TabLayout() {
     </ThemeProvider>
   );
 }
+
+export default Sentry.wrap(TabLayout);
+

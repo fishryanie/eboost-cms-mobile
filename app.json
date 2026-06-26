@@ -63,7 +63,15 @@
       ],
       "expo-image",
       "expo-asset",
-      "./plugins/withGradleProperties"
+      "./plugins/withGradleProperties",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "your-sentry-org",
+          "project": "your-sentry-project"
+        }
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
