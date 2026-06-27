@@ -25,7 +25,7 @@ mkdir -p "$build_dir"
 
 last_number="$(
   find "$build_dir" -maxdepth 1 -type f -name "$app_name-*.$extension" \
-    | sed -n -E "s#^.*/$app_name-([0-9]+)\\.$extension$#\\1#p" \
+    | sed -n -E 's#^.*/'"$app_name"'-([0-9]+)\.'"$extension"'$#\1#p' \
     | sort -n \
     | tail -1
 )"
@@ -39,6 +39,13 @@ fi
 padded_number="$(printf "%03d" "$next_number")"
 output="$build_dir/$app_name-$padded_number.$extension"
 latest="$build_dir/$app_name-latest.$extension"
+
+# Load environment variables from .env if present
+if [ -f .env ]; then
+  set -a
+  . ./.env
+  set +a
+fi
 
 eas build --platform android --profile "$profile" --local --output "$output"
 ln -sf "$(basename "$output")" "$latest"

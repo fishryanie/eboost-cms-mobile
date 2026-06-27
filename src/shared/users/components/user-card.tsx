@@ -1,6 +1,6 @@
 import { mhs } from 'themes/scaling';
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { AlertTriangle, Check, Copy, User } from 'lucide-react-native';
 import { memo, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { ThemedText, ThemedView } from 'components/base';
@@ -20,7 +20,7 @@ function VerificationIcon({ verified }: { verified?: boolean }) {
 
   return (
     <ThemedView style={[styles.verifyCircle, { borderColor: color }]}>
-      <SymbolView name={verified ? 'checkmark' : 'exclamationmark'} resizeMode='scaleAspectFit' size={10} tintColor={color} />
+      {verified ? <Check color={color} size={10} strokeWidth={3} /> : <AlertTriangle color={color} size={10} strokeWidth={3} />}
     </ThemedView>
   );
 }
@@ -37,7 +37,11 @@ function ProviderIcon({ username }: { username?: string | null }) {
   }
 
   if (provider === 'apple') {
-    return <SymbolView name='apple.logo' resizeMode='scaleAspectFit' size={15} tintColor={Palette.textSecondary} />;
+    return (
+      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.bold} fontSize={14} lineHeight={16}>
+        A
+      </ThemedText>
+    );
   }
 
   return null;
@@ -76,7 +80,7 @@ export const UserCard = memo(function UserCard({ onPress, style, user }: { onPre
               <Image contentFit='cover' source={{ uri: avatarUrl }} style={styles.avatarImage} />
             </Pressable>
           ) : (
-            <SymbolView name='person.fill' resizeMode='scaleAspectFit' size={38} tintColor='#FFFFFF' />
+            <User color='#FFFFFF' size={30} />
           )}
         </ThemedView>
         <ThemedView
@@ -103,7 +107,7 @@ export const UserCard = memo(function UserCard({ onPress, style, user }: { onPre
           <ThemedText numberOfLines={1} style={[styles.contactText, styles.phoneText]}>
             {user.phoneNumber || 'eboost-phone'}
           </ThemedText>
-          <SymbolView name='doc.on.doc' resizeMode='scaleAspectFit' size={14} tintColor='#00AF55' />
+          <Copy color='#00AF55' size={14} />
         </ThemedView>
 
         <ThemedView alignItems='center' flexDirection='row' gap={'one'} minWidth={0}>
@@ -112,7 +116,7 @@ export const UserCard = memo(function UserCard({ onPress, style, user }: { onPre
           <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} flexShrink={1} fontSize={12} lineHeight={17} minWidth={0}>
             {user.email || 'No email'}
           </ThemedText>
-          <SymbolView name='doc.on.doc' resizeMode='scaleAspectFit' size={14} tintColor='#00AF55' />
+          <Copy color='#00AF55' size={14} />
         </ThemedView>
       </ThemedView>
 

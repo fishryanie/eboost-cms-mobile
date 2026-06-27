@@ -1,28 +1,49 @@
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import {
+  ArrowLeftRight,
+  Bell,
+  Bike,
+  CalendarClock,
+  CircleDollarSign,
+  CreditCard,
+  FileText,
+  Gift,
+  Home,
+  Map,
+  MapPin,
+  Megaphone,
+  Settings2,
+  Ticket,
+  UserSquare,
+  Users,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react-native';
 
-const symbolMap = {
-  advertisement: 'megaphone.fill',
-  balance: 'creditcard.fill',
-  content: 'doc.text.fill',
-  gift: 'gift.fill',
-  home: 'house.fill',
-  location: 'mappin.and.ellipse',
-  map: 'map.fill',
-  marketing: 'megaphone.fill',
-  notification: 'bell.fill',
-  operation: 'gearshape.2.fill',
-  promotion: 'ticket.fill',
-  reservation: 'calendar.badge.clock',
-  subscription: 'rectangle.stack.badge.person.crop.fill',
-  tariff: 'dollarsign.circle.fill',
-  technical: 'wrench.and.screwdriver.fill',
-  transfer: 'arrow.left.arrow.right',
-  users: 'person.2.fill',
-  vehicle: 'scooter',
-} satisfies Record<string, SymbolViewProps['name']>;
+const symbolMap: Record<string, LucideIcon> = {
+  advertisement: Megaphone,
+  balance: CreditCard,
+  content: FileText,
+  gift: Gift,
+  home: Home,
+  location: MapPin,
+  map: Map,
+  marketing: Megaphone,
+  notification: Bell,
+  operation: Settings2,
+  promotion: Ticket,
+  reservation: CalendarClock,
+  subscription: UserSquare,
+  tariff: CircleDollarSign,
+  technical: Wrench,
+  transfer: ArrowLeftRight,
+  users: Users,
+  vehicle: Bike,
+};
 
 export type TabIconName = keyof typeof symbolMap;
 
 export function TabIcon({ color, name, size = 22 }: { color: string; name: TabIconName; size?: number }) {
-  return <SymbolView name={symbolMap[name]} resizeMode='scaleAspectFit' size={size} tintColor={color} />;
+  const IconComponent = symbolMap[name];
+  if (!IconComponent) return null;
+  return <IconComponent color={color} size={size} />;
 }

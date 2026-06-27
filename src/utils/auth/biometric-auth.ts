@@ -1,3 +1,4 @@
+import { Fingerprint, ScanFace, ShieldCheck, type LucideIcon } from 'lucide-react-native';
 import type { PlatformOSType } from 'react-native';
 
 const fingerprintType = 1;
@@ -15,14 +16,14 @@ export function getBiometricButtonLabel(authenticationTypes: number[], os: Platf
   return 'Biometric';
 }
 
-export function getBiometricSymbolName(authenticationTypes: number[]) {
+export function getBiometricSymbolName(authenticationTypes: number[]): LucideIcon {
   if (authenticationTypes.includes(facialRecognitionType)) {
-    return 'faceid';
+    return ScanFace;
   }
 
   if (authenticationTypes.includes(fingerprintType)) {
-    return 'touchid';
+    return Fingerprint;
   }
 
-  return 'lock.shield';
+  return ShieldCheck;
 }

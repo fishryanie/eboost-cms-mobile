@@ -1,5 +1,5 @@
 import { mhs } from 'themes/scaling';
-import { SymbolView } from 'expo-symbols';
+import { ChevronRight } from 'lucide-react-native';
 import { PropsWithChildren, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -18,12 +18,11 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
     <ThemedView>
       <Pressable style={({ pressed }) => [styles.heading, pressed && styles.pressedHeading]} onPress={() => setIsOpen(value => !value)}>
         <ThemedView type='backgroundElement' width={16} height={16} borderRadius={12} justifyContent='center' alignItems='center'>
-          <SymbolView
-            name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+          <ChevronRight
+            color={theme.text}
             size={14}
-            weight='bold'
-            tintColor={theme.text}
-            style={{ transform: [{ rotate: isOpen ? '-90deg' : '90deg' }] }}
+            strokeWidth={3}
+            style={{ transform: [{ rotate: isOpen ? '90deg' : '0deg' }] }}
           />
         </ThemedView>
 

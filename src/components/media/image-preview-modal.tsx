@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { X } from 'lucide-react-native';
 import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Modal from 'react-native-modal';
@@ -117,7 +117,7 @@ export function ImagePreviewModal({ imageUrl, onClose, title, visible }: { image
             {title || 'Image'}
           </ThemedText>
           <Pressable accessibilityLabel='Close image preview' onPress={close} style={styles.closeButton}>
-            <SymbolView name='xmark' resizeMode='scaleAspectFit' size={18} tintColor='#FFFFFF' />
+            <X color='#FFFFFF' size={18} />
           </Pressable>
         </ThemedView>
 

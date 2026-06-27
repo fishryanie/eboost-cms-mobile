@@ -2,65 +2,91 @@ import { ThemedText, ThemedView } from 'components/base';
 import { AppButton } from 'components/ui/button';
 import * as Updates from 'expo-updates';
 import { DownloadCloud, RefreshCw } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import Modal from 'react-native-modal';
 import { Colors, Palette } from 'themes/colors';
+
+type UpdateModalState = 'hidden' | 'asking' | 'downloading' | 'ready';
+
+const MIN_DOWNLOAD_PROGRESS_MS = 700;
+
+function waitForMinimumProgressDuration() {
+  return new Promise<void>(resolve => {
+    setTimeout(resolve, MIN_DOWNLOAD_PROGRESS_MS);
+  });
+}
 
 export function AutoUpdateModal() {
   const { downloadProgress, isUpdatePending } = Updates.useUpdates();
 
   // Quản lý các trạng thái của Modal: ẩn, đang hỏi, đang tải, đã sẵn sàng khởi động lại
-  const [modalState, setModalState] = useState<'hidden' | 'asking' | 'downloading' | 'ready'>('hidden');
+  const [modalState, setModalState] = useState<UpdateModalState>('hidden');
   const [isUpdating, setIsUpdating] = useState(false);
+  const visibleDownloadProgress = modalState === 'downloading' ? Math.max(downloadProgress ?? 0, 0.08) : (downloadProgress ?? 0);
+  const checkingUpdateRef = useRef(false);
+  const dismissedUpdateRef = useRef(false);
+  const modalStateRef = useRef<UpdateModalState>('hidden');
+  const pendingUpdateRef = useRef(false);
+
+  const updateModalState = (nextState: UpdateModalState) => {
+    modalStateRef.current = nextState;
+    setModalState(nextState);
+  };
 
   useEffect(() => {
     async function checkAndUpdate() {
+      if (__DEV__ || checkingUpdateRef.current || dismissedUpdateRef.current || pendingUpdateRef.current || modalStateRef.current !== 'hidden') {
+        return;
+      }
+
+      checkingUpdateRef.current = true;
       try {
         const update = await Updates.checkForUpdateAsync();
-        if (update.isAvailable) {
+        if (update.isAvailable && !dismissedUpdateRef.current && !pendingUpdateRef.current && modalStateRef.current === 'hidden') {
           // Bật popup hỏi người dùng có muốn update không
+          modalStateRef.current = 'asking';
           setModalState('asking');
         }
       } catch (error) {
         console.log('Update error:', error);
+      } finally {
+        checkingUpdateRef.current = false;
       }
     }
 
-    if (!__DEV__) {
-      checkAndUpdate();
-      const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-        if (nextAppState === 'active' && modalState === 'hidden') {
-          checkAndUpdate();
-        }
-      });
-      return () => subscription.remove();
-    }
-  }, [modalState]);
+    void checkAndUpdate();
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        void checkAndUpdate();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   // Lắng nghe khi tải xong thì chuyển sang trạng thái Sẵn sàng
   useEffect(() => {
-    if (isUpdatePending && modalState === 'downloading') {
-      setModalState('ready');
+    if (isUpdatePending) {
+      pendingUpdateRef.current = true;
     }
-  }, [isUpdatePending, modalState]);
+  }, [isUpdatePending]);
 
   const handleStartDownload = async () => {
-    setModalState('downloading');
+    dismissedUpdateRef.current = false;
+    updateModalState('downloading');
     try {
-      const result = await Updates.fetchUpdateAsync();
-      
-      if (result.isNew) {
-        setModalState('ready');
-      } else if (isUpdatePending) {
-        setModalState('ready');
+      const [result] = await Promise.all([Updates.fetchUpdateAsync(), waitForMinimumProgressDuration()]);
+
+      if (result.isNew || isUpdatePending || pendingUpdateRef.current) {
+        pendingUpdateRef.current = true;
+        updateModalState('ready');
       } else {
         // Nếu không có bản cập nhật mới nào thực sự được tải xuống
-        setModalState('hidden');
+        updateModalState('hidden');
       }
     } catch (e) {
       console.log('Download error:', e);
-      setModalState('hidden');
+      updateModalState('hidden');
     }
   };
 
@@ -71,12 +97,13 @@ export function AutoUpdateModal() {
     } catch (error) {
       console.log('Reload error:', error);
       setIsUpdating(false);
-      setModalState('hidden'); // Fallback: close modal if reload fails
+      updateModalState('hidden'); // Fallback: close modal if reload fails
     }
   };
 
   const handleCancel = () => {
-    setModalState('hidden');
+    dismissedUpdateRef.current = true;
+    updateModalState('hidden');
   };
 
   return (
@@ -116,11 +143,11 @@ export function AutoUpdateModal() {
                 Tiến trình
               </ThemedText>
               <ThemedText color={Palette.accent} fontWeight='bold'>
-                {Math.round((downloadProgress ?? 0) * 100)}%
+                {Math.round(visibleDownloadProgress * 100)}%
               </ThemedText>
             </ThemedView>
             <ThemedView width='100%' height={8} backgroundColor={Colors.light.backgroundSelected} radius={4} style={{ overflow: 'hidden' }}>
-              <ThemedView height='100%' backgroundColor={Palette.accent} style={{ width: `${Math.round((downloadProgress ?? 0) * 100)}%` }} />
+              <ThemedView height='100%' backgroundColor={Palette.accent} style={{ width: `${Math.round(visibleDownloadProgress * 100)}%` }} />
             </ThemedView>
           </ThemedView>
         )}

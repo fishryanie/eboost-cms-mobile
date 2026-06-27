@@ -1,6 +1,6 @@
 import { mhs } from 'themes/scaling';
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { Bike, Car, Fuel, Upload, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -149,7 +149,7 @@ export function LocationCard({
                     onUploadImage();
                   }}
                   style={({ pressed }) => [styles.uploadPlaceholder, pressed && styles.uploadPlaceholderPressed]}>
-                  <SymbolView name='square.and.arrow.up' resizeMode='scaleAspectFit' size={18} tintColor='#A6B5C8' />
+                  <Upload color='#A6B5C8' size={18} />
                   <ThemedText
                     numberOfLines={1}
                     color={Palette.textSecondary}
@@ -166,9 +166,9 @@ export function LocationCard({
 
             <ThemedView flex={1} gap={1} justifyContent='center' minWidth={0}>
               <ThemedView alignItems='center' flexDirection='row' gap={'two'}>
-                <CountPill icon='bicycle' label={`${getCount(location, 'bikeCount')} bikes`} />
-                <CountPill icon='car.fill' label={`${getCount(location, 'carCount')} cars`} />
-                <CountPill icon='fuelpump.fill' label={`${getCount(location, 'stationCount')} stations`} />
+                <CountPill icon={Bike} label={`${getCount(location, 'bikeCount')} bikes`} />
+                <CountPill icon={Car} label={`${getCount(location, 'carCount')} cars`} />
+                <CountPill icon={Fuel} label={`${getCount(location, 'stationCount')} stations`} />
               </ThemedView>
               <ThemedText numberOfLines={1} color='#202124' fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20}>
                 {location.name}
@@ -196,10 +196,10 @@ export function LocationCard({
   );
 }
 
-function CountPill({ icon, label }: { icon: 'bicycle' | 'car.fill' | 'fuelpump.fill'; label: string }) {
+function CountPill({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <ThemedView alignItems='center' flexDirection='row' gap={3} maxWidth={76}>
-      <SymbolView name={icon} resizeMode='scaleAspectFit' size={11} tintColor='#8E8E93' />
+      <Icon color='#8E8E93' size={11} />
       <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={14}>
         {label}
       </ThemedText>

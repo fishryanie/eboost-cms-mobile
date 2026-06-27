@@ -1,5 +1,5 @@
 import { ThemedText, ThemedView } from 'components/base';
-import { SymbolView } from 'expo-symbols';
+
 import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { mhs } from 'themes/scaling';
@@ -18,6 +18,8 @@ import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
 const colors = {
   primary: '#24294A',
 };
+
+import { Bell, QrCode, Search, type LucideIcon } from 'lucide-react-native';
 
 export function HomeHeader() {
   const { top } = useSafeAreaInsets();
@@ -72,18 +74,18 @@ export function HomeHeader() {
       </Pressable>
 
       <ThemedView alignItems='center' flex={1} flexDirection='row' gap={'four'} justifyContent='flex-end'>
-        <HeaderIcon accessibilityLabel='Search' name='magnifyingglass' />
-        <HeaderIcon accessibilityLabel='Notifications' name='bell' />
-        <HeaderIcon accessibilityLabel='Scan QR code' name='qrcode.viewfinder' />
+        <HeaderIcon accessibilityLabel='Search' icon={Search} />
+        <HeaderIcon accessibilityLabel='Notifications' icon={Bell} />
+        <HeaderIcon accessibilityLabel='Scan QR code' icon={QrCode} />
       </ThemedView>
     </ThemedView>
   );
 }
 
-function HeaderIcon({ accessibilityLabel, name }: { accessibilityLabel: string; name: string }) {
+function HeaderIcon({ accessibilityLabel, icon: Icon }: { accessibilityLabel: string; icon: LucideIcon }) {
   return (
     <Pressable accessibilityLabel={accessibilityLabel} accessibilityRole='button' style={styles.iconButton}>
-      <SymbolView name={name as never} resizeMode='scaleAspectFit' size={22} tintColor={colors.primary} />
+      <Icon color={colors.primary} size={22} />
     </Pressable>
   );
 }

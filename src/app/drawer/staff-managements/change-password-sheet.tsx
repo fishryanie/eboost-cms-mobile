@@ -1,6 +1,6 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { SymbolView } from 'expo-symbols';
+import { Eye, EyeOff, Key, AlertCircle, Copy, Check } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
@@ -126,11 +126,11 @@ export function ChangePasswordSheet({ member, onClose, visible }: { member: Staf
                 value={password}
               />
               <Pressable onPress={() => setIsPasswordVisible(v => !v)} style={styles.eyeIcon}>
-                <SymbolView name={isPasswordVisible ? 'eye.slash.fill' : 'eye.fill'} resizeMode='scaleAspectFit' size={20} tintColor={Palette.textTertiary} />
+                {isPasswordVisible ? <EyeOff color={Palette.textTertiary} size={20} /> : <Eye color={Palette.textTertiary} size={20} />}
               </Pressable>
             </ThemedView>
             <Pressable accessibilityRole='button' onPress={generatePassword} style={({ pressed }) => [styles.generateButton, pressed && styles.pressed]}>
-              <SymbolView name='key.fill' resizeMode='scaleAspectFit' size={16} tintColor={Palette.accent} />
+              <Key color={Palette.accent} size={16} />
               <ThemedText color={Palette.accent} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20}>
                 Generate secure password
               </ThemedText>
@@ -152,7 +152,7 @@ export function ChangePasswordSheet({ member, onClose, visible }: { member: Staf
         {step === 2 && member && (
           <ThemedView gap={'three'}>
             <ThemedView style={styles.alertBox}>
-              <SymbolView name='exclamationmark.circle.fill' resizeMode='scaleAspectFit' size={20} tintColor='#F59E0B' />
+              <AlertCircle color='#F59E0B' size={20} />
               <ThemedText color={'#B45309'} fontFamily={FontFamily.medium} fontSize={14} lineHeight={20}>
                 Please double check information before confirming.
               </ThemedText>
@@ -179,7 +179,7 @@ export function ChangePasswordSheet({ member, onClose, visible }: { member: Staf
                   {password}
                 </ThemedText>
                 <Pressable hitSlop={12} onPress={copyToClipboard} style={({ pressed }) => [pressed && styles.pressed]}>
-                  <SymbolView name='doc.on.doc' resizeMode='scaleAspectFit' size={18} tintColor={Palette.accent} />
+                  <Copy color={Palette.accent} size={18} />
                 </Pressable>
               </ThemedView>
             </ThemedView>
@@ -204,7 +204,7 @@ export function ChangePasswordSheet({ member, onClose, visible }: { member: Staf
             <ThemedView flexDirection='row' gap={'three'}>
               <AppButton buttonColor={Palette.surfaceMuted} label='Back' onPress={() => setStep(1)} style={{ flex: 1 }} textColor={Palette.textPrimary} />
               <AppButton
-                icon={<SymbolView name='checkmark' resizeMode='scaleAspectFit' size={18} tintColor='#FFFFFF' />}
+                icon={<Check color='#FFFFFF' size={18} />}
                 label='Save'
                 loading={mutation.isPending}
                 onPress={() => mutation.mutate()}
@@ -217,7 +217,7 @@ export function ChangePasswordSheet({ member, onClose, visible }: { member: Staf
         {step === 3 && (
           <ThemedView alignItems='center' gap={'four'} paddingVertical={'four'}>
             <ThemedView alignItems='center' backgroundColor='#E8F4EF' borderRadius={'pill'} height={64} justifyContent='center' width={64}>
-              <SymbolView name='checkmark' resizeMode='scaleAspectFit' size={32} tintColor={Palette.accent} />
+              <Check color={Palette.accent} size={32} />
             </ThemedView>
             <ThemedView alignItems='center' gap={'two'}>
               <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={28}>

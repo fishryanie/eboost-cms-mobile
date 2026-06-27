@@ -4,7 +4,6 @@ import { Platform, StyleSheet, type ViewStyle } from 'react-native';
 import { Canvas, Group, Blur, ColorMatrix, Paint, Oval, Circle, RoundedRect } from '@shopify/react-native-skia';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, interpolate, useDerivedValue, clamp, WithSpringConfig } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { SymbolView } from 'expo-symbols';
 import { Check, X } from 'lucide-react-native';
 import { DEFAULT_BLOB_COLOR, DEFAULT_ICON_COLOR, DEFAULT_OFF_COLOR, DEFAULT_ON_COLOR, DEFAULT_SIZE, DEFAULT_THRESHOLD } from './const';
 import type { IAnimatedBridge, ICoreOval, IGooeySwitch, IShadowOval } from './types';
@@ -281,7 +280,7 @@ export const GooeySwitch: React.FC<IGooeySwitch> & React.FunctionComponent<IGooe
 
     const defaultActiveIcon = () =>
       Platform.OS === 'ios' ? (
-        <SymbolView name='checkmark' size={ICON_SIZE} tintColor={iconTint} weight='bold' />
+        <Check color={iconTint} size={ICON_SIZE} strokeWidth={3} />
       ) : (
         <>
           <Check size={ICON_SIZE} color={iconTint} />
@@ -290,7 +289,7 @@ export const GooeySwitch: React.FC<IGooeySwitch> & React.FunctionComponent<IGooe
 
     const defaultInactiveIcon = () =>
       Platform.OS === 'ios' ? (
-        <SymbolView name='xmark' size={X_ICON_SIZE} tintColor={iconTint} weight='semibold' />
+        <X color={iconTint} size={X_ICON_SIZE} strokeWidth={2.5} />
       ) : (
         <>
           <X size={X_ICON_SIZE} color={iconTint} />

@@ -1,7 +1,7 @@
 import { mhs } from 'themes/scaling';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { SymbolView } from 'expo-symbols';
+import { ShieldCheck, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput } from 'react-native';
 import { ThemedText, ThemedView } from 'components/base';
@@ -15,7 +15,7 @@ import { sessionKeys } from 'utils/session/use-session-token';
 
 export default function DrawerSettingsScreen() {
   const queryClient = useQueryClient();
-  const [biometricIcon, setBiometricIcon] = useState('lock.shield');
+  const [BiometricIcon, setBiometricIcon] = useState<LucideIcon>(() => ShieldCheck);
   const [biometricLabel, setBiometricLabel] = useState('Biometric');
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [canUseBiometric, setCanUseBiometric] = useState(false);
@@ -141,7 +141,7 @@ export default function DrawerSettingsScreen() {
           padding={'four'}>
           <ThemedView alignItems='center' flexDirection='row' gap={'three'}>
             <ThemedView alignItems='center' backgroundColor='#E8F4EF' borderRadius={'pill'} height={48} justifyContent='center' width={48}>
-              <SymbolView name={biometricIcon as never} resizeMode='scaleAspectFit' size={24} tintColor={Palette.accent} />
+              <BiometricIcon color={Palette.accent} size={24} />
             </ThemedView>
             <ThemedView flex={1} gap={'half'}>
               <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={16} lineHeight={22}>

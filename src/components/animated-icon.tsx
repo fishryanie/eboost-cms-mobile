@@ -1,14 +1,12 @@
+import { ThemedView } from 'components/base';
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { Dimensions, StyleSheet, useWindowDimensions } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { ThemedView, ThemedText } from 'components/base';
 
 const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
-const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
-const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
 
 export function AnimatedSplashOverlay() {
@@ -41,57 +39,6 @@ export function AnimatedSplashOverlay() {
       style={styles.backgroundSolidColor}>
       <Image contentFit='cover' source={require('assets/images/cms-splash.png')} style={{ height, width }} />
     </AnimatedThemedView>
-  );
-}
-
-const keyframe = new Keyframe({
-  0: {
-    transform: [{ scale: INITIAL_SCALE_FACTOR }],
-  },
-  100: {
-    transform: [{ scale: 1 }],
-    easing: Easing.elastic(0.7),
-  },
-});
-
-const logoKeyframe = new Keyframe({
-  0: {
-    transform: [{ scale: 1.3 }],
-    opacity: 0,
-  },
-  40: {
-    transform: [{ scale: 1.3 }],
-    opacity: 0,
-    easing: Easing.elastic(0.7),
-  },
-  100: {
-    opacity: 1,
-    transform: [{ scale: 1 }],
-    easing: Easing.elastic(0.7),
-  },
-});
-
-const glowKeyframe = new Keyframe({
-  0: {
-    transform: [{ rotateZ: '0deg' }],
-  },
-  100: {
-    transform: [{ rotateZ: '7200deg' }],
-  },
-});
-
-export function AnimatedIcon() {
-  return (
-    <ThemedView justifyContent='center' alignItems='center' width={128} height={128} zIndex={100}>
-      <AnimatedThemedView entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
-        <Image style={styles.glow} source={require('assets/images/logo-glow.png')} />
-      </AnimatedThemedView>
-
-      <AnimatedThemedView entering={keyframe.duration(DURATION)} style={styles.background} />
-      <AnimatedThemedView style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
-        <Image style={styles.image} source={require('assets/images/icon.png')} />
-      </AnimatedThemedView>
-    </ThemedView>
   );
 }
 

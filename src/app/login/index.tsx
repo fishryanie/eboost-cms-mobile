@@ -2,7 +2,7 @@ import { Canvas, LinearGradient, RadialGradient, Rect, vec } from '@shopify/reac
 import { useMutation } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Keyboard,
@@ -238,14 +238,15 @@ export default function LoginScreen() {
                     accessibilityLabel={`Sign in with ${biometricLabel}`}
                     buttonColor={canSubmitBiometric ? '#F3FAF6' : Palette.surfaceMuted}
                     disabled={!canSubmitBiometric}
-                    icon={
-                      <SymbolView
-                        name={biometricIcon as never}
-                        resizeMode='scaleAspectFit'
-                        size={biometricSymbolSize}
-                        tintColor={canSubmitBiometric ? Palette.accent : Palette.textTertiary}
-                      />
-                    }
+                    icon={(() => {
+                      const BiometricIcon = biometricIcon;
+                      return (
+                        <BiometricIcon
+                          color={canSubmitBiometric ? Palette.accent : Palette.textTertiary}
+                          size={biometricSymbolSize}
+                        />
+                      );
+                    })()}
                     onPress={handleBiometricLogin}
                     scale={0.92}
                     style={[styles.iconActionButton, !canSubmitBiometric && styles.iconActionButtonDisabled]}

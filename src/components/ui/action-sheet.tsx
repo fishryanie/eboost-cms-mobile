@@ -2,7 +2,7 @@ import { mhs } from 'themes/scaling';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Fragment, ReactNode, useEffect, useMemo, useRef } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
-import { SymbolView, SFSymbol } from 'expo-symbols';
+import { type LucideIcon, ChevronRight } from 'lucide-react-native';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
@@ -10,7 +10,7 @@ import { FontFamily, Palette } from 'themes';
 export type ActionSheetItem = {
   danger?: boolean;
   disabled?: boolean;
-  icon?: SFSymbol;
+  icon?: LucideIcon;
   key: string;
   label: string;
   meta?: string;
@@ -92,9 +92,10 @@ export function ActionSheet({
                     action.onPress();
                   }}
                   style={({ pressed }) => [styles.primaryRowItem, action.disabled && styles.disabled, pressed && styles.pressed]}>
-                  {action.icon && (
-                    <SymbolView name={action.icon} resizeMode='scaleAspectFit' size={18} tintColor={action.danger ? Palette.danger : Palette.accent} />
-                  )}
+                  {action.icon && (() => {
+                    const ActionIcon = action.icon;
+                    return <ActionIcon color={action.danger ? Palette.danger : Palette.accent} size={18} />;
+                  })()}
                   <ThemedText color={action.danger ? Palette.danger : Palette.accent} fontFamily={FontFamily.bold} fontSize={15} lineHeight={20}>
                     {action.label}
                   </ThemedText>
@@ -117,9 +118,10 @@ export function ActionSheet({
                     item.onPress();
                   }}
                   style={({ pressed }) => [styles.item, item.disabled && styles.disabled, pressed && styles.pressed]}>
-                  {item.icon ? (
-                    <SymbolView name={item.icon} resizeMode='scaleAspectFit' size={20} tintColor={item.danger ? Palette.danger : Palette.textPrimary} />
-                  ) : null}
+                  {item.icon ? (() => {
+                    const ItemIcon = item.icon;
+                    return <ItemIcon color={item.danger ? Palette.danger : Palette.textPrimary} size={20} />;
+                  })() : null}
                   <ThemedView flex={1}>
                     <ThemedText style={[styles.itemLabel, item.danger && styles.danger]}>{item.label}</ThemedText>
                     {item.meta ? (
@@ -128,7 +130,7 @@ export function ActionSheet({
                       </ThemedText>
                     ) : null}
                   </ThemedView>
-                  <SymbolView name='chevron.right' resizeMode='scaleAspectFit' size={16} tintColor={Palette.textTertiary} />
+                  <ChevronRight color={Palette.textTertiary} size={16} />
                 </Pressable>
                 {index < items.length - 1 && <ThemedView backgroundColor={Palette.borderSubtle} height={StyleSheet.hairlineWidth} marginLeft={'four'} />}
               </Fragment>

@@ -3,6 +3,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import { ShieldCheck, type LucideIcon } from 'lucide-react-native';
 
 import { loginAdmin } from 'utils/auth/auth-service';
 import { getBiometricButtonLabel, getBiometricSymbolName } from 'utils/auth/biometric-auth';
@@ -18,7 +19,7 @@ type UseBiometricLoginOptions = {
 export function useBiometricLogin({ setErrorMessage }: UseBiometricLoginOptions) {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const [biometricIcon, setBiometricIcon] = useState('lock.shield');
+  const [biometricIcon, setBiometricIcon] = useState<LucideIcon>(ShieldCheck);
   const [biometricLabel, setBiometricLabel] = useState('Biometric');
   const [canUseBiometric, setCanUseBiometric] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);

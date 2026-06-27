@@ -1,5 +1,5 @@
 import * as LocalAuthentication from 'expo-local-authentication';
-import { SymbolView } from 'expo-symbols';
+
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Switch } from 'react-native';
 import Modal from 'react-native-modal';
@@ -9,9 +9,10 @@ import { FontFamily, Palette } from 'themes';
 import { getBiometricButtonLabel, getBiometricSymbolName } from 'utils/auth/biometric-auth';
 import { biometricCredentialStore, type BiometricCredentials } from 'utils/auth/biometric-credentials';
 import { consumePendingBiometricCredentials } from 'utils/auth/biometric-prompt';
+import { ShieldCheck, type LucideIcon } from 'lucide-react-native';
 
 export function BiometricOptInPrompt() {
-  const [biometricIcon, setBiometricIcon] = useState('lock.shield');
+  const [biometricIcon, setBiometricIcon] = useState<LucideIcon>(ShieldCheck);
   const [biometricLabel, setBiometricLabel] = useState('Biometric');
   const [isSaving, setIsSaving] = useState(false);
   const [pendingCredentials, setPendingCredentials] = useState<BiometricCredentials | null>(null);
@@ -96,7 +97,10 @@ export function BiometricOptInPrompt() {
       <ThemedView alignItems='center' flex={1} justifyContent='center' padding={'five'}>
         <ThemedView backgroundColor={Palette.surfaceRaised} borderRadius={'large'} gap={'four'} maxWidth={420} padding={'five'} width='88%'>
           <ThemedView alignItems='center' alignSelf='flex-start' backgroundColor='#E8F4EF' borderRadius={'pill'} height={52} justifyContent='center' width={52}>
-            <SymbolView name={biometricIcon as never} resizeMode='scaleAspectFit' size={28} tintColor={Palette.accent} />
+            {(() => {
+              const BiometricIcon = biometricIcon;
+              return <BiometricIcon color={Palette.accent} size={28} />;
+            })()}
           </ThemedView>
           <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
             Enable {biometricLabel} sign in?

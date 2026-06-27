@@ -1,6 +1,5 @@
 import { BlurView } from 'expo-blur';
-import { SymbolView } from 'expo-symbols';
-import { Search } from 'lucide-react-native';
+import { CircleX, Search } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Dimensions, Platform, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import Animated, { interpolate, useAnimatedProps, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
@@ -231,7 +230,7 @@ export const SearchBar = ({
                   {renderTrailingIcons ? (
                     renderTrailingIcons()
                   ) : (
-                    <SymbolView name='xmark.circle.fill' size={18} tintColor='#98A2B3' fallback={<Search size={18} color='#98A2B3' />} />
+                    <CircleX color='#98A2B3' size={18} />
                   )}
                 </AnimatedTouchable>
               )}

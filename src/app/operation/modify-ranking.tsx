@@ -6,7 +6,6 @@ import { AppButton } from 'components/ui';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { CheckCircle2 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
@@ -265,7 +264,7 @@ export default function ModifyRankingScreen() {
                       {getUserLevelLabel(level)}
                     </ThemedText>
                   </ThemedView>
-                  {selected ? <SymbolView name='checkmark.circle.fill' resizeMode='scaleAspectFit' size={22} tintColor={Palette.accent} /> : null}
+                  {selected ? <CheckCircle2 color={Palette.accent} size={22} /> : null}
                 </Pressable>
               );
             })}

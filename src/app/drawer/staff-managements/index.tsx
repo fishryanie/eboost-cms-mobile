@@ -1,7 +1,8 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAdminProfile } from 'utils/auth/admin-profile';
+import { History, Lock, Mail, Undo2, Archive, Pencil, UserPlus, Ban, CheckCircle2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
 
@@ -417,7 +418,7 @@ export default function StaffManagementsScreen() {
               accessibilityRole='button'
               onPress={() => openSheet('create')}
               style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}>
-              <SymbolView name='person.badge.plus' resizeMode='scaleAspectFit' size={20} tintColor='#FFFFFF' />
+              <UserPlus color='#FFFFFF' size={20} />
             </Pressable>
           }
           searchBar={searchBarElement}
@@ -481,7 +482,7 @@ export default function StaffManagementsScreen() {
             key: 'logs',
             label: 'Activity Logs',
             meta: 'View recent activities',
-            icon: 'clock.arrow.circlepath',
+            icon: History,
             onPress: () => openSheet('logs', selectedMember),
           },
           {
@@ -489,7 +490,7 @@ export default function StaffManagementsScreen() {
             key: 'password',
             label: 'Change Password',
             meta: 'Set a new password for this admin',
-            icon: 'lock',
+            icon: Lock,
             onPress: () => openSheet('password', selectedMember),
           },
           {
@@ -497,7 +498,7 @@ export default function StaffManagementsScreen() {
             key: 'reset',
             label: 'Send Reset Email',
             meta: 'Email a password reset link',
-            icon: 'envelope',
+            icon: Mail,
             onPress: () => selectedMember && resetPasswordMutation.mutate(selectedMember),
           },
           {
@@ -506,7 +507,7 @@ export default function StaffManagementsScreen() {
             key: 'archive',
             label: selectedMember?.deletedAt ? 'Restore' : 'Archive',
             meta: selectedMember?.deletedAt ? 'Bring this admin back' : 'Soft-delete this administrator',
-            icon: selectedMember?.deletedAt ? 'arrow.uturn.left' : 'archivebox',
+            icon: selectedMember?.deletedAt ? Undo2 : Archive,
             onPress: () => selectedMember && archiveMutation.mutate(selectedMember),
           },
         ]}
@@ -516,7 +517,7 @@ export default function StaffManagementsScreen() {
           {
             key: 'edit',
             label: 'Edit',
-            icon: 'pencil',
+            icon: Pencil,
             onPress: () => openSheet('roles', selectedMember),
           },
           {
@@ -524,7 +525,7 @@ export default function StaffManagementsScreen() {
             disabled: !selectedMember || toggleEnabledMutation.isPending || Boolean(selectedMember?.deletedAt),
             key: 'status',
             label: selectedMember?.enabled ? 'Disable' : 'Enable',
-            icon: selectedMember?.enabled ? 'nosign' : 'checkmark.circle',
+            icon: selectedMember?.enabled ? Ban : CheckCircle2,
             onPress: () => selectedMember && toggleEnabledMutation.mutate(selectedMember),
           },
         ]}

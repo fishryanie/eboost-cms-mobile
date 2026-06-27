@@ -1,7 +1,7 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
-import { SymbolView } from 'expo-symbols';
+import { CheckCircle2, Clock, XCircle, ArrowUpRightSquare } from 'lucide-react-native';
 import { useCallback, useEffect, useRef } from 'react';
 import { Alert, Pressable, StyleSheet } from 'react-native';
 
@@ -49,7 +49,7 @@ export function PaymentResultSheet({ onClose, visible, record }: { onClose: () =
   const statusText = record?.status ? record.status.toUpperCase() : 'UNKNOWN';
   const statusColor = isSuccess ? '#00B85A' : isPending ? '#F5A623' : '#D92D20';
   const statusBg = isSuccess ? '#E8F4EF' : isPending ? '#FFF4E5' : '#FEE2E2';
-  const statusIcon = isSuccess ? 'checkmark.circle.fill' : isPending ? 'clock.fill' : 'xmark.circle.fill';
+  const StatusIcon = isSuccess ? CheckCircle2 : isPending ? Clock : XCircle;
 
   return (
     <BottomSheetModal
@@ -71,7 +71,7 @@ export function PaymentResultSheet({ onClose, visible, record }: { onClose: () =
             alignItems='center'
             gap={'two'}
             marginBottom={'three'}>
-            <SymbolView name={statusIcon} resizeMode='scaleAspectFit' size={14} tintColor={statusColor} />
+            <StatusIcon color={statusColor} size={14} />
             <ThemedText color={statusColor} fontFamily={FontFamily.bold} fontSize={12} style={{ letterSpacing: 1 }}>
               {statusText}
             </ThemedText>
@@ -181,7 +181,7 @@ export function PaymentResultSheet({ onClose, visible, record }: { onClose: () =
             </ThemedView>
 
             <AppButton
-              icon={<SymbolView name='arrow.up.right.circle.fill' resizeMode='scaleAspectFit' size={20} tintColor='#FFFFFF' />}
+              icon={<ArrowUpRightSquare color='#FFFFFF' size={20} />}
               label={record?.checkoutUrl ? 'Go to Checkout' : 'No Checkout URL'}
               onPress={handleCheckout}
               disabled={!record?.checkoutUrl}

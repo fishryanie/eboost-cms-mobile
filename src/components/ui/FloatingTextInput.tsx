@@ -1,9 +1,9 @@
 import { ThemedText, ThemedView } from 'components/base';
-import { SymbolView } from 'expo-symbols';
+
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, type TextInputProps, type TextInput as TextInputRef, type ViewStyle } from 'react-native';
 import Animated, { interpolate, interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { Eye, EyeOff } from 'lucide-react-native';
+import { Eye, EyeOff, CircleX } from 'lucide-react-native';
 
 import { FontFamily, Palette } from 'themes';
 import { fs, mhs, rv } from 'themes/scaling';
@@ -135,7 +135,7 @@ export default function FloatingTextInput({
         </Pressable>
       ) : onClear && Boolean(value) ? (
         <Pressable onPress={onClear} style={styles.clearButton}>
-          <SymbolView name='xmark.circle.fill' resizeMode='scaleAspectFit' size={18} tintColor={Palette.textTertiary} />
+          <CircleX color={Palette.textTertiary} size={18} />
         </Pressable>
       ) : null}
       {error ? (

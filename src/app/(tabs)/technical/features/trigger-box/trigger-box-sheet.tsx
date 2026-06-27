@@ -7,7 +7,7 @@ import {
   BottomSheetTextInput,
   type BottomSheetFooterProps,
 } from '@gorhom/bottom-sheet';
-import { SymbolView } from 'expo-symbols';
+import { Zap, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import Modal from 'react-native-modal';
@@ -213,7 +213,7 @@ function TriggerResponseModal({
             showsVerticalScrollIndicator={false}>
             <ThemedView alignItems='flex-start' flexDirection='row' gap={metrics.itemGap}>
               <ThemedView style={[styles.successIcon, { height: metrics.responseIconSize, width: metrics.responseIconSize }]}>
-                <SymbolView name='bolt.fill' resizeMode='scaleAspectFit' size={metrics.titleFontSize + 4} tintColor={Palette.accent} />
+                <Zap color={Palette.accent} size={metrics.titleFontSize + 4} />
               </ThemedView>
               <ThemedView flex={1} gap={'one'} minWidth={0}>
                 <ThemedText
@@ -240,7 +240,7 @@ function TriggerResponseModal({
                 accessibilityRole='button'
                 onPress={onClose}
                 style={[styles.modalCloseButton, { height: metrics.modalCloseSize, width: metrics.modalCloseSize }]}>
-                <SymbolView name='xmark' resizeMode='scaleAspectFit' size={15} tintColor={Palette.textSecondary} />
+                <X color={Palette.textSecondary} size={15} />
               </Pressable>
             </ThemedView>
 

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { CheckCircle2, XCircle, User as UserIcon, TrendingUp, ArrowUpRight, ArrowDownRight, Users, Zap, Clock, type LucideIcon } from 'lucide-react-native';
 import { ArrowRightLeft, ChevronLeft, ChevronsRight, CreditCard, Lock, Mail, ShieldCheck, Star, Wallet } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
@@ -43,7 +43,7 @@ import {
 type OperationServiceKey = 'adjust-balance' | 'transfer-money' | 'modify-ranking' | 'change-email' | 'change-password' | 'payment-checkout';
 type WizardStep = 'auth' | 'input' | 'result';
 type ResultState = { message: string; status: 'error' | 'success'; title: string };
-type SymbolName = ComponentProps<typeof SymbolView>['name'];
+type SymbolName = LucideIcon;
 
 type OperationService = {
   accentColor: string;
@@ -907,13 +907,10 @@ function ResultStep({ loading, onDone, result }: { loading: boolean; onDone: () 
     <ThemedView gap={'four'} style={styles.resultCard}>
       {loading ? (
         <ThemedView borderRadius={'pill'} height={58} loading width={58} />
+      ) : success ? (
+        <CheckCircle2 color={Palette.accent} size={58} />
       ) : (
-        <SymbolView
-          name={success ? 'checkmark.circle.fill' : 'xmark.circle.fill'}
-          resizeMode='scaleAspectFit'
-          size={58}
-          tintColor={success ? Palette.accent : Palette.danger}
-        />
+        <XCircle color={Palette.danger} size={58} />
       )}
       <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={21} lineHeight={27} textAlign='center'>
         {loading ? 'Processing...' : result?.title || 'Operation result'}
@@ -930,7 +927,7 @@ function SelectedUserSummary({ user }: { user: UserListItem }) {
   return (
     <ThemedView style={styles.selectedSummary}>
       <ThemedView style={styles.selectedAvatar}>
-        <SymbolView name='person.fill' resizeMode='scaleAspectFit' size={24} tintColor='#FFFFFF' />
+        <UserIcon color='#FFFFFF' size={24} />
       </ThemedView>
       <ThemedView flex={1} minWidth={0}>
         <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15}>
@@ -1219,7 +1216,7 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
         <ThemedView flex={1} minWidth={0}>
           <SectionTitle subtitle='Monthly user base trend and charging activity.' title='User Growth' />
         </ThemedView>
-        <SymbolView name='chart.line.uptrend.xyaxis' resizeMode='scaleAspectFit' size={18} tintColor={operationAccent} />
+        <TrendingUp color={operationAccent} size={18} />
       </ThemedView>
       
       <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={mhs(24)} gap={'four'} padding={mhs(20)}>
@@ -1228,21 +1225,21 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
             label='Total Users' 
             value={formatFullNumber(summary?.total_users)} 
             change={summary?.today_vs_yesterday_growth_percent} 
-            icon='person.2.fill'
+            icon={Users}
             color='#3B82F6'
           />
           <PremiumGrowthCard 
             label='Active Today' 
             value={formatFullNumber(summary?.users_charged_today)} 
             change={summary?.charged_today_vs_yesterday_percent} 
-            icon='bolt.fill'
+            icon={Zap}
             color='#10B981'
           />
           <PremiumGrowthCard 
             label='Avg Duration' 
             value={formatDurationMinutes(summary?.avg_charge_duration_all_time)} 
             change={summary?.avg_charge_duration_change_percent} 
-            icon='clock.fill'
+            icon={Clock}
             color='#8B5CF6'
           />
         </ThemedView>
@@ -1287,14 +1284,14 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
   );
 }
 
-function PremiumGrowthCard({ change, label, value, icon, color }: { change?: number; label: string; value: string; icon: SymbolName; color: string }) {
+function PremiumGrowthCard({ change, label, value, icon: Icon, color }: { change?: number; label: string; value: string; icon: LucideIcon; color: string }) {
   const isPositive = Number(change) >= 0;
   const changeColor = isPositive ? '#10B981' : '#F43F5E';
   
   return (
     <ThemedView flex={1} minWidth={0} gap={mhs(4)}>
       <ThemedView flexDirection='row' alignItems='center' gap={mhs(4)}>
-        <SymbolView name={icon} size={10} tintColor={Palette.textTertiary} />
+        <Icon color={Palette.textTertiary} size={10} />
         <ThemedText flex={1} numberOfLines={1} color={Palette.textTertiary} fontFamily={FontFamily.bold} fontSize={9} textTransform='uppercase'>
           {label}
         </ThemedText>
@@ -1304,7 +1301,7 @@ function PremiumGrowthCard({ change, label, value, icon, color }: { change?: num
       </ThemedText>
       {change !== undefined && (
         <ThemedView flexDirection='row' alignItems='center' gap={2}>
-          <SymbolView name={isPositive ? 'arrow.up.right' : 'arrow.down.right'} size={10} tintColor={changeColor} />
+          {isPositive ? <ArrowUpRight color={changeColor} size={10} /> : <ArrowDownRight color={changeColor} size={10} />}
           <ThemedText numberOfLines={1} color={changeColor} fontFamily={FontFamily.semibold} fontSize={11}>
             {Math.abs(change).toFixed(1)}%
           </ThemedText>

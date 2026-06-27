@@ -1,5 +1,4 @@
 import { mhs } from 'themes/scaling';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { PropsWithChildren, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, { Easing, Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -25,15 +24,17 @@ const colors = {
   itemPressed: 'rgba(255,255,255,0.12)',
 };
 
+import { LogOut, Settings, UserCircle, UserCog, type LucideIcon } from 'lucide-react-native';
+
 const drawerItems: {
-  icon: SymbolViewProps['name'];
+  icon: LucideIcon;
   name: string;
   route?: '/drawer/profile' | '/drawer/settings' | '/drawer/staff-managements' | '/home' | '/marketing' | '/operation';
 }[] = [
-  { icon: 'person.crop.circle', name: 'My profile', route: '/drawer/profile' },
-  { icon: 'person.2.badge.gearshape.fill', name: 'Staff management', route: '/drawer/staff-managements' },
-  { icon: 'gearshape.fill', name: 'Setting', route: '/drawer/settings' },
-  { icon: 'rectangle.portrait.and.arrow.right', name: 'Logout' },
+  { icon: UserCircle, name: 'My profile', route: '/drawer/profile' },
+  { icon: UserCog, name: 'Staff management', route: '/drawer/staff-managements' },
+  { icon: Settings, name: 'Setting', route: '/drawer/settings' },
+  { icon: LogOut, name: 'Logout' },
 ];
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -150,15 +151,18 @@ export function AppDrawer({ children }: PropsWithChildren) {
             </ThemedView>
           </ThemedView>
 
-          {drawerItems.map(item => (
-            <Pressable
-              key={item.name}
-              onPress={() => void handlePressItem(item)}
-              style={({ pressed }) => [styles.drawerItem, pressed && styles.drawerItemPressed]}>
-              <SymbolView name={item.icon} resizeMode='scaleAspectFit' size={20} tintColor={colors.text} />
-              <ThemedText style={[styles.drawerItemText, { color: colors.text }]}>{item.name}</ThemedText>
-            </Pressable>
-          ))}
+          {drawerItems.map(item => {
+            const Icon = item.icon;
+            return (
+              <Pressable
+                key={item.name}
+                onPress={() => void handlePressItem(item)}
+                style={({ pressed }) => [styles.drawerItem, pressed && styles.drawerItemPressed]}>
+                <Icon color={colors.text} size={20} />
+                <ThemedText style={[styles.drawerItemText, { color: colors.text }]}>{item.name}</ThemedText>
+              </Pressable>
+            );
+          })}
         </ThemedView>
 
         <ThemedText style={[styles.version, { bottom: insets.bottom + 12, color: drawerMutedColor }]}>
