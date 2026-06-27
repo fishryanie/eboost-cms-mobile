@@ -67,8 +67,8 @@
       [
         "@sentry/react-native/expo",
         {
-          "organization": "your-sentry-org",
-          "project": "eboost"
+          "organization": "eboost-cms",
+          "project": "eboost-cms"
         }
       ],
       "expo-notifications"

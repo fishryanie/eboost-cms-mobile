@@ -23,6 +23,13 @@ padded_number="$(printf "%03d" "$next_number")"
 output="$build_dir/$app_name-$padded_number.ipa"
 latest="$build_dir/$app_name-latest.ipa"
 
+# Load environment variables from .env if present
+if [ -f .env ]; then
+  set -a
+  . ./.env
+  set +a
+fi
+
 eas build --platform ios --local --output "$output"
 ln -sf "$(basename "$output")" "$latest"
 
