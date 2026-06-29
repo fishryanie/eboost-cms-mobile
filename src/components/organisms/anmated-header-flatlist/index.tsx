@@ -128,9 +128,9 @@ function AnimatedHeaderFlatListComponent<T>({
         <MaskedView
           maskElement={<LinearGradient colors={mask.colors as any} locations={mask.locations as any} style={StyleSheet.absoluteFill} />}
           style={StyleSheet.absoluteFill}>
-          <LinearGradient colors={['rgba(255,255,255,0.85)', 'rgba(255,255,255,0.8)', 'rgba(255,255,255,0)']} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={['rgba(255,255,255,0.98)', 'rgba(255,255,255,0.94)', 'rgba(255,255,255,0)']} style={StyleSheet.absoluteFill} />
 
-          <AnimatedBlurView animatedProps={headerBlurAnimatedProps as any} intensity={10} tint='light' style={StyleSheet.absoluteFill} />
+          <AnimatedBlurView animatedProps={headerBlurAnimatedProps as any} blurMethod='dimezisBlurViewSdk31Plus' intensity={10} tint='light' style={StyleSheet.absoluteFill} />
         </MaskedView>
       </Animated.View>
 

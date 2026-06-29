@@ -1,14 +1,14 @@
-import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import { CheckCircle2, XCircle, User as UserIcon, TrendingUp, ArrowUpRight, ArrowDownRight, Users, Zap, Clock, type LucideIcon } from 'lucide-react-native';
 import { ArrowRightLeft, ChevronLeft, ChevronsRight, CreditCard, Lock, Mail, ShieldCheck, Star, Wallet } from 'lucide-react-native';
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BarChart, LineChart } from 'react-native-gifted-charts';
+import { BarChart } from 'react-native-gifted-charts';
 import { useScrollStore } from 'utils/scroll-store';
 import { mhs } from 'themes/scaling';
 import { AppButton, EmptyState } from 'components/ui';
@@ -22,17 +22,14 @@ import { biometricCredentialStore } from 'utils/auth/biometric-credentials';
 import {
   adjustUserBalance,
   confirmAdminPassword,
-  fetchAlePayHistory,
   fetchTopStations,
   fetchTopUsers,
   fetchUserGrowth,
   fetchUserGrowthChart,
-  fetchUserLevels,
   getCollectionData,
   transferMoneyUsers,
   updateUserEmail,
   updateUserPassword,
-  updateUserRanking,
   type BalanceAdjustmentType,
   type TopStationPerformanceItem,
   type TopUserPerformanceItem,
@@ -43,7 +40,6 @@ import {
 type OperationServiceKey = 'adjust-balance' | 'transfer-money' | 'modify-ranking' | 'change-email' | 'change-password' | 'payment-checkout';
 type WizardStep = 'auth' | 'input' | 'result';
 type ResultState = { message: string; status: 'error' | 'success'; title: string };
-type SymbolName = LucideIcon;
 
 type OperationService = {
   accentColor: string;
@@ -130,16 +126,6 @@ function formatDurationMinutes(value?: number | string | null) {
   return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
 }
 
-function formatPercent(value?: number | string | null) {
-  const percent = Number(value);
-
-  if (!Number.isFinite(percent)) {
-    return '--';
-  }
-
-  return `${percent > 0 ? '+' : ''}${decimalFormatter.format(percent)}%`;
-}
-
 function formatGrowthMonth(value?: string) {
   if (!value) {
     return '--';
@@ -177,17 +163,12 @@ function chunkItems<T>(items: T[], size: number) {
   return chunks;
 }
 
-function getUserLevelLabel(level?: UserLevel | null) {
-  return level?.nameVn || level?.name_vn || level?.name || (level?.id ? `Level #${level.id}` : '--');
-}
-
 function parseApiError(error: unknown) {
   return error instanceof Error ? error.message : 'Operation failed. Please try again.';
 }
 
 export default function OperationScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { width } = useWindowDimensions();
   const [selectedService, setSelectedService] = useState<OperationService | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
@@ -1111,7 +1092,7 @@ function PerformanceHorizontalSection({
       {items.length ? (
         <ScrollView contentContainerStyle={styles.topUsersScrollerContent} horizontal showsHorizontalScrollIndicator={false} style={styles.topUsersScroller}>
           {items.map((item, index) => (
-            <TopUserPerformanceCard accentColor={accentColor} index={index} item={item} key={`${title}-${item.label}-${item.rank}`} width={cardWidth} />
+            <TopUserPerformanceCard index={index} item={item} key={`${title}-${item.label}-${item.rank}`} width={cardWidth} />
           ))}
         </ScrollView>
       ) : (
@@ -1122,12 +1103,10 @@ function PerformanceHorizontalSection({
 }
 
 function TopUserPerformanceCard({
-  accentColor,
   index,
   item,
   width,
 }: {
-  accentColor: string;
   index: number;
   item: { label: string; meta: string; rank: number; value: string };
   width: number;
@@ -1226,21 +1205,18 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
             value={formatFullNumber(summary?.total_users)} 
             change={summary?.today_vs_yesterday_growth_percent} 
             icon={Users}
-            color='#3B82F6'
           />
           <PremiumGrowthCard 
             label='Active Today' 
             value={formatFullNumber(summary?.users_charged_today)} 
             change={summary?.charged_today_vs_yesterday_percent} 
             icon={Zap}
-            color='#10B981'
           />
           <PremiumGrowthCard 
             label='Avg Duration' 
             value={formatDurationMinutes(summary?.avg_charge_duration_all_time)} 
             change={summary?.avg_charge_duration_change_percent} 
             icon={Clock}
-            color='#8B5CF6'
           />
         </ThemedView>
         
@@ -1284,7 +1260,7 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
   );
 }
 
-function PremiumGrowthCard({ change, label, value, icon: Icon, color }: { change?: number; label: string; value: string; icon: LucideIcon; color: string }) {
+function PremiumGrowthCard({ change, label, value, icon: Icon }: { change?: number; label: string; value: string; icon: LucideIcon }) {
   const isPositive = Number(change) >= 0;
   const changeColor = isPositive ? '#10B981' : '#F43F5E';
   

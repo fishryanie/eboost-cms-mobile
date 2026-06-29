@@ -1,9 +1,64 @@
+import { useInfiniteQuery, useQuery, type InfiniteData } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 
 import { apiRequest } from 'utils/api/client';
 import { getCollectionResult } from 'utils/api/collection';
 
-import type { StaffActivityLog, StaffCreateInput, StaffListFilters, StaffMember, StaffUpdateInput } from './types';
+export type StaffRole =
+  | 'ROLE_VIEWER'
+  | 'ROLE_TECHNICIAN'
+  | 'ROLE_CUSTOMER_SERVICE'
+  | 'ROLE_MARKETING'
+  | 'ROLE_EDITOR'
+  | 'ROLE_STAFF'
+  | 'ROLE_ADMIN'
+  | 'ROLE_SUPER_ADMIN'
+  | 'ROLE_DEVELOPER';
+
+export type StaffMember = {
+  avatarUrl: string | null;
+  createdAt: string;
+  deletedAt: string | null;
+  email: string;
+  enabled: boolean;
+  id: number;
+  iriId?: string;
+  name: string;
+  roles: StaffRole[];
+  updatedAt: string;
+  username: string;
+};
+
+export type StaffActivityLog = {
+  action: string;
+  createdAt: string;
+  data: string;
+  id: number;
+  ipAddress: string;
+  userAgent: string;
+};
+
+export type StaffListFilters = {
+  id?: string;
+  email?: string;
+  enabled?: '0' | '1';
+  username?: string;
+};
+
+export type StaffCreateInput = {
+  email: string;
+  enabled: boolean;
+  name: string;
+  password: string;
+  roles: StaffRole[];
+  username: string;
+};
+
+export type StaffUpdateInput = {
+  enabled?: boolean;
+  name?: string;
+  roles?: StaffRole[];
+};
 
 export const staffPageSize = 20;
 
@@ -18,6 +73,13 @@ export const staffRoles = [
   'ROLE_SUPER_ADMIN',
   'ROLE_DEVELOPER',
 ] as const;
+
+export const staffKeys = {
+  activities: (id: number | string) => ['staff', 'activities', String(id)] as const,
+  all: ['staff'] as const,
+  detail: (id: number | string) => ['staff', 'detail', String(id)] as const,
+  list: (filters: StaffListFilters) => ['staff', 'list', filters] as const,
+};
 
 type StaffPageParams = StaffListFilters & {
   page: number;
@@ -119,5 +181,34 @@ export function restoreStaffMember(member: Pick<StaffMember, 'id' | 'name'>) {
       name: member.name.endsWith('_archived') ? member.name.replace(/_archived$/, '') : member.name,
     },
     method: 'PATCH',
+  });
+}
+
+export function useInfiniteStaff(filters: StaffListFilters) {
+  return useInfiniteQuery<TechnicalList<StaffMember>, Error, InfiniteData<TechnicalList<StaffMember>>, readonly unknown[], number>({
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedCount = allPages.reduce((total, page) => total + page.items.length, 0);
+      if (lastPage.items.length < 1 || loadedCount >= lastPage.total) return undefined;
+      return allPages.length + 1;
+    },
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => fetchStaffPage({ ...filters, page: pageParam }),
+    queryKey: staffKeys.list(filters),
+  });
+}
+
+export function useStaffMember(id?: number | string | null) {
+  return useQuery({
+    enabled: !!id,
+    queryFn: () => fetchStaffMember(id as number | string),
+    queryKey: staffKeys.detail(id || ''),
+  });
+}
+
+export function useStaffActivities(id?: number | string | null) {
+  return useQuery({
+    enabled: !!id,
+    queryFn: () => fetchStaffActivities(id as number | string),
+    queryKey: staffKeys.activities(id || ''),
   });
 }

@@ -11,7 +11,6 @@ import { FontFamily } from 'themes';
 import { clampZoomOffset } from 'utils/media/zoom-bounds';
 
 const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
-const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;

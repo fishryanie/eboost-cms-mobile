@@ -1,3 +1,5 @@
+import axios, { isAxiosError } from 'axios';
+
 import { getApiBaseUrl, setApiBaseUrls } from './config';
 import { ApiError, getApiErrorMessage } from './errors';
 import type { ApiClientConfig, ApiRequestOptions, ApiService } from './types';
@@ -35,16 +37,8 @@ function getContentType(method?: string, data?: unknown) {
   return undefined;
 }
 
-async function parseResponse(response: Response) {
-  const contentType = response.headers.get('content-type') || '';
-  if (contentType.includes('application/json') || contentType.includes('+json')) {
-    return response.json();
-  }
-  return response.text();
-}
-
 export function createApiClient(config: ApiClientConfig = {}) {
-  const fetchImpl = config.fetchImpl || fetch;
+  const axiosImpl = config.axiosImpl || axios;
 
   async function request<TResponse = unknown, TData = unknown>(path: string, options: ApiRequestOptions<TData> = {}): Promise<TResponse> {
     const service: ApiService = options.service || 'core';
@@ -73,30 +67,40 @@ export function createApiClient(config: ApiClientConfig = {}) {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const init: RequestInit = {
-      headers,
-      method,
-    };
-
-    if (options.data !== undefined) {
-      init.body = typeof FormData !== 'undefined' && options.data instanceof FormData ? options.data : JSON.stringify(options.data);
-    }
-
     const url = appendParams(joinUrl(baseUrl, path), options.params);
-    const response = await fetchImpl(url, init);
-    const payload = await parseResponse(response);
 
-    if (!response.ok) {
-      throw new ApiError({
-        message: getApiErrorMessage(payload, response.statusText || 'Request failed'),
-        raw: payload,
-        service,
-        status: response.status,
-        title: response.statusText,
+    try {
+      const response = await axiosImpl.request<TResponse>({
+        data: options.data,
+        headers,
+        method,
+        url,
       });
-    }
 
-    return payload as TResponse;
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response) {
+          throw new ApiError({
+            message: getApiErrorMessage(error.response.data, error.response.statusText || 'Request failed'),
+            raw: error.response.data,
+            service,
+            status: error.response.status,
+            title: error.response.statusText,
+          });
+        }
+
+        throw new ApiError({
+          message: error.message || 'Network error',
+          raw: error,
+          service,
+          status: 0,
+          title: 'Network error',
+        });
+      }
+
+      throw error;
+    }
   }
 
   return { request };

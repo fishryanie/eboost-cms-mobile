@@ -84,7 +84,7 @@ export const FlipCard: React.FC<FlipCardProps> & {
 
 const Front: React.FC<FlipCardFrontProps> & React.FunctionComponent<FlipCardFrontProps> = memo<FlipCardFrontProps>(
   ({ children, style }: FlipCardFrontProps): (React.ReactNode & React.JSX.Element & React.ReactElement) | null => {
-    const { isFlipped, rotation, scale, width, height, borderRadius, blurIntensity, tint }: FlipCardContextValue = useFlipCard();
+    const { isFlipped, rotation, scale, borderRadius, blurIntensity, tint }: FlipCardContextValue = useFlipCard();
 
     const frontAnimatedStylez = useAnimatedStyle<Pick<ViewStyle, 'transform' | 'opacity'>>(() => {
       const rotateY = interpolate(rotation.value, [0, 180], [0, 180], Extrapolation.CLAMP);
@@ -129,7 +129,7 @@ const Front: React.FC<FlipCardFrontProps> & React.FunctionComponent<FlipCardFron
 
 const Back: React.FC<FlipCardBackProps> & React.FunctionComponent<FlipCardBackProps> = memo<FlipCardBackProps>(
   ({ children, style }: FlipCardBackProps): (React.ReactNode & React.JSX.Element & React.ReactElement) | null => {
-    const { isFlipped, rotation, scale, width, height, borderRadius, blurIntensity, tint }: FlipCardContextValue = useFlipCard();
+    const { isFlipped, rotation, scale, borderRadius, blurIntensity, tint }: FlipCardContextValue = useFlipCard();
 
     const backAnimatedStylez = useAnimatedStyle<Pick<ViewStyle, 'transform' | 'opacity'>>(() => {
       const rotateY = interpolate(rotation.value, [0, 180], [180, 360], Extrapolation.CLAMP);

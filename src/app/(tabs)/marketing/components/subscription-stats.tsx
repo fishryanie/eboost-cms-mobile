@@ -137,28 +137,19 @@ const styles = StyleSheet.create({
 });
 
 export function SubscriptionStatsCard({
-  isFetching,
   isLoading,
   monthRange,
-  onMetricChange,
-  onRefresh,
   shareMetric,
   summary,
-  width,
 }: {
-  isFetching: boolean;
   isLoading: boolean;
   monthRange: { end: string; start: string };
-  onMetricChange: (metric: ShareMetric) => void;
-  onRefresh: () => void;
   shareMetric: ShareMetric;
   summary: SubscriptionStatsSummary;
-  width: number;
 }) {
   const router = useRouter();
   const hasRows = summary.rows.length > 0;
   const usedPercent = summary.kwSummary.purchasedKw > 0 ? Math.min(100, Math.round((summary.kwSummary.usedKw / summary.kwSummary.purchasedKw) * 100)) : 0;
-  const chartSize = Math.min(172, width - screenHorizontalPadding * 2 - mhs(16) * 2);
 
   return (
     <ThemedView gap={'three'}>

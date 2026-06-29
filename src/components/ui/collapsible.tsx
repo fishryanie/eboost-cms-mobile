@@ -8,7 +8,6 @@ import { ThemedView, ThemedText } from 'components/base';
 import { useTheme } from 'hooks/use-theme';
 
 const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
-const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
 export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
   const [isOpen, setIsOpen] = useState(false);

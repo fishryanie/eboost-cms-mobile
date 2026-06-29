@@ -5,7 +5,7 @@ import { ThemedView } from 'components/base';
 import { CmsPlaceholderPanelScreen } from 'components/cms-placeholder-panel-screen';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, RefreshControl, useWindowDimensions } from 'react-native';
+import { FlatList, RefreshControl } from 'react-native';
 import { Palette } from 'themes';
 import { mhs } from 'themes/scaling';
 import { apiRequest } from 'utils/api/client';
@@ -13,8 +13,7 @@ import { getCurrentMonthRange, ShareMetric, SubscriptionStatsResponse, toSubscri
 
 export default function MarketingPanelRoute() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const [shareMetric, setShareMetric] = useState<ShareMetric>('revenue');
+  const [shareMetric] = useState<ShareMetric>('revenue');
   const monthRange = useMemo(() => getCurrentMonthRange(), []);
   const statsQuery = useQuery({
     queryFn: () => apiRequest<SubscriptionStatsResponse>('api/controller/statistic/subscription-kw-summary', { params: monthRange }),
@@ -39,14 +38,10 @@ export default function MarketingPanelRoute() {
             ListEmptyComponent: (
               <ThemedView gap={'three'} paddingHorizontal={18}>
                 <SubscriptionStatsCard
-                  isFetching={statsQuery.isFetching}
                   isLoading={statsQuery.isLoading}
                   monthRange={monthRange}
-                  onMetricChange={setShareMetric}
-                  onRefresh={statsQuery.refetch}
                   shareMetric={shareMetric}
                   summary={summary}
-                  width={width}
                 />
               </ThemedView>
             ),

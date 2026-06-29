@@ -165,7 +165,7 @@ export default function SubscriptionPackageListScreen() {
   const params = useLocalSearchParams<{ metric?: string }>();
   const initialMetric: ShareMetric = params.metric === 'purchases' ? 'purchases' : 'revenue';
   const onBack = () => router.back();
-  const [shareMetric, setShareMetric] = useState<ShareMetric>(initialMetric);
+  const [shareMetric] = useState<ShareMetric>(initialMetric);
   const monthRange = useMemo(() => getCurrentMonthRange(), []);
   const statsQuery = useQuery({
     queryFn: () => apiRequest<SubscriptionStatsResponse>('api/controller/statistic/subscription-kw-summary', { params: monthRange }),

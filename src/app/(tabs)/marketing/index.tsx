@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
-import { Bell, CalendarPlus, ChevronLeft, ChevronsRight, Gift, TicketPercent, type LucideIcon } from 'lucide-react-native';
+import { ChevronLeft, ChevronsRight } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ScrollView, Pressable, RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
@@ -17,50 +17,7 @@ import { fetchAtRiskUsers, getCollectionData, type AtRiskUserItem } from 'shared
 
 const screenHorizontalPadding = 18;
 const serviceTileSize = 82;
-const chartColors = ['#6F8EF6', '#5567F0', '#3843A7', '#141C3A', '#9AA7BD', '#D9DEE7', '#2F9E7F', '#F59E0B'];
 const compactNumber = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
-const currencyFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
-const numberFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
-const kwFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
-
-type MarketingServiceItem = {
-  icon: LucideIcon;
-  labelLines: [string, string];
-  label: string;
-  panel: string;
-  serviceKey: string;
-};
-
-const marketingServices: MarketingServiceItem[] = [
-  {
-    icon: Bell,
-    labelLines: ['Push', 'Noti'],
-    label: 'Push Noti',
-    panel: 'notifications',
-    serviceKey: 'push-noti',
-  },
-  {
-    icon: CalendarPlus,
-    labelLines: ['Schedule', 'Noti'],
-    label: 'Add Schedule Noti',
-    panel: 'notification-message-templates',
-    serviceKey: 'schedule-noti',
-  },
-  {
-    icon: TicketPercent,
-    labelLines: ['Promo', 'Code'],
-    label: 'New Promo Code',
-    panel: 'promotions',
-    serviceKey: 'new-promo-code',
-  },
-  {
-    icon: Gift,
-    labelLines: ['New', 'Bonus'],
-    label: 'New Bonus',
-    panel: 'bonus-topup',
-    serviceKey: 'new-bonus',
-  },
-];
 
 const styles = StyleSheet.create({
   backButton: {
@@ -199,7 +156,7 @@ export default function MarketingScreen() {
   const focusStats = false;
   const onBack = undefined;
   const { width } = useWindowDimensions();
-  const [shareMetric, setShareMetric] = useState<ShareMetric>('revenue');
+  const [shareMetric] = useState<ShareMetric>('revenue');
   const monthRange = useMemo(() => getCurrentMonthRange(), []);
   const statsQuery = useQuery({
     queryFn: () => apiRequest<SubscriptionStatsResponse>('api/controller/statistic/subscription-kw-summary', { params: monthRange }),
@@ -251,14 +208,10 @@ export default function MarketingScreen() {
           <ThemedView gap={'seven'}>
             {!focusStats ? <MarketingServicesSection tileWidth={serviceTileWidth} /> : null}
             <SubscriptionStatsCard
-              isFetching={statsQuery.isFetching}
               isLoading={statsQuery.isLoading}
               monthRange={monthRange}
-              onMetricChange={setShareMetric}
-              onRefresh={() => statsQuery.refetch()}
               shareMetric={shareMetric}
               summary={summary}
-              width={width}
             />
             <AtRiskSubscriptionSection
               accentColor='#D92D20'

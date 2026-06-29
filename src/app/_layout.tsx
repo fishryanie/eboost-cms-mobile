@@ -69,6 +69,7 @@ function TabLayout() {
                   <Stack.Screen name='marketing/package-list/index' />
                   <Stack.Screen name='marketing/[panel]/index' />
                   <Stack.Screen name='operation/[panel]/index' />
+                  <Stack.Screen name='scan-qr-code/index' />
                   <Stack.Screen name='technical/network-issues/index' />
                 </Stack>
                 <AutoUpdateModal />
@@ -83,4 +84,3 @@ function TabLayout() {
 }
 
 export default Sentry.wrap(TabLayout);
-

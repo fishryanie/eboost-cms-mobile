@@ -1,9 +1,8 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { CheckCircle2, Clock, XCircle, ArrowUpRightSquare } from 'lucide-react-native';
 import { useCallback, useEffect, useRef } from 'react';
-import { Alert, Pressable, StyleSheet } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
 import { AppButton } from 'components/ui';

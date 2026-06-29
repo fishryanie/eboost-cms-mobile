@@ -103,38 +103,9 @@ export function getPeakUsageDayTotals(rows: PeakUsageRow[]): PeakUsageDayTotal[]
     .sort((left, right) => right.value - left.value);
 }
 
-function TopDayChips({ rows }: { rows: PeakUsageRow[] }) {
-  const dayTotals = getPeakUsageDayTotals(rows).slice(0, 3);
-
-  return (
-    <ThemedView flexDirection='row' gap={'two'}>
-      {dayTotals.map(day => (
-        <ThemedView
-          backgroundColor='#F6F8FA'
-          borderColor='#E8EDF2'
-          borderRadius={12}
-          borderWidth={1}
-          flex={1}
-          gap={1}
-          key={day.key}
-          paddingHorizontal={8}
-          paddingVertical={6}>
-          <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.bold} fontSize={9} lineHeight={12}>
-            {day.label}
-          </ThemedText>
-          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={12} lineHeight={16}>
-            {day.value.toLocaleString()}
-          </ThemedText>
-        </ThemedView>
-      ))}
-    </ThemedView>
-  );
-}
-
 function MiniHourlyBars({ rows }: { rows: PeakUsageRow[] }) {
   const totals = getHourlyUsageTotals(rows);
   const maxValue = Math.max(...totals.map(item => item.value), 0);
-  const minValue = Math.min(...totals.map(item => item.value), 0);
   const chartHeight = 54;
 
   return (

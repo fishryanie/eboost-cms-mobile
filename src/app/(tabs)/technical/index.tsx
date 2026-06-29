@@ -24,7 +24,6 @@ import { PeakUsageHoursSection } from './components/peak-usage-hours-section';
 
 export const technicalDetailPanels: TechnicalPanel[] = ['chargers', 'meter-hourly', 'status-logs', 'energy-differ'];
 
-const emptyOverviewData: unknown[] = [];
 const serviceTileSize = 64;
 
 async function getNetworkStatus(vehicle: TechnicalVehicle) {

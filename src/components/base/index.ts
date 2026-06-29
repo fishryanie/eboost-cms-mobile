@@ -3,3 +3,4 @@ export * from './ThemedView';
 export * from './BottomButton';
 export * from './HeaderTitle';
 export * from './ToastCustom';
+export * from './scrollable-search';

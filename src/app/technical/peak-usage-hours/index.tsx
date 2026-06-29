@@ -165,7 +165,7 @@ export default function PeakUsageHoursScreen() {
   const [vehicle, setVehicle] = React.useState<PeakUsageVehicle>('all');
   const [interval, setInterval] = React.useState<PeakUsageInterval>(1);
   const [range, setRange] = React.useState<PeakUsageRange>(30);
-  const { data, error, isLoading, isRefetching, refetch } = useQuery({
+  const { data, error, isLoading, refetch } = useQuery({
     queryFn: () => fetchPeakUsageHours({ interval, range, vehicle }),
     queryKey: ['technical', 'peak-usage-hours', vehicle, interval, range],
   });

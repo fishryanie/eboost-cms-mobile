@@ -219,7 +219,7 @@ const AccordionTrigger = ({ children }: AccordionTriggerProps) => {
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.trigger]}
+      style={() => [styles.trigger]}
       onPress={() => {
         toggleItem(value);
         if (Platform.OS === 'android') performAndroidHapticsAsync(AndroidHaptics.Clock_Tick);

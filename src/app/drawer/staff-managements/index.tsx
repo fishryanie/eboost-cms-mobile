@@ -1,14 +1,11 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAdminProfile } from 'utils/auth/admin-profile';
 import { History, Lock, Mail, Undo2, Archive, Pencil, UserPlus, Ban, CheckCircle2 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
 import { ActionSheet, AppButton, EmptyState } from 'components/ui';
-import { staffKeys, useInfiniteStaff } from 'shared/staff/hooks';
 import {
   archiveStaffMember,
   createStaffMember,
@@ -16,10 +13,15 @@ import {
   formatStaffRoleSummary,
   resetStaffPassword,
   restoreStaffMember,
+  staffKeys,
   staffRoles,
   updateStaffMember,
-} from 'shared/staff/staff-service';
-import type { StaffCreateInput, StaffListFilters, StaffMember, StaffRole } from 'shared/staff/types';
+  useInfiniteStaff,
+  type StaffCreateInput,
+  type StaffListFilters,
+  type StaffMember,
+  type StaffRole,
+} from './staff-data';
 import { FontFamily, Palette } from 'themes';
 import { mhs } from 'themes/scaling';
 
@@ -357,7 +359,6 @@ function StaffFormSheet({
 }
 
 export default function StaffManagementsScreen() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<StaffListFilters>({});
   const [selectedMember, setSelectedMember] = useState<StaffMember | null>(null);

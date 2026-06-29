@@ -12,7 +12,6 @@ import { ImagePreviewModal } from 'components/media/image-preview-modal';
 import { getDisplayImageUrl } from 'utils/media/image-url';
 
 const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
-const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
 const ACTION_WIDTH = 144;
 const ACTION_TRIGGER = ACTION_WIDTH * 0.4;

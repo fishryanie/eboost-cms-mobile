@@ -9,22 +9,10 @@ import { ThemedText, ThemedView } from 'components/base';
 import { AppButton } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 import { mhs } from 'themes/scaling';
-import { staffKeys } from 'shared/staff/hooks';
-import { updateStaffPassword, formatStaffRoleSummary } from 'shared/staff/staff-service';
-import type { StaffMember } from 'shared/staff/types';
+import { staffKeys, updateStaffPassword, type StaffMember } from './staff-data';
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Request failed. Please try again.';
-}
-
-function getInitials(member: Pick<StaffMember, 'email' | 'name' | 'username'>) {
-  const label = member.name || member.username || member.email;
-  return label
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(part => part[0]?.toUpperCase())
-    .join('');
 }
 
 export function ChangePasswordSheet({ member, onClose, visible }: { member: StaffMember | null; onClose: () => void; visible: boolean }) {

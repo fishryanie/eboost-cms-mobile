@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, ViewStyle } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, interpolateColor, Easing, interpolate } from 'react-native-reanimated';
 import type { AnimatedChipProps } from './Chip.types';

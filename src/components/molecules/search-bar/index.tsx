@@ -1,8 +1,7 @@
-import { BlurView } from 'expo-blur';
 import { CircleX, Search } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Dimensions, Platform, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import Animated, { interpolate, useAnimatedProps, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { SearchBarProps } from './SearchBar.types';
 import { ThemedView, ThemedText } from 'components/base';
@@ -10,7 +9,6 @@ import { ThemedView, ThemedText } from 'components/base';
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 const AnimatedView = Animated.createAnimatedComponent(ThemedView);
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
-const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -31,7 +29,7 @@ export const SearchBar = ({
   ...props
 }: SearchBarProps) => {
   const [query, setQuery] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
+  const [, setIsFocused] = useState(false);
   const [containerDimensions, setContainerDimensions] = useState({ width: 0 });
   const inputRef = useRef<TextInput>(null);
 
@@ -66,13 +64,6 @@ export const SearchBar = ({
     return {
       opacity,
       transform: [{ translateX }],
-    };
-  });
-
-  const animatedBlurViewProps = useAnimatedProps(() => {
-    const blurAmount = withSpring(interpolate(focusProgress.value, [0, 0.3, 0.5, 1], [0, 20, 30, 0]));
-    return {
-      intensity: blurAmount,
     };
   });
 

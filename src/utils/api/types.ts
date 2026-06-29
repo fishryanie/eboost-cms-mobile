@@ -1,3 +1,5 @@
+import type { AxiosInstance } from 'axios';
+
 export type ApiService = 'building' | 'core' | 'hub';
 
 export type ApiBaseUrls = Partial<Record<ApiService, string>>;
@@ -12,7 +14,7 @@ export type ApiRequestOptions<TData = unknown> = {
 };
 
 export type ApiClientConfig = {
+  axiosImpl?: AxiosInstance;
   baseUrls?: ApiBaseUrls;
-  fetchImpl?: typeof fetch;
   getToken?: () => Promise<string | null | undefined> | string | null | undefined;
 };

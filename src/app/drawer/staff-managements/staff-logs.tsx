@@ -1,12 +1,11 @@
 import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal } from '@gorhom/bottom-sheet';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText, ThemedView } from 'components/base';
 import { EmptyState } from 'components/ui/empty-state';
-import { useStaffActivities } from 'shared/staff/hooks';
-import { StaffMember } from 'shared/staff/types';
+import { useStaffActivities, type StaffMember } from './staff-data';
 import { FontFamily, Palette } from 'themes';
 import { mhs } from 'themes/scaling';
 
