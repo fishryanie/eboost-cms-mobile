@@ -5,10 +5,11 @@ import { Pressable, StyleSheet } from 'react-native';
 import { mhs } from 'themes/scaling';
 import { FontFamily, Palette } from 'themes';
 import { SectionTitle } from './subscription-stats';
+import { useDrawerStore } from 'utils/drawer-store';
 
 const screenHorizontalPadding = 18;
 
-export function chunkItems<T>(items: T[], size: number) {
+function chunkItems<T>(items: T[], size: number) {
   const chunks: T[][] = [];
   for (let index = 0; index < items.length; index += size) {
     chunks.push(items.slice(index, index + size));
@@ -20,8 +21,7 @@ type MarketingServiceItem = {
   icon: LucideIcon;
   labelLines: [string, string];
   label: string;
-  panel: string;
-  serviceKey: string;
+  route: string;
 };
 
 const marketingServices: MarketingServiceItem[] = [
@@ -29,50 +29,43 @@ const marketingServices: MarketingServiceItem[] = [
     icon: Bell,
     labelLines: ['Push', 'Notice'],
     label: 'Push Notice',
-    panel: 'notifications',
-    serviceKey: 'push-noti',
+    route: '/marketing/push-notice',
   },
   {
     icon: CalendarPlus,
     labelLines: ['Schedule', 'Notice'],
     label: 'Schedule Push Notice',
-    panel: 'notification-message-templates',
-    serviceKey: 'schedule-noti',
+    route: '/marketing/schedule-notice',
   },
   {
     icon: FileText,
     labelLines: ['Notice', 'Drafts'],
     label: 'Notice Drafts',
-    panel: 'notification-message-templates',
-    serviceKey: 'manage-templates',
+    route: '/marketing/notice-drafts',
   },
   {
     icon: TicketPercent,
     labelLines: ['Create', 'Promo Code'],
     label: 'Create Promo Codes',
-    panel: 'promotions',
-    serviceKey: 'new-promo-code',
+    route: '/marketing/create-promo-code',
   },
   {
     icon: Gift,
     labelLines: ['Bonus', 'Campaign'],
     label: 'Create Bonus Money Campaigns',
-    panel: 'bonus-topup',
-    serviceKey: 'new-bonus',
+    route: '/marketing/create-bonus-campaign',
   },
   {
     icon: Timer,
     labelLines: ['Extend', 'Package'],
     label: 'Extend Promotional Packages',
-    panel: 'subscriptions',
-    serviceKey: 'extend-package',
+    route: '/marketing/extend-package',
   },
   {
     icon: PauseCircle,
     labelLines: ['Suspend', 'Package'],
     label: 'Suspend Promotional Packages',
-    panel: 'subscriptions',
-    serviceKey: 'suspend-package',
+    route: '/marketing/suspend-package',
   },
 ];
 
@@ -199,6 +192,10 @@ const styles = StyleSheet.create({
 export function MarketingServicesSection({ tileWidth }: { tileWidth: number }) {
   const router = useRouter();
   const rows = chunkItems(marketingServices, 4);
+  const openService = (route: string) => {
+    useDrawerStore.getState().closeDrawer();
+    router.push(route as never);
+  };
 
   return (
     <ThemedView gap={'three'}>
@@ -207,17 +204,7 @@ export function MarketingServicesSection({ tileWidth }: { tileWidth: number }) {
         {rows.map((row, rowIndex) => (
           <ThemedView flexDirection='row' justifyContent='space-between' key={`marketing-service-row-${rowIndex}`} style={styles.serviceRow}>
             {row.map(service => (
-              <MarketingServiceTile
-                key={service.serviceKey}
-                service={service}
-                tileWidth={tileWidth}
-                onPress={() =>
-                  router.push({
-                    pathname: '/marketing/[panel]',
-                    params: { action: service.serviceKey, panel: service.panel },
-                  } as never)
-                }
-              />
+              <MarketingServiceTile key={service.route} service={service} tileWidth={tileWidth} onPress={() => openService(service.route)} />
             ))}
             {row.length < 4
               ? Array.from({ length: 4 - row.length }).map((_, index) => <ThemedView key={`marketing-service-spacer-${rowIndex}-${index}`} width={tileWidth} />)

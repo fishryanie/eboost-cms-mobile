@@ -3,7 +3,7 @@ import { PropsWithChildren, useEffect } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, { Easing, Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { ThemedText, ThemedView } from 'components/base';
@@ -39,10 +39,15 @@ const drawerItems: {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+function closeDrawer() {
+  useDrawerStore.getState().closeDrawer();
+}
+
 export function AppDrawer({ children }: PropsWithChildren) {
   const progress = useSharedValue(0);
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
   const adminProfile = useAdminProfile();
@@ -53,19 +58,26 @@ export function AppDrawer({ children }: PropsWithChildren) {
         return;
       }
 
-      progress.value = withTiming(state.isOpen ? 1 : 0, {
-        duration: 280,
-        easing: Easing.out(Easing.cubic),
-      });
+      progress.set(
+        withTiming(state.isOpen ? 1 : 0, {
+          duration: 280,
+          easing: Easing.out(Easing.cubic),
+        }),
+      );
     });
 
     return unsubscribe;
   }, [progress]);
 
+  useEffect(() => {
+    useDrawerStore.getState().closeDrawer();
+  }, [pathname]);
+
   const appStyle = useAnimatedStyle(() => {
-    const borderRadius = interpolate(progress.value, [0, 1], [0, 28], Extrapolation.CLAMP);
-    const scale = interpolate(progress.value, [0, 1], [1, 0.78], Extrapolation.CLAMP);
-    const translateX = interpolate(progress.value, [0, 1], [0, Math.min(width * 0.68, 270)], Extrapolation.CLAMP);
+    const drawerProgress = progress.get();
+    const borderRadius = interpolate(drawerProgress, [0, 1], [0, 28], Extrapolation.CLAMP);
+    const scale = interpolate(drawerProgress, [0, 1], [1, 0.78], Extrapolation.CLAMP);
+    const translateX = interpolate(drawerProgress, [0, 1], [0, Math.min(width * 0.68, 270)], Extrapolation.CLAMP);
 
     return {
       backgroundColor: colors.contentBackplate,
@@ -86,26 +98,22 @@ export function AppDrawer({ children }: PropsWithChildren) {
   }));
 
   const hazeStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.35, 1], [0, 0.45, 1], Extrapolation.CLAMP),
+    opacity: interpolate(progress.get(), [0, 0.35, 1], [0, 0.45, 1], Extrapolation.CLAMP),
     transform: [
-      { translateX: interpolate(progress.value, [0, 1], [Math.min(width * 0.12, 48), 0], Extrapolation.CLAMP) },
-      { scale: interpolate(progress.value, [0, 1], [0.92, 1], Extrapolation.CLAMP) },
+      { translateX: interpolate(progress.get(), [0, 1], [Math.min(width * 0.12, 48), 0], Extrapolation.CLAMP) },
+      { scale: interpolate(progress.get(), [0, 1], [0.92, 1], Extrapolation.CLAMP) },
     ],
   }));
 
   const overlayStyle = useAnimatedStyle(() => ({
-    display: progress.value > 0.02 ? 'flex' : 'none',
+    display: progress.get() > 0.02 ? 'flex' : 'none',
   }));
 
   const drawerTextColor = colors.text;
   const drawerMutedColor = colors.textMuted;
 
-  const handleClose = () => {
-    useDrawerStore.getState().closeDrawer();
-  };
-
   const handlePressItem = async (item: (typeof drawerItems)[number]) => {
-    handleClose();
+    closeDrawer();
 
     if (item.name === 'Logout') {
       await sessionStore.clearToken();
@@ -172,7 +180,7 @@ export function AppDrawer({ children }: PropsWithChildren) {
 
       <AnimatedThemedView needsOffscreenAlphaCompositing renderToHardwareTextureAndroid style={appStyle}>
         {children}
-        <AnimatedPressable accessibilityLabel='Close drawer' accessibilityRole='button' onPress={handleClose} style={[StyleSheet.absoluteFill, overlayStyle]} />
+        <AnimatedPressable accessibilityLabel='Close drawer' accessibilityRole='button' onPress={closeDrawer} style={[StyleSheet.absoluteFill, overlayStyle]} />
       </AnimatedThemedView>
     </ThemedView>
   );

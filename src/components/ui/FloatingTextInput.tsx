@@ -15,6 +15,7 @@ const inputLineHeight = fs(18);
 const labelFontSize = fs(12);
 const floatingLabelFontSize = fs(11);
 const labelRestingTop = (inputHeight - inputLineHeight) / 2;
+const moneyFormatter = new Intl.NumberFormat('en-US');
 
 type FloatingTextInputProps = Omit<TextInputProps, 'style'> & {
   error?: string;
@@ -51,7 +52,7 @@ export default function FloatingTextInput({
       if (!numericString) {
         inputProps.onChangeText?.('');
       } else {
-        const formatted = new Intl.NumberFormat('en-US').format(Number(numericString));
+        const formatted = moneyFormatter.format(Number(numericString));
         inputProps.onChangeText?.(formatted);
       }
     } else {
@@ -61,11 +62,13 @@ export default function FloatingTextInput({
 
   useEffect(() => {
     if (isFloating && !isFocused) {
-      animation.value = 1;
+      animation.set(1);
     } else {
-      animation.value = withTiming(isFloating ? 1 : 0, {
-        duration: 160,
-      });
+      animation.set(
+        withTiming(isFloating ? 1 : 0, {
+          duration: 160,
+        }),
+      );
     }
   }, [animation, isFloating, isFocused]);
 

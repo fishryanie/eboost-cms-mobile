@@ -68,7 +68,7 @@ export const RangePicker = forwardRef<RangePickerMethods, RangePickerProps>(({ o
           width={width - 64}
           onDateChange={handleDateChange}
         />
-        <AppButton children='Confirm' onPress={handleAccept} style={{ marginTop: 16 }} />
+        <AppButton disabled={!startDate || !endDate} label='Confirm' onPress={handleAccept} style={{ marginTop: 16 }} />
       </ViewTheme>
     </Modal>
   );

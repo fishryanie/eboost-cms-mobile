@@ -1,4 +1,5 @@
 import { Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   BadgeDollarSign,
   BadgeInfo,
@@ -69,6 +70,7 @@ export function ChargerServicesSection({
   onSetupLocation: () => void;
   tileWidth: number;
 }) {
+  const router = useRouter();
   const services = quickServiceGroups[0]?.services || [];
   const rows = chunkItems(services, 4);
 
@@ -93,7 +95,13 @@ export function ChargerServicesSection({
                           ? onReplaceMeter
                           : service.slug === 'setup-location'
                             ? onSetupLocation
-                            : undefined
+                            : service.slug === 'uninstall-charger'
+                              ? () => router.push('/technical/uninstall-charger')
+                              : service.slug === 'replace-charger'
+                                ? () => router.push('/technical/replace-charger')
+                                : service.slug === 'add-charger'
+                                  ? () => router.push('/technical/add-charger')
+                                  : undefined
                 }
                 service={service}
               />
