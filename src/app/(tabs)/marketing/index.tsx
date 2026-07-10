@@ -13,7 +13,9 @@ import { apiRequest } from 'utils/api/client';
 import { getCurrentMonthRange, toSubscriptionStatsSummary, type ShareMetric, type SubscriptionStatsResponse } from 'utils/marketing';
 import { MarketingServicesSection } from './components/marketing-services';
 import { SubscriptionStatsCard, SectionTitle } from './components/subscription-stats';
-import { fetchAtRiskUsers, getCollectionData, type AtRiskUserItem } from 'shared/operation/operation-user-service';
+import { type DashboardApiData } from 'utils/api/types';
+import { type AtRiskUserItem } from 'app/marketing/at-risk-users/index';
+import { getCollectionItems } from 'utils/api/collection';
 
 const screenHorizontalPadding = 18;
 const serviceTileSize = 82;
@@ -162,7 +164,7 @@ export default function MarketingScreen() {
     queryFn: () => apiRequest<SubscriptionStatsResponse>('api/controller/statistic/subscription-kw-summary', { params: monthRange }),
     queryKey: ['marketing', 'subscription-package-stats', monthRange.start, monthRange.end],
   });
-  const atRiskQuery = useQuery({ queryFn: () => fetchAtRiskUsers(), queryKey: ['operation', 'at-risk-users'] });
+  const atRiskQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<AtRiskUserItem[]>>('api/controller/statistic/at-risk-users', { params: { limit: 5, low_quota_ratio: 0.2, near_end_days: 7, page: 1, renew: 'all', risk: 'all' } }), queryKey: ['operation', 'at-risk-users'] });
   const summary = useMemo(() => toSubscriptionStatsSummary(statsQuery.data, shareMetric), [shareMetric, statsQuery.data]);
   const serviceTileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - mhs(12) * 3) / 4));
   const emptyAtRiskUsers: AtRiskUserItem[] = [];
@@ -215,7 +217,7 @@ export default function MarketingScreen() {
             />
             <AtRiskSubscriptionSection
               accentColor='#D92D20'
-              items={getCollectionData(atRiskQuery.data) || emptyAtRiskUsers}
+              items={getCollectionItems(atRiskQuery.data) || emptyAtRiskUsers}
               onViewMore={() => router.push('/marketing/at-risk-users')}
             />
           </ThemedView>

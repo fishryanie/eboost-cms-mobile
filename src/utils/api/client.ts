@@ -5,11 +5,27 @@ import { ApiError, getApiErrorMessage } from './errors';
 import type { ApiClientConfig, ApiRequestOptions, ApiService } from './types';
 
 let sessionTokenGetter: NonNullable<ApiClientConfig['getToken']> | undefined;
+let sessionRefreshTokenGetter: NonNullable<ApiClientConfig['getRefreshToken']> | undefined;
+let sessionRefreshHandler: NonNullable<ApiClientConfig['refreshToken']> | undefined;
+let sessionExpiredHandler: NonNullable<ApiClientConfig['onSessionExpired']> | undefined;
+let refreshInFlight: Promise<string | null | undefined> | undefined;
 
 export { ApiError, setApiBaseUrls };
 
 export function setApiSessionTokenGetter(getToken: NonNullable<ApiClientConfig['getToken']>) {
   sessionTokenGetter = getToken;
+}
+
+export function setApiSessionRefreshTokenGetter(getRefreshToken: NonNullable<ApiClientConfig['getRefreshToken']>) {
+  sessionRefreshTokenGetter = getRefreshToken;
+}
+
+export function setApiSessionRefreshHandler(refreshToken: NonNullable<ApiClientConfig['refreshToken']>) {
+  sessionRefreshHandler = refreshToken;
+}
+
+export function setApiSessionExpiredHandler(onSessionExpired: NonNullable<ApiClientConfig['onSessionExpired']>) {
+  sessionExpiredHandler = onSessionExpired;
 }
 
 function joinUrl(baseUrl: string, path: string) {
@@ -35,6 +51,26 @@ function getContentType(method?: string, data?: unknown) {
   if (method?.toUpperCase() === 'PATCH') return 'application/merge-patch+json';
   if (data !== undefined) return 'application/json';
   return undefined;
+}
+
+async function notifySessionExpired(config: ApiClientConfig) {
+  await (config.onSessionExpired || sessionExpiredHandler)?.();
+}
+
+async function refreshSessionToken(config: ApiClientConfig) {
+  const refreshToken = await (config.getRefreshToken || sessionRefreshTokenGetter)?.();
+
+  if (!refreshToken) {
+    return null;
+  }
+
+  if (!refreshInFlight) {
+    refreshInFlight = Promise.resolve((config.refreshToken || sessionRefreshHandler)?.(refreshToken)).finally(() => {
+      refreshInFlight = undefined;
+    });
+  }
+
+  return refreshInFlight;
 }
 
 export function createApiClient(config: ApiClientConfig = {}) {
@@ -81,6 +117,20 @@ export function createApiClient(config: ApiClientConfig = {}) {
     } catch (error) {
       if (isAxiosError(error)) {
         if (error.response) {
+          if (error.response.status === 401 && !options.skipAuth && !options.skipTokenRefresh) {
+            try {
+              const nextAccessToken = await refreshSessionToken(config);
+
+              if (nextAccessToken) {
+                return request<TResponse, TData>(path, { ...options, skipTokenRefresh: true });
+              }
+            } catch {
+              // Fall through to the session-expired handler below.
+            }
+
+            await notifySessionExpired(config);
+          }
+
           throw new ApiError({
             message: getApiErrorMessage(error.response.data, error.response.statusText || 'Request failed'),
             raw: error.response.data,

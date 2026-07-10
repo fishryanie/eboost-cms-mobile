@@ -8,12 +8,19 @@ import { AnimatedSplashOverlay } from 'components/animated-icon';
 import { AppDrawer } from 'components/app-drawer';
 import { AutoUpdateModal } from 'components/auto-update-modal';
 import { AppQueryProvider } from 'utils/query-provider';
+import { SessionExpiredModal } from 'utils/session/components/session-expired-modal';
 import { bootstrapSession } from 'utils/session/bootstrap';
 import * as Sentry from '@sentry/react-native';
 import * as Notifications from 'expo-notifications';
 import { useNotifications } from 'hooks/use-notifications';
 import { useAdminProfile } from 'utils/auth/admin-profile';
 import { useEffect } from 'react';
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  debug: __DEV__,
+  environment: process.env.EXPO_PUBLIC_APP_ENV,
+});
 
 bootstrapSession();
 
@@ -25,11 +32,6 @@ Notifications.setNotificationHandler({
     shouldShowBanner: true,
     shouldShowList: true,
   }),
-});
-
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  debug: __DEV__,
 });
 
 function TabLayout() {
@@ -73,6 +75,7 @@ function TabLayout() {
                   <Stack.Screen name='technical/network-issues/index' />
                 </Stack>
                 <AutoUpdateModal />
+                <SessionExpiredModal />
               </AppDrawer>
             </BottomSheetModalProvider>
           </AppQueryProvider>

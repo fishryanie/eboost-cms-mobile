@@ -11,7 +11,8 @@ import {
 } from 'app/(tabs)/technical/components/peak-usage-hours.helpers';
 import { ThemedText, ThemedView } from 'components/base';
 import { LoadingBlock, RetryBlock, SectionTitle } from 'components/technical/list-ui';
-import { DashboardApiData, getCollectionData } from 'shared/operation/operation-user-service';
+import { type DashboardApiData } from 'utils/api/types';
+import { getCollectionItems } from 'utils/api/collection';
 import { FontFamily, Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
 
@@ -64,7 +65,7 @@ export async function fetchPeakUsageHours({ interval, range, vehicle }: { interv
     },
   });
 
-  return normalizePeakUsageRows(getCollectionData(response));
+  return normalizePeakUsageRows(getCollectionItems(response));
 }
 
 export function getPeakUsageMoments(rows: PeakUsageRow[]) {

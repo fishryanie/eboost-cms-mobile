@@ -1,7 +1,7 @@
 import { ThemedView } from 'components/base';
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { StyleSheet, useWindowDimensions } from 'react-native';
+import { StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -37,7 +37,11 @@ export function AnimatedSplashOverlay() {
         }
       })}
       style={styles.backgroundSolidColor}>
-      <Image contentFit='cover' source={require('assets/images/cms-splash.png')} style={{ height, width }} />
+      <Image 
+        contentFit={Platform.OS === 'android' ? 'contain' : 'cover'} 
+        source={Platform.OS === 'android' ? require('../assets/images/icon.png') : require('../assets/images/cms-splash.png')} 
+        style={{ height, width }} 
+      />
     </AnimatedThemedView>
   );
 }

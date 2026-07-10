@@ -10,7 +10,7 @@
     "ios": {
       "icon": "./src/assets/images/icon.png",
       "bundleIdentifier": "com.evida.eboost.cms",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "infoPlist": {
         "CFBundleDisplayName": "Eboost CMS",
         "ITSAppUsesNonExemptEncryption": false
@@ -31,15 +31,17 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#FFFFFF",
-          "image": "./src/assets/images/cms-splash.png",
-          "resizeMode": "cover",
+          "image": "./src/assets/images/icon.png",
+          "resizeMode": "contain",
           "ios": {
+            "image": "./src/assets/images/cms-splash.png",
+            "resizeMode": "cover",
             "enableFullScreenImage_legacy": true
           },
           "android": {
-            "image": "./src/assets/images/cms-splash.png",
+            "image": "./src/assets/images/icon.png",
             "backgroundColor": "#FFFFFF",
-            "resizeMode": "cover"
+            "resizeMode": "contain"
           }
         }
       ],
@@ -75,7 +77,8 @@
           "project": "eboost-cms"
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,

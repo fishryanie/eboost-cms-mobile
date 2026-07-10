@@ -4,7 +4,7 @@ import { Alert, StyleSheet } from 'react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
 import { AppButton, EmptyState } from 'components/ui';
-import { fetchAlePayHistory } from 'shared/operation/operation-user-service';
+import { apiRequest } from 'utils/api/client';
 import { FontFamily, Palette } from 'themes';
 import { mhs } from 'themes/scaling';
 
@@ -49,7 +49,7 @@ export function PaymentCheckoutSheet({ onClose, visible, onSuccess }: { onClose:
     setIsSearching(true);
     setIsNotFound(false);
     try {
-      const data = await fetchAlePayHistory(detectParam(code));
+      const data = await apiRequest<any>('api/ale_pay_histories', { params: detectParam(code), method: 'GET' });
       const record = Array.isArray(data) ? data[0] : data?.['hydra:member']?.[0] || (data as any)?.data?.[0];
       if (record) {
         onSuccess(record);

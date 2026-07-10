@@ -6,7 +6,7 @@ import { useIsFocused, useRouter } from 'expo-router';
 import { Camera, CameraOff, ChevronLeft, Copy, ExternalLink, Flashlight, FlashlightOff, QrCode, RotateCcw, Settings, SwitchCamera } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +23,7 @@ const MIN_ZOOM = 0;
 const ZOOM_STEP = 0.04;
 const CAPTURE_BUTTON_SIZE = 78;
 const SCANNER_ANIMATION_SIZE = Math.min(width - mhs(32), mhs(340));
+const SHOULD_CHECK_CAMERA_AVAILABILITY = Platform.OS === 'web';
 
 const clampZoom = (value: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
 const getScannedLink = (value: string) => {
@@ -44,7 +45,7 @@ export default function ScanQrCodeScreen() {
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [zoom, setZoom] = useState(0);
   const [cameraReady, setCameraReady] = useState(false);
-  const [isCameraAvailable, setIsCameraAvailable] = useState(true);
+  const [isCameraAvailable, setIsCameraAvailable] = useState(!SHOULD_CHECK_CAMERA_AVAILABILITY);
   const [scannedValue, setScannedValue] = useState<string | null>(null);
 
   const pinchStartZoom = useSharedValue(0);
@@ -52,9 +53,21 @@ export default function ScanQrCodeScreen() {
   const effectiveTorchEnabled = cameraIsActive && torchEnabled;
 
   useEffect(() => {
+    if (!SHOULD_CHECK_CAMERA_AVAILABILITY) return;
+
+    let isMounted = true;
+
     CameraView.isAvailableAsync()
-      .then(setIsCameraAvailable)
-      .catch(() => setIsCameraAvailable(false));
+      .then(isAvailable => {
+        if (isMounted) setIsCameraAvailable(isAvailable);
+      })
+      .catch(() => {
+        if (isMounted) setIsCameraAvailable(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {

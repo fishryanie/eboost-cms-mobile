@@ -78,7 +78,7 @@ export default function DrawerSettingsScreen() {
       await Promise.all([
         biometricCredentialStore.setLastUsername(username),
         biometricCredentialStore.saveCredentials({ password, username }),
-        sessionStore.setToken(response.token),
+        sessionStore.setTokens({ refreshToken: response.refreshToken || response.refresh_token, token: response.token }),
       ]);
       queryClient.setQueryData(sessionKeys.token, response.token);
       await queryClient.invalidateQueries({ queryKey: ['locations'] });

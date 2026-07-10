@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import Toast from 'react-native-toast-message';
-import { updateUserPassword } from 'shared/operation/operation-user-service';
+
 import { UserCard } from 'shared/users/components/user-card';
 import { useInfiniteUsers } from 'shared/users/hooks';
 import { FontFamily, Palette } from 'themes';
@@ -72,9 +72,12 @@ export default function ChangePasswordScreen() {
       }
 
       // 2. Update password
-      return updateUserPassword({
-        password: newPassword,
-        userId: selectedUser.id,
+      return apiRequest<{ message?: string; statusCode?: string; success?: boolean }>('api/controller/password/admin/update-password-user', {
+        data: {
+          id: selectedUser.id,
+          password: newPassword,
+        },
+        method: 'POST',
       });
     },
     onSuccess: response => {

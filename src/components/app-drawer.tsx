@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
+import { LogOut, Settings, UserCircle, UserCog, type LucideIcon } from 'lucide-react-native';
 import { ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
 import { useAdminProfile } from 'utils/auth/admin-profile';
@@ -23,8 +24,6 @@ const colors = {
   textMuted: 'rgba(255,255,255,0.68)',
   itemPressed: 'rgba(255,255,255,0.12)',
 };
-
-import { LogOut, Settings, UserCircle, UserCog, type LucideIcon } from 'lucide-react-native';
 
 const drawerItems: {
   icon: LucideIcon;
@@ -116,7 +115,7 @@ export function AppDrawer({ children }: PropsWithChildren) {
     closeDrawer();
 
     if (item.name === 'Logout') {
-      await sessionStore.clearToken();
+      await sessionStore.clearTokens();
       queryClient.setQueryData(sessionKeys.token, null);
       await queryClient.invalidateQueries({ queryKey: ['locations'] });
       router.replace('/login');

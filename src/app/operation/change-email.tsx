@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import Toast from 'react-native-toast-message';
-import { updateUserEmail } from 'shared/operation/operation-user-service';
+
 import { UserCard } from 'shared/users/components/user-card';
 import { useInfiniteUsers } from 'shared/users/hooks';
 import { FontFamily, Palette } from 'themes';
@@ -72,9 +72,12 @@ export default function ChangeEmailScreen() {
       }
 
       // 2. Update email
-      return updateUserEmail({
-        email: email.trim(),
-        userId: selectedUser.id,
+      return apiRequest<{ message?: string; success?: boolean }>(`api/controller/user/update-user-mail/${selectedUser.id}`, {
+        data: {
+          email: email.trim(),
+          username: email.trim(),
+        },
+        method: 'POST',
       });
     },
     onSuccess: response => {

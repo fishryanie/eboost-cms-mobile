@@ -19,23 +19,61 @@ import { useInfiniteUsers, userKeys } from 'shared/users/hooks';
 import { FontFamily, Palette } from 'themes';
 import { biometricCredentialStore } from 'utils/auth/biometric-credentials';
 
-import {
-  adjustUserBalance,
-  confirmAdminPassword,
-  fetchTopStations,
-  fetchTopUsers,
-  fetchUserGrowth,
-  fetchUserGrowthChart,
-  getCollectionData,
-  transferMoneyUsers,
-  updateUserEmail,
-  updateUserPassword,
-  type BalanceAdjustmentType,
-  type TopStationPerformanceItem,
-  type TopUserPerformanceItem,
-  type UserGrowthChartItem,
-  type UserGrowthSummary,
-} from 'shared/operation/operation-user-service';
+import { type DashboardApiData } from 'utils/api/types';
+
+export type BalanceAdjustmentType = 'deduct_wallet' | 'plus_wallet';
+
+export type BalanceAdjustmentInput = {
+  amount: number;
+  reason: string;
+  type: BalanceAdjustmentType;
+  userId: number;
+};
+
+export type TransferMoneyInput = {
+  amount?: number;
+  from: number;
+  to: number;
+};
+
+export type TopUserPerformanceItem = {
+  growth?: number;
+  total_energy?: number;
+  total_orders?: number;
+  total_paid?: number;
+  total_topup?: number;
+  user_email?: string;
+  user_id: number;
+  user_name?: string;
+  user_phone?: string;
+};
+
+export type TopStationPerformanceItem = {
+  growth?: number;
+  station_id: number;
+  station_name?: string;
+  total_energy?: number;
+  total_energy_kwh?: number;
+  total_orders?: number;
+  total_paid?: number;
+};
+
+export type UserGrowthSummary = {
+  avg_charge_duration_all_time?: number;
+  avg_charge_duration_change_percent?: number;
+  charged_today_vs_yesterday_percent?: number;
+  today_vs_yesterday_growth_percent?: number;
+  total_users?: number;
+  users_charged_today?: number;
+};
+
+export type UserGrowthChartItem = {
+  new_users?: number | string;
+  time: string;
+  total_users?: number | string;
+};
+import { apiRequest } from 'utils/api/client';
+import { getCollectionItems } from 'utils/api/collection';
 
 type OperationServiceKey = 'adjust-balance' | 'transfer-money' | 'modify-ranking' | 'change-email' | 'change-password' | 'payment-checkout';
 type WizardStep = 'auth' | 'input' | 'result';
@@ -170,17 +208,14 @@ function parseApiError(error: unknown) {
 export default function OperationScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const [selectedService, setSelectedService] = useState<OperationService | null>(null);
-  const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isPaymentCheckoutOpen, setIsPaymentCheckoutOpen] = useState(false);
   const [isPaymentResultOpen, setIsPaymentResultOpen] = useState(false);
   const [paymentRecord, setPaymentRecord] = useState<any>(null);
-  const topUsersQuery = useQuery({ queryFn: () => fetchTopUsers(), queryKey: ['operation', 'top-users'] });
-  const topStationsQuery = useQuery({ queryFn: () => fetchTopStations(), queryKey: ['operation', 'top-stations'] });
+  const topUsersQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<TopUserPerformanceItem[]>>('api/controller/statistic/top-users', { params: { sortBy: 'total_orders' } }), queryKey: ['operation', 'top-users'] });
+  const topStationsQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<TopStationPerformanceItem[]>>('api/controller/statistic/top-stations', { params: { sortBy: 'total_orders' } }), queryKey: ['operation', 'top-stations'] });
   const growthRange = useMemo(() => getLastMonthsRange(12), []);
-  const growthQuery = useQuery({ queryFn: () => fetchUserGrowth(), queryKey: ['operation', 'user-growth'] });
-  const growthChartQuery = useQuery({ queryFn: () => fetchUserGrowthChart(growthRange), queryKey: ['operation', 'user-growth-chart', growthRange] });
+  const growthQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<UserGrowthSummary>>('api/controller/statistic/user-growth'), queryKey: ['operation', 'user-growth'] });
+  const growthChartQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<UserGrowthChartItem[]>>('api/controller/statistic/user-growth-chart', { params: { endDate: growthRange.endDate, period: 'month', startDate: growthRange.startDate } }), queryKey: ['operation', 'user-growth-chart', growthRange] });
   const tileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - mhs(12) * 3) / 4));
   const isRefreshing =
     topUsersQuery.isRefetching || topStationsQuery.isRefetching || growthQuery.isRefetching || growthChartQuery.isRefetching;
@@ -210,35 +245,7 @@ export default function OperationScreen() {
       router.push('/operation/change-password');
       return;
     }
-    setSelectedService(service);
-    setSelectedUser(null);
-    setIsPickerOpen(true);
   }, [router]);
-
-  const closeWizard = useCallback(() => {
-    setSelectedService(null);
-    setSelectedUser(null);
-    setIsPickerOpen(false);
-  }, []);
-
-  const handleUserNext = useCallback((user: UserListItem) => {
-    setSelectedUser(user);
-    setIsPickerOpen(false);
-  }, []);
-
-  if (selectedService && selectedUser) {
-    return (
-      <OperationUserWizard
-        service={selectedService}
-        user={selectedUser}
-        onBack={() => {
-          setSelectedUser(null);
-          setIsPickerOpen(true);
-        }}
-        onDone={closeWizard}
-      />
-    );
-  }
 
   return (
     <>
@@ -276,26 +283,21 @@ export default function OperationScreen() {
             <ThemedView gap={'seven'}>
               <OperationServicesSection onSelectService={openService} tileWidth={tileWidth} />
               <OperationStatsSection
-                growth={getCollectionData(growthChartQuery.data) || emptyGrowth}
+                growth={getCollectionItems(growthChartQuery.data) || []}
                 growthSummary={growthQuery.data?.data}
                 isLoading={
                   topUsersQuery.isLoading || topStationsQuery.isLoading || growthQuery.isLoading || growthChartQuery.isLoading
                 }
                 onViewMoreTopStations={() => router.push('/operation/locations')}
                 onViewMoreTopUsers={() => router.push('/operation/users')}
-                topStations={getCollectionData(topStationsQuery.data) || emptyTopStations}
-                topUsers={getCollectionData(topUsersQuery.data) || emptyTopUsers}
+                topStations={getCollectionItems(topStationsQuery.data) || []}
+                topUsers={getCollectionItems(topUsersQuery.data) || []}
               />
             </ThemedView>
           </ThemedView>
         </ScrollView>
       </ThemedView>
-      <UserPickerSheet
-        onClose={() => setIsPickerOpen(false)}
-        onNext={handleUserNext}
-        service={selectedService}
-        visible={isPickerOpen && Boolean(selectedService)}
-      />
+
       <PaymentCheckoutSheet
         onClose={() => setIsPaymentCheckoutOpen(false)}
         visible={isPaymentCheckoutOpen}
@@ -344,649 +346,6 @@ function ServiceShortcut({ onPress, service, tileWidth }: { onPress: () => void;
         </ThemedText>
       </ThemedView>
     </Pressable>
-  );
-}
-
-
-
-function UserPickerSheet({
-  onClose,
-  onNext,
-  service,
-  visible,
-}: {
-  onClose: () => void;
-  onNext: (user: UserListItem) => void;
-  service: OperationService | null;
-  visible: boolean;
-}) {
-  const ref = useRef<BottomSheetModal>(null);
-  const { bottom } = useSafeAreaInsets();
-  const [queryInput, setQueryInput] = useState('');
-  const [query, setQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
-  const usersQuery = useInfiniteUsers(query);
-  const users = useMemo(() => usersQuery.data?.pages.flatMap(page => page.items) || emptyUsers, [usersQuery.data]);
-
-  useEffect(() => {
-    if (visible) {
-      ref.current?.present();
-      return;
-    }
-    ref.current?.dismiss();
-  }, [visible]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setQuery(queryInput.trim()), 350);
-    return () => clearTimeout(timeout);
-  }, [queryInput]);
-
-  const loadMore = useCallback(() => {
-    if (usersQuery.hasNextPage && !usersQuery.isFetchingNextPage) {
-      void usersQuery.fetchNextPage();
-    }
-  }, [usersQuery]);
-
-  return (
-    <BottomSheetModal
-      backdropComponent={props => <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />}
-      enableDynamicSizing={false}
-      onDismiss={onClose}
-      ref={ref}
-      snapPoints={['72%', '88%']}>
-      <ThemedView style={[styles.sheetHeader, { paddingBottom: mhs(12) }]}>
-        <ThemedView flex={1} minWidth={0}>
-          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={18} lineHeight={24}>
-            Select User
-          </ThemedText>
-          <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} marginTop={2}>
-            {service?.title || 'Operation service'}
-          </ThemedText>
-        </ThemedView>
-        <AppButton disabled={!selectedUser} label='Next' onPress={() => selectedUser && onNext(selectedUser)} style={styles.sheetNextButton} />
-      </ThemedView>
-      <ThemedView paddingHorizontal={'four'} paddingBottom={'three'}>
-        <BottomSheetTextInput
-          autoCapitalize='none'
-          autoCorrect={false}
-          onChangeText={setQueryInput}
-          placeholder='Search ID, phone, or email'
-          placeholderTextColor='#98A2B3'
-          returnKeyType='search'
-          style={styles.search}
-          value={queryInput}
-        />
-      </ThemedView>
-      <BottomSheetFlatList
-        contentContainerStyle={[styles.sheetList, { paddingBottom: bottom + 'five' }]}
-        data={users}
-        keyExtractor={user => String(user.id)}
-        ListEmptyComponent={
-          usersQuery.isLoading ? (
-            <ThemedView gap={'three'} paddingTop={'six'}>
-              <ThemedView borderRadius={'large'} height={88} loading />
-              <ThemedView borderRadius={'large'} height={88} loading />
-              <ThemedView borderRadius={'large'} height={88} loading />
-            </ThemedView>
-          ) : usersQuery.isError ? (
-            <EmptyState message='The user list could not be loaded.' title='Users unavailable' />
-          ) : (
-            <EmptyState message={query ? 'Try another ID, phone number, or email.' : 'No user records were returned.'} title='No users found' />
-          )
-        }
-        ListFooterComponent={
-          usersQuery.isFetchingNextPage ? (
-            <ThemedView alignSelf='center' borderRadius={'pill'} height={18} loading marginVertical={24} width={132} />
-          ) : null
-        }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        renderItem={({ item }) => (
-          <ThemedView style={selectedUser?.id === item.id ? styles.selectedUserRow : undefined}>
-            <UserCard onPress={() => setSelectedUser(item)} user={item} />
-          </ThemedView>
-        )}
-      />
-    </BottomSheetModal>
-  );
-}
-
-function OperationUserWizard({ onBack, onDone, service, user }: { onBack: () => void; onDone: () => void; service: OperationService; user: UserListItem }) {
-  const queryClient = useQueryClient();
-  const [step, setStep] = useState<WizardStep>('input');
-  const [result, setResult] = useState<ResultState | null>(null);
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [authPassword, setAuthPassword] = useState('');
-  const [canUseBiometric, setCanUseBiometric] = useState(false);
-  const [pendingPayload, setPendingPayload] = useState<Record<string, unknown> | null>(null);
-  const mutation = useMutation({
-    mutationFn: async ({ authenticatedPassword }: { authenticatedPassword?: string }) => {
-      const response = await confirmAdminPassword(authenticatedPassword || '');
-      if (response?.success === false) {
-        throw new Error(response.message || 'Incorrect password');
-      }
-
-      if (service.key === 'adjust-balance') {
-        return adjustUserBalance({
-          amount: Number(pendingPayload?.amount),
-          reason: String(pendingPayload?.reason || ''),
-          type: pendingPayload?.type as BalanceAdjustmentType,
-          userId: user.id,
-        });
-      }
-
-      if (service.key === 'transfer-money') {
-        return transferMoneyUsers({
-          amount: pendingPayload?.amount ? Number(pendingPayload.amount) : undefined,
-          from: user.id,
-          to: Number(pendingPayload?.to),
-        });
-      }
-
-      if (service.key === 'change-email') {
-        return updateUserEmail({ email: String(pendingPayload?.email || '').trim(), userId: user.id });
-      }
-
-      if (service.key === 'change-password') {
-        return updateUserPassword({ password: String(pendingPayload?.password || ''), userId: user.id });
-      }
-
-      throw new Error('Service not implemented yet');
-    },
-    onError: error => {
-      setResult({
-        message: parseApiError(error),
-        status: 'error',
-        title: `${service.title} failed`,
-      });
-      setStep('result');
-    },
-    onSuccess: response => {
-      const apiResponse = response as { message?: string; statusCode?: string; success?: boolean };
-      if (apiResponse?.success === false || apiResponse?.statusCode === 'EVD011' || apiResponse?.statusCode === 'EVD013') {
-        setResult({
-          message: apiResponse.message || 'Operation failed.',
-          status: 'error',
-          title: `${service.title} failed`,
-        });
-        setStep('result');
-        return;
-      }
-
-      void queryClient.invalidateQueries({ queryKey: userKeys.all });
-      void queryClient.invalidateQueries({ queryKey: userKeys.detail(user.id) });
-      setResult({
-        message:
-          service.key === 'change-password' ? `New password: ${pendingPayload?.password || '--'}` : `${service.title} completed for ${getUserName(user)}.`,
-        status: 'success',
-        title: 'Operation successful',
-      });
-      setStep('result');
-    },
-  });
-
-  useEffect(() => {
-    let isMounted = true;
-    Promise.all([
-      LocalAuthentication.hasHardwareAsync(),
-      LocalAuthentication.isEnrolledAsync(),
-      biometricCredentialStore.canUseBiometricAuthentication(),
-      biometricCredentialStore.hasCredentials(),
-    ])
-      .then(([hasHardware, isEnrolled, canSaveProtectedCredentials, hasSavedCredentials]) => {
-        if (isMounted) setCanUseBiometric(hasHardware && isEnrolled && canSaveProtectedCredentials && hasSavedCredentials);
-      })
-      .catch(() => {
-        if (isMounted) setCanUseBiometric(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const updateValue = useCallback((key: string, value: string) => {
-    setFormValues(current => ({ ...current, [key]: value }));
-  }, []);
-
-  const goToAuth = useCallback(
-    (payload: Record<string, unknown>) => {
-      setPendingPayload(payload);
-      setAuthPassword('');
-      setStep('auth');
-    },
-    [setPendingPayload],
-  );
-
-  const submitWithPassword = useCallback(() => {
-    if (!authPassword.trim()) {
-      Alert.alert('Password required', 'Enter your admin password or use biometric authentication.');
-      return;
-    }
-
-    mutation.mutate({ authenticatedPassword: authPassword });
-  }, [authPassword, mutation, service.key]);
-
-  const submitWithBiometric = useCallback(async () => {
-    try {
-      const credentials = await biometricCredentialStore.getCredentials();
-      if (!credentials?.password) {
-        setCanUseBiometric(false);
-        Alert.alert('Biometric unavailable', 'Please sign in with your CMS account once before using biometric authentication.');
-        return;
-      }
-      mutation.mutate({ authenticatedPassword: credentials.password });
-    } catch (error) {
-      Alert.alert('Authentication failed', parseApiError(error));
-    }
-  }, [mutation]);
-
-  return (
-    <ThemedView safePaddingTop flex={1} backgroundColor={Palette.surfaceBase}>
-      <ThemedView style={styles.wizardHeader}>
-        <Pressable accessibilityLabel='Back' accessibilityRole='button' onPress={step === 'input' ? onBack : () => setStep('input')} style={styles.backButton}>
-          <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
-        </Pressable>
-        <ThemedView flex={1} minWidth={0}>
-          <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={18} lineHeight={24} textAlign='center'>
-            {service.title}
-          </ThemedText>
-          <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} textAlign='center'>
-            {getUserName(user)}
-          </ThemedText>
-        </ThemedView>
-        <ThemedView width={34} />
-      </ThemedView>
-      <ScrollView contentContainerStyle={styles.wizardContent} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
-        <StepIndicator current={step} />
-        <SelectedUserSummary user={user} />
-        {step === 'input' ? (
-          <InputStep
-            formValues={formValues}
-            onNext={goToAuth}
-            onValueChange={updateValue}
-            serviceKey={service.key}
-            user={user}
-          />
-        ) : step === 'auth' ? (
-          <AuthStep
-            canUseBiometric={canUseBiometric}
-            loading={mutation.isPending}
-            onBack={() => setStep('input')}
-            onBiometric={submitWithBiometric}
-            onPasswordChange={setAuthPassword}
-            onSubmit={submitWithPassword}
-            password={authPassword}
-          />
-        ) : (
-          <ResultStep loading={mutation.isPending} onDone={onDone} result={result} />
-        )}
-      </ScrollView>
-    </ThemedView>
-  );
-}
-
-function InputStep({
-  formValues,
-  onNext,
-  onValueChange,
-  serviceKey,
-  user,
-}: {
-  formValues: Record<string, string>;
-  onNext: (payload: Record<string, unknown>) => void;
-  onValueChange: (key: string, value: string) => void;
-  serviceKey: OperationServiceKey;
-  user: UserListItem;
-}) {
-  const [receiver, setReceiver] = useState<UserListItem | null>(null);
-  const [receiverSearch, setReceiverSearch] = useState('');
-  const [receiverQuery, setReceiverQuery] = useState('');
-  const receiverUsersQuery = useInfiniteUsers(receiverQuery);
-  const receiverUsers = useMemo(
-    () => receiverUsersQuery.data?.pages.flatMap(page => page.items).filter(item => item.id !== user.id) || [],
-    [receiverUsersQuery.data, user.id],
-  );
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setReceiverQuery(receiverSearch.trim()), 350);
-    return () => clearTimeout(timeout);
-  }, [receiverSearch]);
-
-  const submit = useCallback(() => {
-    if (serviceKey === 'adjust-balance') {
-      const amount = Number(formValues.amount);
-      const reason = formValues.reason?.trim();
-      const type = (formValues.type || 'plus_wallet') as BalanceAdjustmentType;
-      if (!Number.isFinite(amount) || amount <= 0 || !reason || reason.length < 10) {
-        Alert.alert('Missing details', 'Enter an amount and a reason with at least 10 characters.');
-        return;
-      }
-      onNext({ amount, reason, type });
-      return;
-    }
-
-    if (serviceKey === 'transfer-money') {
-      const amountText = formValues.amount?.trim();
-      if (!receiver?.id) {
-        Alert.alert('Receiver required', 'Select the receiver user.');
-        return;
-      }
-      if (amountText && (!Number.isFinite(Number(amountText)) || Number(amountText) <= 0)) {
-        Alert.alert('Invalid amount', 'Amount must be greater than zero, or leave it empty to transfer full balance.');
-        return;
-      }
-      onNext({ amount: amountText ? Number(amountText) : undefined, to: receiver.id });
-      return;
-    }
-
-
-    if (serviceKey === 'change-email') {
-      const email = formValues.email?.trim();
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        Alert.alert('Invalid email', 'Enter a valid replacement email.');
-        return;
-      }
-      if (email.toLowerCase() === user.email?.trim().toLowerCase()) {
-        Alert.alert('Same email', 'New email must be different from current email.');
-        return;
-      }
-      onNext({ email });
-      return;
-    }
-
-    if (serviceKey === 'change-password') {
-      const password = formValues.password || '';
-      const confirmPassword = formValues.confirmPassword || '';
-      if (password.length < 8 || password.length > 40 || password !== confirmPassword) {
-        Alert.alert('Invalid password', 'Password must be 8-40 characters and match confirmation.');
-        return;
-      }
-      onNext({ password });
-      return;
-    }
-
-    if (serviceKey === 'payment-checkout') {
-      onNext({});
-      return;
-    }
-  }, [formValues, onNext, receiver, serviceKey, user.email]);
-
-  return (
-    <ThemedView gap={'four'}>
-      {serviceKey === 'adjust-balance' ? (
-        <>
-          <SegmentedInput
-            onChange={value => onValueChange('type', value)}
-            options={[
-              { label: 'Plus', value: 'plus_wallet' },
-              { label: 'Deduct', value: 'deduct_wallet' },
-            ]}
-            value={formValues.type || 'plus_wallet'}
-          />
-          <LabeledInput
-            keyboardType='numeric'
-            label='Transfer amount'
-            onChangeText={value => onValueChange('amount', value)}
-            placeholder='Enter amount'
-            value={formValues.amount || ''}
-          />
-          <LabeledInput
-            label='Reason'
-            multiline
-            onChangeText={value => onValueChange('reason', value)}
-            placeholder='Enter reason for this transaction'
-            style={styles.textArea}
-            value={formValues.reason || ''}
-          />
-        </>
-      ) : null}
-
-      {serviceKey === 'transfer-money' ? (
-        <>
-          <ThemedView style={styles.infoCard}>
-            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={11}>
-              SENDER
-            </ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={16} marginTop={4}>
-              {getUserName(user)}
-            </ThemedText>
-            <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={14} marginTop={2}>
-              {formatCurrency(user.balance)}
-            </ThemedText>
-          </ThemedView>
-          <LabeledInput
-            label='Receiver'
-            onChangeText={text => {
-              setReceiverSearch(text);
-              setReceiver(null);
-            }}
-            placeholder='Search receiver ID, phone, or email'
-            value={receiver ? getUserName(receiver) : receiverSearch}
-          />
-          {receiverSearch || receiverUsersQuery.isLoading ? (
-            <ThemedView style={styles.inlineList}>
-              {receiverUsersQuery.isLoading ? (
-                <ThemedView borderRadius={'large'} height={58} loading />
-              ) : (
-                receiverUsers.slice(0, 5).map(item => (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => {
-                      setReceiver(item);
-                      setReceiverSearch('');
-                    }}
-                    style={({ pressed }) => [styles.inlineUserRow, pressed && styles.pressed]}>
-                    <ThemedText numberOfLines={1} color={Palette.textPrimary} flex={1} fontFamily={FontFamily.bold} fontSize={13}>
-                      {getUserName(item)}
-                    </ThemedText>
-                    <ThemedText color={Palette.accent} fontFamily={FontFamily.semibold} fontSize={12}>
-                      #{item.id}
-                    </ThemedText>
-                  </Pressable>
-                ))
-              )}
-            </ThemedView>
-          ) : null}
-          <LabeledInput
-            keyboardType='numeric'
-            label='Amount'
-            onChangeText={value => onValueChange('amount', value)}
-            placeholder='Empty means transfer full balance'
-            value={formValues.amount || ''}
-          />
-        </>
-      ) : null}
-
-      {serviceKey === 'change-email' ? (
-        <>
-          <ThemedView style={styles.infoCard}>
-            <Mail color={Palette.textSecondary} size={18} />
-            <ThemedView flex={1} minWidth={0}>
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={11}>
-                CURRENT EMAIL
-              </ThemedText>
-              <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} marginTop={3}>
-                {user.email || '--'}
-              </ThemedText>
-            </ThemedView>
-          </ThemedView>
-          <LabeledInput
-            autoCapitalize='none'
-            keyboardType='email-address'
-            label='New email'
-            onChangeText={value => onValueChange('email', value)}
-            placeholder='Enter new email'
-            value={formValues.email || ''}
-          />
-        </>
-      ) : null}
-
-      {serviceKey === 'change-password' ? (
-        <>
-          <LabeledInput
-            label='New password'
-            onChangeText={value => onValueChange('password', value)}
-            placeholder='Enter new password'
-            secureTextEntry
-            value={formValues.password || ''}
-          />
-          <LabeledInput
-            label='Confirm new password'
-            onChangeText={value => onValueChange('confirmPassword', value)}
-            placeholder='Confirm new password'
-            secureTextEntry
-            value={formValues.confirmPassword || ''}
-          />
-        </>
-      ) : null}
-
-      <AppButton block label='Next' onPress={submit} />
-    </ThemedView>
-  );
-}
-
-function AuthStep({
-  canUseBiometric,
-  loading,
-  onBack,
-  onBiometric,
-  onPasswordChange,
-  onSubmit,
-  password,
-}: {
-  canUseBiometric: boolean;
-  loading: boolean;
-  onBack: () => void;
-  onBiometric: () => void;
-  onPasswordChange: (value: string) => void;
-  onSubmit: () => void;
-  password: string;
-}) {
-  return (
-    <ThemedView gap={'four'}>
-      <ThemedView style={styles.warningCard}>
-        <ShieldCheck color={operationAccent} size={20} />
-        <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={19}>
-          Review the details carefully. The operation will be submitted immediately after this step.
-        </ThemedText>
-      </ThemedView>
-      <LabeledInput label='Admin password' onChangeText={onPasswordChange} placeholder='Enter password to confirm' secureTextEntry value={password} />
-      <ThemedView flexDirection='row' gap={'three'}>
-        <AppButton block label='Back' onPress={onBack} variant='ghost' />
-        <AppButton block label='Submit' loading={loading} onPress={onSubmit} />
-      </ThemedView>
-      {canUseBiometric ? <AppButton block label='Use Biometric' loading={loading} onPress={onBiometric} variant='secondary' /> : null}
-    </ThemedView>
-  );
-}
-
-function ResultStep({ loading, onDone, result }: { loading: boolean; onDone: () => void; result: ResultState | null }) {
-  const success = result?.status === 'success';
-
-  return (
-    <ThemedView gap={'four'} style={styles.resultCard}>
-      {loading ? (
-        <ThemedView borderRadius={'pill'} height={58} loading width={58} />
-      ) : success ? (
-        <CheckCircle2 color={Palette.accent} size={58} />
-      ) : (
-        <XCircle color={Palette.danger} size={58} />
-      )}
-      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={21} lineHeight={27} textAlign='center'>
-        {loading ? 'Processing...' : result?.title || 'Operation result'}
-      </ThemedText>
-      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} lineHeight={21} textAlign='center'>
-        {loading ? 'Please wait a moment.' : result?.message || '--'}
-      </ThemedText>
-      <AppButton block label='Back to Operation' onPress={onDone} />
-    </ThemedView>
-  );
-}
-
-function SelectedUserSummary({ user }: { user: UserListItem }) {
-  return (
-    <ThemedView style={styles.selectedSummary}>
-      <ThemedView style={styles.selectedAvatar}>
-        <UserIcon color='#FFFFFF' size={24} />
-      </ThemedView>
-      <ThemedView flex={1} minWidth={0}>
-        <ThemedText numberOfLines={1} color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15}>
-          {getUserName(user)}
-        </ThemedText>
-        <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} marginTop={2}>
-          #{user.id} • {user.email || user.phoneNumber || 'No contact'}
-        </ThemedText>
-      </ThemedView>
-      <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={13}>
-        {formatCurrency(user.balance)}
-      </ThemedText>
-    </ThemedView>
-  );
-}
-
-function StepIndicator({ current }: { current: WizardStep }) {
-  const steps: { key: WizardStep; label: string }[] = [
-    { key: 'input', label: 'Input' },
-    { key: 'auth', label: 'Verify' },
-    { key: 'result', label: 'Result' },
-  ];
-
-  return (
-    <ThemedView flexDirection='row' gap={'two'}>
-      {steps.map((item, index) => {
-        const active = item.key === current;
-        return (
-          <ThemedView flex={1} key={item.key} style={[styles.stepPill, active && styles.stepPillActive]}>
-            <ThemedText color={active ? '#FFFFFF' : Palette.textSecondary} fontFamily={FontFamily.bold} fontSize={11} textAlign='center'>
-              {index + 1}. {item.label}
-            </ThemedText>
-          </ThemedView>
-        );
-      })}
-    </ThemedView>
-  );
-}
-
-function LabeledInput({
-  label,
-  style,
-  ...props
-}: {
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-  keyboardType?: 'default' | 'email-address' | 'numeric';
-  label: string;
-  multiline?: boolean;
-  onChangeText: (value: string) => void;
-  placeholder: string;
-  secureTextEntry?: boolean;
-  style?: object;
-  value: string;
-}) {
-  return (
-    <ThemedView gap={'two'}>
-      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={13}>
-        {label}
-      </ThemedText>
-      <TextInput placeholderTextColor='#98A2B3' style={[styles.input, style]} {...props} />
-    </ThemedView>
-  );
-}
-
-function SegmentedInput({ onChange, options, value }: { onChange: (value: string) => void; options: { label: string; value: string }[]; value: string }) {
-  return (
-    <ThemedView flexDirection='row' gap={'two'} style={styles.segmented}>
-      {options.map(option => {
-        const selected = option.value === value;
-        return (
-          <Pressable key={option.value} onPress={() => onChange(option.value)} style={[styles.segmentButton, selected && styles.segmentButtonSelected]}>
-            <ThemedText color={selected ? '#FFFFFF' : Palette.textSecondary} fontFamily={FontFamily.bold} fontSize={13} textAlign='center'>
-              {option.label}
-            </ThemedText>
-          </Pressable>
-        );
-      })}
-    </ThemedView>
   );
 }
 

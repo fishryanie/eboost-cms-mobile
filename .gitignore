@@ -51,3 +51,5 @@ example
 
 bun.lock
 bun.lockb
+
+.env.local

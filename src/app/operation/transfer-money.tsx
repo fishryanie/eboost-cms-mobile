@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import Toast from 'react-native-toast-message';
-import { transferMoneyUsers } from 'shared/operation/operation-user-service';
+
 import { UserCard } from 'shared/users/components/user-card';
 import { useInfiniteUsers } from 'shared/users/hooks';
 import { FontFamily, Palette } from 'themes';
@@ -91,10 +91,14 @@ export default function TransferMoneyScreen() {
       // 2. Transfer money
       const parsedAmount = amount ? Number(amount.replace(/[^0-9]/g, '')) : undefined;
 
-      return transferMoneyUsers({
-        amount: parsedAmount,
-        from: senderUserId,
-        to: receiverUserId,
+      return apiRequest('api/controller/utilities/transfer-money-users', {
+        data: {
+          amount: parsedAmount,
+          from: senderUserId,
+          to: receiverUserId,
+        },
+        method: 'POST',
+        service: 'core',
       });
     },
     onSuccess: () => {

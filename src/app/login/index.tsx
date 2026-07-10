@@ -58,7 +58,10 @@ export default function LoginScreen() {
 
       await Promise.all([biometricCredentialStore.setLastUsername(credentials.username), queueBiometricOptIn(credentials)]);
       useAdminProfile.getState().loadProfile();
-      await completeAuthenticatedSession(response.token);
+      await completeAuthenticatedSession({
+        refreshToken: response.refreshToken || response.refresh_token,
+        token: response.token,
+      });
     },
     onError: error => {
       setErrorMessage(error instanceof Error ? error.message : 'Please check your credentials and try again.');
@@ -240,12 +243,7 @@ export default function LoginScreen() {
                     disabled={!canSubmitBiometric}
                     icon={(() => {
                       const BiometricIcon = biometricIcon;
-                      return (
-                        <BiometricIcon
-                          color={canSubmitBiometric ? Palette.accent : Palette.textTertiary}
-                          size={biometricSymbolSize}
-                        />
-                      );
+                      return <BiometricIcon color={canSubmitBiometric ? Palette.accent : Palette.textTertiary} size={biometricSymbolSize} />;
                     })()}
                     onPress={handleBiometricLogin}
                     scale={0.92}

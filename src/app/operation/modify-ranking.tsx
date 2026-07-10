@@ -11,7 +11,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import Toast from 'react-native-toast-message';
-import { confirmAdminPassword, fetchUserLevels, getCollectionData, updateUserRanking } from 'shared/operation/operation-user-service';
+import { apiRequest } from 'utils/api/client';
+import { getCollectionItems } from 'utils/api/collection';
+import { type DashboardApiData } from 'utils/api/types';
 import { UserCard } from 'shared/users/components/user-card';
 import { useInfiniteUsers } from 'shared/users/hooks';
 import { FontFamily, Palette } from 'themes';
@@ -49,10 +51,10 @@ export default function ModifyRankingScreen() {
 
   // User Levels state
   const levelsQuery = useQuery({
-    queryFn: fetchUserLevels,
+    queryFn: () => apiRequest<DashboardApiData<UserLevel[]> | UserLevel[]>('api/user_levels', { params: { pagination: false } }),
     queryKey: ['operation', 'user-levels'],
   });
-  const userLevels = useMemo(() => getCollectionData(levelsQuery.data), [levelsQuery.data]);
+  const userLevels = useMemo(() => getCollectionItems(levelsQuery.data), [levelsQuery.data]);
 
   const [selectedIriId, setSelectedIriId] = useState<string>('');
 
@@ -71,13 +73,15 @@ export default function ModifyRankingScreen() {
       if (!selectedUserId) throw new Error('User not selected');
       if (!selectedIriId) throw new Error('Ranking level not selected');
 
-      // 1. Check admin password
-      await confirmAdminPassword(password);
+      await apiRequest<{ message?: string; success?: boolean }>('api/controller/password/admin/confirm-password', {
+        data: { password },
+        method: 'POST',
+      });
 
       // 2. Modify ranking
-      return updateUserRanking({
-        iriId: selectedIriId,
-        userId: selectedUserId,
+      return apiRequest(`api/users/${selectedUserId}`, {
+        data: { userLevel: selectedIriId },
+        method: 'PATCH',
       });
     },
     onSuccess: () => {

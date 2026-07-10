@@ -5,6 +5,7 @@ export type SessionStorageAdapter = {
 };
 
 const adminTokenKey = 'eboost-admin-token';
+const adminRefreshTokenKey = 'eboost-admin-refresh-token';
 
 async function getSecureStore(): Promise<SessionStorageAdapter> {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -26,14 +27,32 @@ export function createSessionStore(storage?: SessionStorageAdapter) {
   const getStorage = () => storage || getSecureStore();
 
   return {
-    clearToken() {
-      return Promise.resolve(getStorage()).then(nextStorage => nextStorage.deleteItemAsync(adminTokenKey));
+    async clearToken() {
+      const nextStorage = await getStorage();
+      await Promise.all([nextStorage.deleteItemAsync(adminTokenKey), nextStorage.deleteItemAsync(adminRefreshTokenKey)]);
+    },
+    async clearTokens() {
+      const nextStorage = await getStorage();
+      await Promise.all([nextStorage.deleteItemAsync(adminTokenKey), nextStorage.deleteItemAsync(adminRefreshTokenKey)]);
+    },
+    getRefreshToken() {
+      return Promise.resolve(getStorage()).then(nextStorage => nextStorage.getItemAsync(adminRefreshTokenKey));
     },
     getToken() {
       return Promise.resolve(getStorage()).then(nextStorage => nextStorage.getItemAsync(adminTokenKey));
     },
     setToken(token: string) {
       return Promise.resolve(getStorage()).then(nextStorage => nextStorage.setItemAsync(adminTokenKey, token));
+    },
+    async setTokens({ refreshToken, token }: { refreshToken?: string; token: string }) {
+      const nextStorage = await getStorage();
+      await nextStorage.setItemAsync(adminTokenKey, token);
+
+      if (refreshToken) {
+        await nextStorage.setItemAsync(adminRefreshTokenKey, refreshToken);
+      } else {
+        await nextStorage.deleteItemAsync(adminRefreshTokenKey);
+      }
     },
   };
 }

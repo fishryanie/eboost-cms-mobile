@@ -6,7 +6,23 @@ import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flat
 import { EmptyState } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 import { LoadingBlock } from 'app/(tabs)/marketing/components/subscription-stats';
-import { fetchAtRiskUsers, getCollectionData } from 'shared/operation/operation-user-service';
+import { getCollectionItems } from 'utils/api/collection';
+import { apiRequest } from 'utils/api/client';
+import { type DashboardApiData } from 'utils/api/types';
+
+export type AtRiskUserItem = {
+  auto_renew?: boolean;
+  days_left?: number;
+  end_date?: string;
+  risk_types?: string[];
+  subscription_id: number;
+  user?: {
+    email?: string;
+    id: number;
+    name?: string;
+    phone?: string;
+  };
+};
 
 const screenHorizontalPadding = 18;
 
@@ -33,8 +49,8 @@ const styles = StyleSheet.create({
 });
 
 export default function AtRiskUsersScreen() {
-  const atRiskQuery = useQuery({ queryFn: () => fetchAtRiskUsers(), queryKey: ['operation', 'at-risk-users'] });
-  const items = getCollectionData(atRiskQuery.data) || [];
+  const atRiskQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<AtRiskUserItem[]>>('api/controller/statistic/at-risk-users', { params: { limit: 5, low_quota_ratio: 0.2, near_end_days: 7, page: 1, renew: 'all', risk: 'all' } }), queryKey: ['operation', 'at-risk-users'] });
+  const items = getCollectionItems(atRiskQuery.data) || [];
 
   return (
     <ThemedView flex={1}>

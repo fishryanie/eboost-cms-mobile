@@ -25,8 +25,8 @@ export function useBiometricLogin({ setErrorMessage }: UseBiometricLoginOptions)
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
 
   const completeAuthenticatedSession = useCallback(
-    async (token: string) => {
-      await sessionStore.setToken(token);
+    async ({ refreshToken, token }: { refreshToken?: string; token: string }) => {
+      await sessionStore.setTokens({ refreshToken, token });
       queryClient.setQueryData(sessionKeys.token, token);
       await queryClient.invalidateQueries({ queryKey: ['locations'] });
       router.replace('/technical');
@@ -96,7 +96,10 @@ export function useBiometricLogin({ setErrorMessage }: UseBiometricLoginOptions)
         return;
       }
 
-      await completeAuthenticatedSession(response.token);
+      await completeAuthenticatedSession({
+        refreshToken: response.refreshToken || response.refresh_token,
+        token: response.token,
+      });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Biometric sign in was cancelled or failed. Please try again.');
     } finally {
