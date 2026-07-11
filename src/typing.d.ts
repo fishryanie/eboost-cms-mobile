@@ -176,6 +176,14 @@ type OperationStatus = {
   label?: string;
 };
 
+type LocationPartnership = {
+  contract?: string | { code?: string; name?: string; number?: string } | null;
+  contractCode?: string | null;
+  mainUser?: { email?: string | null; name?: string | null; phone?: string | null; username?: string | null } | null;
+  notes?: string | null;
+  tariff?: string | { name?: string; title?: string } | null;
+};
+
 type LocationRecord = {
   address?: string | null;
   bikeCount?: number;
@@ -183,6 +191,7 @@ type LocationRecord = {
   deletedAt?: string | null;
   displayAddress?: string | null;
   id: number;
+  iriId?: string;
   image?: string | null;
   image_url?: string | null;
   imageUrl?: string | null;
@@ -196,18 +205,50 @@ type LocationRecord = {
   stationCount?: number;
   thumbnailUrl?: string | null;
   visible?: boolean;
+  addressVn?: string | null;
+  description?: string | null;
+  descriptionVn?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  nameVn?: string | null;
+  partnership?: LocationPartnership | null;
+  partnershipLocation?: LocationPartnership | null;
 };
 
 type StationRecord = {
+  bikeBoxes?: BikeBoxRecord[];
+  carBoxes?: CarBoxRecord[];
+  description?: string | null;
+  descriptionVn?: string | null;
+  fullTime?: boolean;
   id: number;
+  iriId?: string;
+  images?: { originalName?: string | null; url?: string | null }[];
   name?: string;
+  nameVn?: string;
+  numberOfBikeBoxes?: number;
+  numberOfCarBoxes?: number;
+  public?: boolean;
+  stationAreaType?: { name?: string };
+  stationOpenProfile?: { name?: string };
   visible?: boolean;
 };
 
-type CarConnectorRecord = { id: number };
-type OutletRecord = { id: number };
-type CarBoxRecord = { carConnectors?: CarConnectorRecord[]; id: number };
-type BikeBoxRecord = { id: number; outlets?: OutletRecord[] };
+type ChargerPortRecord = {
+  id: number;
+  name?: string;
+  orderOnBox?: number;
+  power?: number;
+  qrCode?: string;
+  status?: boolean | string;
+  uniqueId?: string;
+  used?: boolean;
+  visible?: boolean;
+};
+type CarConnectorRecord = ChargerPortRecord;
+type OutletRecord = ChargerPortRecord;
+type CarBoxRecord = WorkflowChargerRecord & { carConnectors?: CarConnectorRecord[]; numberOfCarConnectors?: number };
+type BikeBoxRecord = WorkflowChargerRecord & { numberOfOutlets?: number; outlets?: OutletRecord[] };
 
 type UserLevel = {
   backgroundColor?: string | null;

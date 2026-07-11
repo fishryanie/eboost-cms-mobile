@@ -1,12 +1,22 @@
 import { Alert } from 'react-native';
-import { Eye, EyeOff, RefreshCcw, Undo2 } from 'lucide-react-native';
+import { Eye, EyeOff, Pencil, RefreshCcw, Undo2 } from 'lucide-react-native';
 
 import { ActionSheet } from 'components/ui';
 
 import { getLocationVisibilityAction } from '../location-actions';
 import { useLocationActionMutations } from '../hooks';
 
-export function LocationActionsSheet({ location, onClose, open }: { location?: LocationRecord; onClose: () => void; open: boolean }) {
+export function LocationActionsSheet({
+  location,
+  onClose,
+  onEdit,
+  open,
+}: {
+  location?: LocationRecord;
+  onClose: () => void;
+  onEdit?: () => void;
+  open: boolean;
+}) {
   const mutations = useLocationActionMutations(location?.id);
 
   if (!location) {
@@ -22,6 +32,9 @@ export function LocationActionsSheet({ location, onClose, open }: { location?: L
       open={open}
       title={location.name}
       items={[
+        ...(onEdit && !location.deletedAt
+          ? [{ icon: Pencil, key: 'edit', label: 'Edit location', meta: 'Update names, address, descriptions and coordinates', onPress: onEdit }]
+          : []),
         {
           disabled: busy,
           icon: RefreshCcw,

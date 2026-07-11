@@ -24,7 +24,9 @@ type CollectionResponse<T> =
   | {
       data?: T[];
       'hydra:member'?: T[];
+      'hydra:totalItems'?: number;
       member?: T[];
+      total?: number;
     };
 
 function unwrapCollection<T>(response: CollectionResponse<T>): T[] {
@@ -70,6 +72,31 @@ export async function fetchLocationStations(locationId: number | string) {
   });
 
   return unwrapCollection(response);
+}
+
+export async function fetchStationChargers(stationId: number | string, page = 1, pageSize = 12) {
+  const [cars, bikes] = await Promise.all([
+    apiRequest<CollectionResponse<CarBoxRecord>>('api/car_boxes', { params: { station: String(stationId), page, itemsPerPage: pageSize } }),
+    apiRequest<CollectionResponse<BikeBoxRecord>>('api/bike_boxes', { params: { station: String(stationId), page, itemsPerPage: pageSize } }),
+  ]);
+
+  const carItems = unwrapCollection(cars);
+  const bikeItems = unwrapCollection(bikes);
+  const totalOf = <T>(response: CollectionResponse<T>, fallback: number) =>
+    Array.isArray(response) ? fallback : (response['hydra:totalItems'] ?? response.total ?? fallback);
+
+  return {
+    items: [...carItems.map(charger => ({ ...charger, boxType: 'car' as const })), ...bikeItems.map(charger => ({ ...charger, boxType: 'bike' as const }))],
+    nextPage: page * pageSize < Math.max(totalOf(cars, carItems.length), totalOf(bikes, bikeItems.length)) ? page + 1 : undefined,
+  };
+}
+
+export function updateResource<T>(path: string, id: number | string, data: Record<string, unknown>) {
+  return apiRequest<T>(`${path}/${id}`, { data, method: 'PATCH' });
+}
+
+export function createResource<T>(path: string, data: Record<string, unknown>) {
+  return apiRequest<T>(path, { data, method: 'POST' });
 }
 
 export function syncPartnershipLocation() {
