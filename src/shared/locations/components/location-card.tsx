@@ -1,21 +1,21 @@
-import { mhs } from 'themes/scaling';
 import { Image } from 'expo-image';
-import { Bike, Car, Fuel, Upload, type LucideIcon } from 'lucide-react-native';
-import { useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { Bike, Building2, Car, RadioTower, Upload } from 'lucide-react-native';
+import { useRef, useState } from 'react';
+import { Pressable as NativePressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native-gesture-handler';
+import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { ThemedText, ThemedView } from 'components/base';
 
-import { FontFamily, Palette } from 'themes';
 import { ImagePreviewModal } from 'components/media/image-preview-modal';
+import { FontFamily, Palette } from 'themes';
+import { mhs } from 'themes/scaling';
 import { getDisplayImageUrl } from 'utils/media/image-url';
 
-const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+import { getLocationStatusTheme } from '../location-status';
 
 const ACTION_WIDTH = 144;
 const ACTION_TRIGGER = ACTION_WIDTH * 0.4;
-const THUMB_SIZE = 50;
+const THUMB_SIZE = 64;
 
 function getLocationImage(location: LocationRecord) {
   return getDisplayImageUrl(
@@ -24,23 +24,46 @@ function getLocationImage(location: LocationRecord) {
 }
 
 function getLocationAddress(location: LocationRecord) {
-  return location.displayAddress || location.address || `Location #${location.id}`;
+  const baseAddress = location.displayAddress || location.address || location.addressVn || '';
+  const parts = baseAddress
+    .split(',')
+    .map(part => part.trim())
+    .filter(Boolean);
+  const administrativeParts = [location.ward?.name || location.ward?.nameVn, location.ward?.province?.name || location.ward?.province?.nameVn].filter(
+    (part): part is string => Boolean(part?.trim()),
+  );
+
+  administrativeParts.forEach(part => {
+    const candidate = part.trim();
+    const candidateKey = candidate.toLocaleLowerCase().replace(/[^a-z0-9à-ỹđ]/g, '');
+    const duplicateIndex = parts.findIndex(current => current.toLocaleLowerCase().replace(/[^a-z0-9à-ỹđ]/g, '') === candidateKey);
+
+    if (duplicateIndex === -1) {
+      parts.push(candidate);
+    } else if (candidate.length > parts[duplicateIndex].length) {
+      parts[duplicateIndex] = candidate;
+    }
+  });
+
+  return parts.join(', ') || `Location #${location.id}`;
 }
 
-function getStatusState(status: string, visible?: boolean) {
-  const normalized = status.toLowerCase();
-
-  if (visible === false || normalized.includes('terminated') || normalized.includes('deleted')) {
-    return { color: '#DD3B4A', label: status };
-  }
-
-  return { color: '#079A13', label: status || 'Operating' };
+function getLocationCode(location: LocationRecord) {
+  return location.locationCode?.trim() || location.location_code?.trim() || `EVM-${String(location.id).padStart(4, '0')}`;
 }
 
-function getCount(location: LocationRecord, key: 'bikeCount' | 'carCount' | 'stationCount') {
-  if (key === 'bikeCount') return location.bikeCount ?? location.numberOfBikeBoxes ?? 0;
-  if (key === 'carCount') return location.carCount ?? location.numberOfCarBoxes ?? 0;
-  return location.stationCount ?? location.numberOfStations ?? 0;
+function formatLocationName(name: string) {
+  const lettersOnly = name.replace(/[^A-Za-zÀ-ỹĐđ]/g, '');
+  if (!lettersOnly || lettersOnly !== lettersOnly.toUpperCase()) return name;
+
+  return name
+    .split(/(\s+|-|\/)/)
+    .map(part => {
+      if (!part.trim() || part === '-' || part === '/') return part;
+      if (/\d/.test(part) || part.length <= 2) return part.toUpperCase();
+      return `${part.charAt(0).toUpperCase()}${part.slice(1).toLowerCase()}`;
+    })
+    .join('');
 }
 
 export function LocationCard({
@@ -57,150 +80,170 @@ export function LocationCard({
   onUploadImage: () => void;
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
-  const status = location.operationStatus?.label || 'Unknown';
-  const statusState = getStatusState(status, location.visible);
+  const statusTheme = getLocationStatusTheme(location);
   const imageUrl = getLocationImage(location);
   const address = getLocationAddress(location);
-  const translateX = useSharedValue(0);
-  const startX = useSharedValue(0);
+  const locationCode = getLocationCode(location);
+  const stationCount = location.stationCount ?? location.numberOfStations ?? 0;
+  const carCount = location.carCount ?? location.numberOfCarBoxes ?? 0;
+  const bikeCount = location.bikeCount ?? location.numberOfBikeBoxes ?? 0;
+  const displayName = formatLocationName(location.name);
+  const swipeableRef = useRef<SwipeableMethods>(null);
 
   const closeActions = () => {
-    translateX.set(withTiming(0, { duration: 180 }));
+    swipeableRef.current?.close();
   };
-
-  const pan = Gesture.Pan()
-    .activeOffsetX([-12, 12])
-    .failOffsetY([-8, 8])
-    .onBegin(() => {
-      startX.set(translateX.get());
-    })
-    .onUpdate(event => {
-      const next = startX.get() + event.translationX;
-      translateX.set(Math.min(0, Math.max(-ACTION_WIDTH, next)));
-    })
-    .onEnd(event => {
-      const shouldOpen = translateX.get() < -ACTION_TRIGGER || event.velocityX < -420;
-      translateX.set(
-        withSpring(shouldOpen ? -ACTION_WIDTH : 0, {
-          damping: 18,
-          stiffness: 220,
-        }),
-      );
-    });
-
-  const foregroundStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.get() }],
-  }));
-
-  const actionStyle = useAnimatedStyle(() => ({
-    opacity: Math.min(1, Math.abs(translateX.get()) / ACTION_WIDTH + 0.15),
-  }));
 
   return (
     <ThemedView backgroundColor={Palette.surfaceBase} overflow='hidden'>
-      <AnimatedThemedView style={[styles.actionsRail, actionStyle]}>
-        <Pressable
+      <ReanimatedSwipeable
+        friction={2}
+        overshootRight={false}
+        ref={swipeableRef}
+        renderRightActions={() => (
+          <ThemedView flexDirection='row' width={ACTION_WIDTH}>
+            <Pressable
+              onPress={() => {
+                closeActions();
+                onRelocate();
+              }}
+              style={({ pressed }) => [styles.actionButton, styles.relocateAction, pressed && styles.actionPressed]}>
+              <ThemedText color='#071C12' fontFamily={FontFamily.medium} fontSize={14} lineHeight={18}>
+                Relocate
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                closeActions();
+                onEdit();
+              }}
+              style={({ pressed }) => [styles.actionButton, styles.editAction, pressed && styles.actionPressed]}>
+              <ThemedText color='#241600' fontFamily={FontFamily.medium} fontSize={14} lineHeight={18}>
+                Edit
+              </ThemedText>
+            </Pressable>
+          </ThemedView>
+        )}
+        rightThreshold={ACTION_TRIGGER}>
+        <NativePressable
+          accessibilityLabel={`${location.name}, ${statusTheme.label}, ${stationCount} stations, ${carCount} cars, ${bikeCount} bikes, ${address}`}
+          accessibilityRole='button'
           onPress={() => {
             closeActions();
-            onRelocate();
+            onPress();
           }}
-          style={({ pressed }) => [styles.actionButton, styles.relocateAction, pressed && styles.actionPressed]}>
-          <ThemedText color='#071C12' fontFamily={FontFamily.medium} fontSize={14} lineHeight={18}>
-            Relocate
-          </ThemedText>
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            closeActions();
-            onEdit();
-          }}
-          style={({ pressed }) => [styles.actionButton, styles.editAction, pressed && styles.actionPressed]}>
-          <ThemedText style={[styles.actionText, styles.editActionText]}>Edit</ThemedText>
-        </Pressable>
-      </AnimatedThemedView>
-
-      <GestureDetector gesture={pan}>
-        <AnimatedThemedView style={[styles.foreground, foregroundStyle]}>
-          <Pressable
-            onPress={() => {
-              closeActions();
-              onPress();
-            }}
-            style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-            <ThemedView height={THUMB_SIZE} width={THUMB_SIZE}>
+          style={({ pressed }) => [styles.foreground, pressed && styles.pressed]}>
+          <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={12} minHeight={104} paddingLeft={12}>
+            <ThemedView backgroundColor='transparent' height={THUMB_SIZE} width={THUMB_SIZE}>
               {imageUrl ? (
-                <Pressable
+                <NativePressable
                   accessibilityLabel={`Open image for ${location.name}`}
+                  accessibilityRole='imagebutton'
                   onPress={event => {
                     event.stopPropagation();
                     closeActions();
                     setPreviewOpen(true);
                   }}>
-                  <Image contentFit='cover' source={{ uri: imageUrl }} style={styles.thumbnailImage} />
-                </Pressable>
+                  <Image accessibilityLabel={location.name} contentFit='cover' source={{ uri: imageUrl }} style={styles.thumbnailImage} transition={150} />
+                </NativePressable>
               ) : (
-                <Pressable
-                  accessibilityLabel={`Upload image for ${location.name}`}
-                  disabled={false}
-                  onPress={event => {
-                    event.stopPropagation();
-                    closeActions();
-                    onUploadImage();
-                  }}
-                  style={({ pressed }) => [styles.uploadPlaceholder, pressed && styles.uploadPlaceholderPressed]}>
-                  <Upload color='#A6B5C8' size={18} />
-                  <ThemedText
-                    numberOfLines={1}
-                    color={Palette.textSecondary}
-                    fontFamily={FontFamily.semibold}
-                    fontSize={9}
-                    lineHeight={11}
-                    marginTop={2}
-                    maxWidth={THUMB_SIZE - 6}>
-                    Upload
-                  </ThemedText>
-                </Pressable>
+                <ThemedView
+                  alignItems='center'
+                  backgroundColor={statusTheme.tone}
+                  borderColor={statusTheme.border}
+                  borderCurve='continuous'
+                  borderRadius={16}
+                  borderWidth={1}
+                  height={THUMB_SIZE}
+                  justifyContent='center'
+                  overflow='hidden'
+                  width={THUMB_SIZE}>
+                  <NativePressable
+                    accessibilityLabel={`Upload image for ${location.name}`}
+                    accessibilityRole='button'
+                    onPress={event => {
+                      event.stopPropagation();
+                      closeActions();
+                      onUploadImage();
+                    }}
+                    style={({ pressed }) => [styles.uploadButton, pressed && styles.uploadButtonPressed]}>
+                    <Building2 color={statusTheme.accent} size={25} strokeWidth={1.8} />
+                    <ThemedView
+                      alignItems='center'
+                      backgroundColor={statusTheme.accent}
+                      borderColor='#FFFFFF'
+                      borderRadius={'pill'}
+                      borderWidth={2}
+                      bottom={4}
+                      height={20}
+                      justifyContent='center'
+                      position='absolute'
+                      right={4}
+                      width={20}>
+                      <Upload color='#FFFFFF' size={10} strokeWidth={2.6} />
+                    </ThemedView>
+                  </NativePressable>
+                </ThemedView>
               )}
             </ThemedView>
 
-            <ThemedView flex={1} gap={1} justifyContent='center' minWidth={0}>
-              <ThemedView alignItems='center' flexDirection='row' gap={'two'}>
-                <CountPill icon={Bike} label={`${getCount(location, 'bikeCount')} bikes`} />
-                <CountPill icon={Car} label={`${getCount(location, 'carCount')} cars`} />
-                <CountPill icon={Fuel} label={`${getCount(location, 'stationCount')} stations`} />
+            <ThemedView
+              backgroundColor='transparent'
+              borderBottomColor='#E6EAE8'
+              borderBottomWidth={StyleSheet.hairlineWidth}
+              flex={1}
+              gap={6}
+              justifyContent='center'
+              minHeight={104}
+              minWidth={0}
+              paddingRight={12}
+              paddingVertical={10}>
+              <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={8} justifyContent='space-between'>
+                <ThemedView alignItems='center' backgroundColor='transparent' flex={1} flexDirection='row' gap={8} minWidth={0}>
+                  <ThemedText color='#365C91' fontFamily={FontFamily.semibold} fontSize={9} letterSpacing={0.7} lineHeight={12} numberOfLines={1}>
+                    {locationCode}
+                  </ThemedText>
+                  <InlineMetric icon={RadioTower} value={stationCount} />
+                  <InlineMetric icon={Car} value={carCount} />
+                  <InlineMetric icon={Bike} value={bikeCount} />
+                </ThemedView>
+                <ThemedView
+                  alignItems='center'
+                  backgroundColor={statusTheme.accent}
+                  borderRadius={'pill'}
+                  justifyContent='center'
+                  minHeight={22}
+                  paddingHorizontal={8}>
+                  <ThemedText color='#FFFFFF' fontFamily={FontFamily.semibold} fontSize={9} lineHeight={12} numberOfLines={1}>
+                    {statusTheme.label}
+                  </ThemedText>
+                </ThemedView>
               </ThemedView>
-              <ThemedText numberOfLines={1} color='#202124' fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20}>
-                {location.name}
-              </ThemedText>
-              <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={16}>
-                {address}
-              </ThemedText>
-            </ThemedView>
 
-            <ThemedView alignItems='flex-end' alignSelf='stretch' justifyContent='space-between' paddingVertical={3} width={76}>
-              <ThemedView style={[styles.statusBubble, { backgroundColor: statusState.color }]}>
-                <ThemedText numberOfLines={1} color='#FFFFFF' fontFamily={FontFamily.medium} fontSize={10} lineHeight={13}>
-                  {statusState.label}
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20} numberOfLines={2}>
+                {displayName}
+              </ThemedText>
+
+              <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row'>
+                <ThemedText color={Palette.textSecondary} flex={1} fontFamily={FontFamily.regular} fontSize={11} lineHeight={15}>
+                  {address}
                 </ThemedText>
               </ThemedView>
-              <ThemedView style={[styles.toggle, location.visible === false && styles.toggleOff]}>
-                <ThemedView style={[styles.toggleKnob, location.visible === false && styles.toggleKnobOff]} />
-              </ThemedView>
             </ThemedView>
-            <ImagePreviewModal imageUrl={imageUrl} onClose={() => setPreviewOpen(false)} title={location.name} visible={previewOpen} />
-          </Pressable>
-        </AnimatedThemedView>
-      </GestureDetector>
+          </ThemedView>
+        </NativePressable>
+      </ReanimatedSwipeable>
+      <ImagePreviewModal imageUrl={imageUrl} onClose={() => setPreviewOpen(false)} title={location.name} visible={previewOpen} />
     </ThemedView>
   );
 }
 
-function CountPill({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+function InlineMetric({ icon: Icon, value }: { icon: typeof Bike; value: number }) {
   return (
-    <ThemedView alignItems='center' flexDirection='row' gap={3} maxWidth={76}>
-      <Icon color='#8E8E93' size={11} />
-      <ThemedText numberOfLines={1} color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={14}>
-        {label}
+    <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={3}>
+      <Icon color={Palette.textTertiary} size={11} strokeWidth={1.9} />
+      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={9} lineHeight={12}>
+        {value}
       </ThemedText>
     </ThemedView>
   );
@@ -216,25 +259,8 @@ const styles = StyleSheet.create({
   actionPressed: {
     opacity: 0.75,
   },
-  actionsRail: {
-    bottom: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    width: ACTION_WIDTH,
-  },
-  actionText: {
-    color: '#071C12',
-    fontFamily: FontFamily.medium,
-    fontSize: 14,
-    lineHeight: 18,
-  },
   editAction: {
     backgroundColor: '#FFAA0A',
-  },
-  editActionText: {
-    color: '#241600',
   },
   foreground: {
     backgroundColor: Palette.surfaceBase,
@@ -245,65 +271,18 @@ const styles = StyleSheet.create({
   relocateAction: {
     backgroundColor: '#05AE51',
   },
-  row: {
-    alignItems: 'center',
-    backgroundColor: Palette.surfaceBase,
-    borderBottomColor: '#E9ECEF',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: mhs(8),
-    minHeight: 82,
-    paddingLeft: mhs(12),
-    paddingRight: mhs(12),
-    paddingVertical: mhs(8),
-  },
-  statusBubble: {
-    alignItems: 'center',
-    borderRadius: mhs(12),
-    maxWidth: 82,
-    minWidth: 62,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
   thumbnailImage: {
     borderRadius: mhs(16),
     height: THUMB_SIZE,
     width: THUMB_SIZE,
   },
-  toggle: {
-    alignItems: 'flex-end',
-    backgroundColor: '#04B05A',
-    borderRadius: 999,
-    height: 20,
-    justifyContent: 'center',
-    paddingHorizontal: 2,
-    width: 38,
-  },
-  toggleKnob: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 999,
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.18)',
-    height: 16,
-    width: 16,
-  },
-  toggleKnobOff: {
-    alignSelf: 'flex-start',
-  },
-  toggleOff: {
-    backgroundColor: '#C9C9CC',
-  },
-  uploadPlaceholder: {
+  uploadButton: {
     alignItems: 'center',
-    borderColor: '#D4DFEC',
-    borderRadius: mhs(16),
-    borderStyle: 'dashed',
-    borderWidth: 1.5,
-    height: THUMB_SIZE,
+    height: '100%',
     justifyContent: 'center',
-    width: THUMB_SIZE,
+    width: '100%',
   },
-  uploadPlaceholderPressed: {
-    backgroundColor: Palette.surfaceMuted,
-    borderColor: Palette.accent,
+  uploadButtonPressed: {
+    opacity: 0.7,
   },
 });

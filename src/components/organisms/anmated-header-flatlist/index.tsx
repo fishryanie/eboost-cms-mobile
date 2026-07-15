@@ -36,6 +36,7 @@ export interface AnimatedHeaderFlatListProps<T> extends Omit<FlatListProps<T>, '
   subtitle?: string;
   renderItem?: ListRenderItem<T>;
   rightComponent?: React.ReactNode;
+  largeRightComponent?: React.ReactNode;
   searchBar?: React.ReactNode;
   canGoBack?: boolean;
   onBack?: () => void;
@@ -53,6 +54,7 @@ function AnimatedHeaderFlatListComponent<T>({
   subtitle,
   renderItem,
   rightComponent,
+  largeRightComponent,
   searchBar,
   canGoBack,
   onBack,
@@ -69,7 +71,7 @@ function AnimatedHeaderFlatListComponent<T>({
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: event => {
-      scrollY.value = event.contentOffset.y;
+      scrollY.set(event.contentOffset.y);
     },
   });
 
@@ -130,7 +132,13 @@ function AnimatedHeaderFlatListComponent<T>({
           style={StyleSheet.absoluteFill}>
           <LinearGradient colors={['rgba(255,255,255,0.98)', 'rgba(255,255,255,0.94)', 'rgba(255,255,255,0)']} style={StyleSheet.absoluteFill} />
 
-          <AnimatedBlurView animatedProps={headerBlurAnimatedProps as any} blurMethod='dimezisBlurViewSdk31Plus' intensity={10} tint='light' style={StyleSheet.absoluteFill} />
+          <AnimatedBlurView
+            animatedProps={headerBlurAnimatedProps as any}
+            blurMethod='dimezisBlurViewSdk31Plus'
+            intensity={10}
+            tint='light'
+            style={StyleSheet.absoluteFill}
+          />
         </MaskedView>
       </Animated.View>
 
@@ -196,13 +204,18 @@ function AnimatedHeaderFlatListComponent<T>({
         ListHeaderComponent={
           <>
             <Animated.View style={[styles.largeTitleContainer, largeTitleContainerStyle, largeTitleOpacityStyle]}>
-              <Animated.Text style={[styles.largeTitle, largeHeaderTitleStyle, animatedLargeTitleStyle]}>{largeTitle}</Animated.Text>
+              <ThemedView alignItems='center' flexDirection='row' gap={'three'} justifyContent='space-between'>
+                <ThemedView flex={1} minWidth={0}>
+                  <Animated.Text style={[styles.largeTitle, largeHeaderTitleStyle, animatedLargeTitleStyle]}>{largeTitle}</Animated.Text>
 
-              {!!subtitle && (
-                <ThemedText color={Colors.gray[400]} fontSize={18} marginTop={spacing.xs} style={largeHeaderSubtitleStyle}>
-                  {subtitle}
-                </ThemedText>
-              )}
+                  {!!subtitle && (
+                    <ThemedText color={Colors.gray[400]} fontSize={18} marginTop={spacing.xs} style={largeHeaderSubtitleStyle}>
+                      {subtitle}
+                    </ThemedText>
+                  )}
+                </ThemedView>
+                {largeRightComponent}
+              </ThemedView>
               {searchBar && (
                 <ThemedView marginTop={spacing.sm} width='100%'>
                   {searchBar}

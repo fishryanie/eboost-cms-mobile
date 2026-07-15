@@ -1,18 +1,11 @@
 import { mhs } from 'themes/scaling';
-import {
-  BottomSheetBackdrop,
-  BottomSheetFlatList,
-  BottomSheetFooter,
-  BottomSheetModal,
-  BottomSheetTextInput,
-  type BottomSheetFooterProps,
-} from '@gorhom/bottom-sheet';
+import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, type BottomSheetFooterProps } from '@gorhom/bottom-sheet';
 import { Zap, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ThemedText, ThemedView } from 'components/base';
+import { BottomSheetButton, ThemedText, ThemedView } from 'components/base';
 
 import { AppButton, EmptyState } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
@@ -463,28 +456,17 @@ export function TriggerBoxSheet({ mode = 'trigger', onClose, visible }: TriggerB
   }
 
   function renderFooter(props: BottomSheetFooterProps) {
-    const footerPadding = { paddingBottom: Math.max(bottom, mhs(16)) };
-
     return (
-      <BottomSheetFooter {...props} bottomInset={0}>
-        <ThemedView
-          style={[
-            styles.footer,
-            {
-              gap: metrics.footerGap,
-              paddingHorizontal: metrics.footerPaddingHorizontal,
-              paddingTop: metrics.footerPaddingTop,
-            },
-            footerPadding,
-          ]}>
-          <ThemedView flex={1}>
-            <AppButton block disabled={isSubmitting} label='Cancel' onPress={close} variant='ghost' />
-          </ThemedView>
-          <ThemedView flex={1}>
-            <AppButton block disabled={!canConfirm} label='Confirm' loading={isSubmitting} onPress={() => void submitSelectedAction()} />
-          </ThemedView>
-        </ThemedView>
-      </BottomSheetFooter>
+      <BottomSheetButton
+        disabled={!canConfirm}
+        footerProps={props}
+        loading={isSubmitting}
+        onPress={() => void submitSelectedAction()}
+        onSecondaryPress={close}
+        secondaryDisabled={isSubmitting}
+        secondaryTitle='Cancel'
+        title='Confirm'
+      />
     );
   }
 
@@ -658,15 +640,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingTop: mhs(4),
-  },
-  footer: {
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: Palette.borderSubtle,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: mhs(8),
-    paddingHorizontal: mhs(12),
-    paddingTop: mhs(8),
   },
   notice: {
     backgroundColor: '#FFF1F0',

@@ -67,7 +67,19 @@ function TabLayout() {
                   <Stack.Screen name='drawer/profile/index' />
                   <Stack.Screen name='drawer/staff-managements/index' />
                   <Stack.Screen name='drawer/settings/index' />
-                  <Stack.Screen name='location/[id]/index' />
+                  <Stack.Screen name='location/[id]/edit' />
+                  <Stack.Screen
+                    name='location/map-picker'
+                    options={{
+                      headerBackButtonDisplayMode: 'minimal',
+                      headerShown: true,
+                      headerShadowVisible: false,
+                      headerTitle: 'Choose location',
+                      headerTransparent: true,
+                      headerTintColor: '#162033',
+                    }}
+                  />
+                  <Stack.Screen name='station/[stationId]/index' />
                   <Stack.Screen name='marketing/package-list/index' />
                   <Stack.Screen name='marketing/[panel]/index' />
                   <Stack.Screen name='operation/[panel]/index' />

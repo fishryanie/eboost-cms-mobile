@@ -1,19 +1,21 @@
 import { mhs } from 'themes/scaling';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
-import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Plus } from 'lucide-react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
 import Modal from 'react-native-modal';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
-import { LocationActionsSheet } from 'shared/locations/components/location-actions-sheet';
 import { LocationCard } from 'shared/locations/components/location-card';
 import { LocationListSkeleton } from 'shared/locations/components/location-list-skeleton';
+import { RelocateLocationModal } from 'shared/locations/components/relocate-location-modal';
+import { LocationStationsSheet } from 'shared/locations/components/location-stations-sheet';
 import { filterLocationsByStatus, getLocationStatusOptions } from 'shared/locations/location-filter';
 import { useCreateLocation, useLocations, useUploadLocationImage } from 'shared/locations/hooks';
 import { AppButton, EmptyState } from 'components/ui';
+import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 
 export default function LocationScreen({ onBack }: { onBack?: () => void } = {}) {
   const router = useRouter();
@@ -21,7 +23,10 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
   const [search, setSearch] = useState('');
   const [createOpenState, setCreateOpenState] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState<LocationRecord | undefined>();
+  const [relocateLocation, setRelocateLocation] = useState<LocationRecord | undefined>();
+  const [sheetLocation, setSheetLocation] = useState<LocationRecord | undefined>();
+  const [locationSheetOpen, setLocationSheetOpen] = useState(false);
+  const sheetExitActionRef = useRef<{ locationId: string; type: 'edit' } | { locationId: string; stationId: string; type: 'station' } | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState('');
   const locationsQuery = useLocations(search.trim());
   const createLocation = useCreateLocation();
@@ -53,7 +58,8 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
             router.setParams({ action: undefined });
           }
           setNewLocationName('');
-          router.push({ pathname: '/location/[id]', params: { id: location.id } });
+          setSheetLocation(location);
+          setLocationSheetOpen(true);
         },
       },
     );
@@ -101,9 +107,12 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
     ({ item }: { item: LocationRecord }) => (
       <LocationCard
         location={item}
-        onEdit={() => setSelectedLocation(item)}
-        onPress={() => router.push({ pathname: '/location/[id]', params: { id: item.id } })}
-        onRelocate={() => router.push({ pathname: '/menu/[slug]', params: { slug: 'pick-lat-lng' } })}
+        onEdit={() => router.push({ pathname: '/location/[id]/edit', params: { id: String(item.id) } })}
+        onPress={() => {
+          setSheetLocation(item);
+          setLocationSheetOpen(true);
+        }}
+        onRelocate={() => setRelocateLocation(item)}
         onUploadImage={() => uploadImageForLocation(item)}
       />
     ),
@@ -111,8 +120,26 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
   );
 
   return (
-    <ThemedView safePaddingTop flex={1} backgroundColor={Palette.surfaceBase}>
-      <FlatList
+    <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
+      <AnimatedHeaderFlatList
+        largeTitle='Locations'
+        subtitle={`${filteredLocations.length.toLocaleString()} of ${locations.length.toLocaleString()} locations`}
+        canGoBack={Boolean(onBack)}
+        onBack={onBack}
+        largeRightComponent={<CreateLocationButton onPress={() => setCreateOpenState(true)} />}
+        rightComponent={<CreateLocationButton onPress={() => setCreateOpenState(true)} />}
+        searchBar={
+          <TextInput
+            autoCapitalize='none'
+            autoCorrect={false}
+            onChangeText={setSearch}
+            placeholder='Search locations'
+            placeholderTextColor='#98A2B3'
+            returnKeyType='search'
+            style={styles.search}
+            value={search}
+          />
+        }
         contentContainerStyle={styles.content}
         data={filteredLocations}
         keyboardShouldPersistTaps='handled'
@@ -130,37 +157,7 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
           )
         }
         ListHeaderComponent={
-          <ThemedView gap={'three'} padding={'four'}>
-            <ThemedView alignItems='center' flexDirection='row' gap={'three'} justifyContent='space-between'>
-              {onBack ? (
-                <Pressable
-                  accessibilityLabel='Back'
-                  accessibilityRole='button'
-                  onPress={onBack}
-                  style={({ pressed }) => [styles.backButton, pressed && styles.filterChipPressed]}>
-                  <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
-                </Pressable>
-              ) : null}
-              <ThemedView flex={1} minWidth={0}>
-                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={28} letterSpacing={0} lineHeight={34}>
-                  Locations
-                </ThemedText>
-                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} marginTop={2}>
-                  {filteredLocations.length.toLocaleString()} of {locations.length.toLocaleString()} locations
-                </ThemedText>
-              </ThemedView>
-              <AppButton label='Create' onPress={() => setCreateOpenState(true)} style={styles.createButton} />
-            </ThemedView>
-            <TextInput
-              autoCapitalize='none'
-              autoCorrect={false}
-              onChangeText={setSearch}
-              placeholder='Search locations'
-              placeholderTextColor='#98A2B3'
-              returnKeyType='search'
-              style={styles.search}
-              value={search}
-            />
+          <ThemedView paddingHorizontal={'four'}>
             <ScrollView contentContainerStyle={styles.filters} horizontal showsHorizontalScrollIndicator={false}>
               <StatusFilterChip active={!statusFilter} label='All' onPress={() => setStatusFilter('')} />
               {statusOptions.map(status => (
@@ -174,7 +171,30 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
         showsVerticalScrollIndicator={false}
       />
 
-      <LocationActionsSheet location={selectedLocation} onClose={() => setSelectedLocation(undefined)} open={Boolean(selectedLocation)} />
+      <LocationStationsSheet
+        location={sheetLocation}
+        onClose={() => setLocationSheetOpen(false)}
+        onClosed={() => {
+          setSheetLocation(undefined);
+          const exitAction = sheetExitActionRef.current;
+          sheetExitActionRef.current = undefined;
+          if (exitAction?.type === 'edit') {
+            router.push({ pathname: '/location/[id]/edit', params: { id: exitAction.locationId } });
+          } else if (exitAction?.type === 'station') {
+            router.push({ pathname: '/station/[stationId]', params: { locationId: exitAction.locationId, stationId: exitAction.stationId } });
+          }
+        }}
+        onManage={location => {
+          sheetExitActionRef.current = { locationId: String(location.id), type: 'edit' };
+          setLocationSheetOpen(false);
+        }}
+        onSelectStation={(location, station) => {
+          sheetExitActionRef.current = { locationId: String(location.id), stationId: String(station.id), type: 'station' };
+          setLocationSheetOpen(false);
+        }}
+        open={locationSheetOpen}
+      />
+      <RelocateLocationModal location={relocateLocation} onClose={() => setRelocateLocation(undefined)} />
 
       <Modal
         animationIn='slideInUp'
@@ -195,15 +215,15 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
           backgroundColor={Palette.surfaceBase}
           borderTopLeftRadius={'large'}
           borderTopRightRadius={'large'}
-          gap={'four'}
+          gap={'three'}
           padding={'four'}
           paddingBottom={'six'}>
           <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20} lineHeight={26}>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={18} lineHeight={24}>
               Create location
             </ThemedText>
             <Pressable onPress={closeCreate} style={styles.closeButton}>
-              <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={14}>
+              <ThemedText color={Palette.accent} fontFamily={FontFamily.semibold} fontSize={13}>
                 Close
               </ThemedText>
             </Pressable>
@@ -230,6 +250,19 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
   );
 }
 
+function CreateLocationButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityLabel='Create location'
+      accessibilityRole='button'
+      hitSlop={8}
+      onPress={onPress}
+      style={({ pressed }) => [styles.createButton, pressed && styles.filterChipPressed]}>
+      <Plus color={Palette.surfaceBase} size={22} strokeWidth={2.5} />
+    </Pressable>
+  );
+}
+
 function StatusFilterChip({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.filterChip, active && styles.filterChipActive, pressed && styles.filterChipPressed]}>
@@ -239,16 +272,17 @@ function StatusFilterChip({ active, label, onPress }: { active: boolean; label: 
 }
 
 const styles = StyleSheet.create({
-  backButton: {
-    alignItems: 'center',
-    borderRadius: mhs(16),
-    height: 34,
-    justifyContent: 'center',
-    width: 34,
-  },
   bottomModal: {
     justifyContent: 'flex-end',
     margin: 0,
+  },
+  createButton: {
+    alignItems: 'center',
+    backgroundColor: Palette.accent,
+    borderRadius: mhs(20),
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
   },
   closeButton: {
     paddingHorizontal: mhs(8),
@@ -256,9 +290,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: 120,
-  },
-  createButton: {
-    minHeight: 42,
   },
   filterChip: {
     backgroundColor: Palette.surfaceRaised,
@@ -270,8 +301,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: mhs(12),
   },
   filterChipActive: {
-    backgroundColor: Palette.textPrimary,
-    borderColor: Palette.textPrimary,
+    backgroundColor: Palette.surfaceMuted,
+    borderColor: Palette.border,
   },
   filterChipPressed: {
     opacity: 0.72,
@@ -283,7 +314,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   filterChipTextActive: {
-    color: Palette.surfaceBase,
+    color: Palette.textPrimary,
   },
   filters: {
     gap: mhs(8),
@@ -295,9 +326,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: Palette.textPrimary,
     fontFamily: FontFamily.medium,
-    fontSize: 16,
-    minHeight: 54,
-    paddingHorizontal: mhs(16),
+    fontSize: 15,
+    minHeight: 48,
+    paddingHorizontal: mhs(14),
   },
 
   search: {
@@ -307,8 +338,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: Palette.textPrimary,
     fontFamily: FontFamily.medium,
-    fontSize: 15,
-    minHeight: 48,
-    paddingHorizontal: mhs(16),
+    fontSize: 14,
+    minHeight: 44,
+    paddingHorizontal: mhs(14),
   },
 });

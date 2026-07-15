@@ -19,10 +19,7 @@
     "android": {
       "icon": "./src/assets/images/icon.png",
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
-      ],
+      "permissions": ["android.permission.USE_BIOMETRIC", "android.permission.USE_FINGERPRINT"],
       "package": "com.evida.eboost.cms"
     },
     "plugins": [
@@ -65,6 +62,12 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow Eboost CMS to access your photos so you can upload location images."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Eboost CMS to use your current location when relocating a charging location."
         }
       ],
       "expo-image",

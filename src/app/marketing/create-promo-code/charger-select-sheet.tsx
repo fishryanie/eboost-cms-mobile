@@ -1,16 +1,9 @@
-import {
-  BottomSheetBackdrop,
-  BottomSheetFlatList,
-  BottomSheetFooter,
-  BottomSheetModal,
-  BottomSheetTextInput,
-  type BottomSheetFooterProps,
-} from '@gorhom/bottom-sheet';
+import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, type BottomSheetFooterProps } from '@gorhom/bottom-sheet';
 import { CheckCircle2 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
-import { ThemedText, ThemedView } from 'components/base';
-import { AppButton, EmptyState } from 'components/ui';
+import { BottomSheetButton, ThemedText, ThemedView } from 'components/base';
+import { EmptyState } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 import { mhs } from 'themes/scaling';
 import type { PromoChargerOption, PromoChargerTarget } from './types';
@@ -59,11 +52,11 @@ export function ChargerSelectSheet({ chargers, loading, onClose, onToggle, selec
 
   function renderFooter(props: BottomSheetFooterProps) {
     return (
-      <BottomSheetFooter {...props} bottomInset={0}>
-        <ThemedView backgroundColor={Palette.surfaceRaised} borderTopColor={Palette.borderSubtle} borderTopWidth={StyleSheet.hairlineWidth} padding={'three'}>
-          <AppButton block label={`Done${selectedTargets.length ? ` (${selectedTargets.length})` : ''}`} onPress={() => ref.current?.dismiss()} />
-        </ThemedView>
-      </BottomSheetFooter>
+      <BottomSheetButton
+        footerProps={props}
+        onPress={() => ref.current?.dismiss()}
+        title={`Done${selectedTargets.length ? ` (${selectedTargets.length})` : ''}`}
+      />
     );
   }
 

@@ -1,17 +1,10 @@
 import { mhs } from 'themes/scaling';
-import {
-  BottomSheetBackdrop,
-  BottomSheetFlatList,
-  BottomSheetFooter,
-  BottomSheetModal,
-  BottomSheetTextInput,
-  type BottomSheetFooterProps,
-} from '@gorhom/bottom-sheet';
+import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, type BottomSheetFooterProps } from '@gorhom/bottom-sheet';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ThemedText, ThemedView } from 'components/base';
+import { BottomSheetButton, ThemedText, ThemedView } from 'components/base';
 
 import { useLocations } from 'shared/locations/hooks';
 import { getServiceSheetMetrics } from 'app/(tabs)/technical/features/service-sheet-metrics';
@@ -66,35 +59,19 @@ export function SetupLocationSheet({ onClose, visible }: SetupLocationSheetProps
 
   function renderFooter(props: BottomSheetFooterProps) {
     return (
-      <BottomSheetFooter {...props} bottomInset={0}>
-        <ThemedView
-          style={[
-            styles.footer,
-            {
-              gap: metrics.footerGap,
-              paddingBottom: Math.max(bottom, mhs(16)),
-              paddingHorizontal: metrics.footerPaddingHorizontal,
-              paddingTop: metrics.footerPaddingTop,
-            },
-          ]}>
-          <ThemedView flex={1}>
-            <AppButton block label='Cancel' onPress={close} variant='ghost' />
-          </ThemedView>
-          <ThemedView flex={1}>
-            <AppButton
-              block
-              disabled={!selectedLocationId}
-              label='Select'
-              onPress={() => {
-                close();
-                if (selectedLocationId) {
-                  router.push({ pathname: '/technical/setup-location', params: { id: selectedLocationId } });
-                }
-              }}
-            />
-          </ThemedView>
-        </ThemedView>
-      </BottomSheetFooter>
+      <BottomSheetButton
+        disabled={!selectedLocationId}
+        footerProps={props}
+        onPress={() => {
+          close();
+          if (selectedLocationId) {
+            router.push({ pathname: '/technical/setup-location', params: { id: selectedLocationId } });
+          }
+        }}
+        onSecondaryPress={close}
+        secondaryTitle='Cancel'
+        title='Select'
+      />
     );
   }
 
@@ -233,15 +210,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingTop: mhs(4),
-  },
-  footer: {
-    backgroundColor: Palette.surfaceRaised,
-    borderTopColor: Palette.borderSubtle,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: mhs(8),
-    paddingHorizontal: mhs(12),
-    paddingTop: mhs(8),
   },
   header: {
     backgroundColor: Palette.surfaceRaised,

@@ -6,19 +6,27 @@ import {
   createLocation,
   createResource,
   fetchLocation,
+  fetchLocationEditorLookup,
+  fetchLocationPartnership,
   fetchLocations,
   fetchLocationStations,
   fetchStationChargers,
+  relocateLocation,
   syncPartnershipLocation,
+  updateLocationPartnership,
   updateResource,
   uploadLocationImage,
+  getLocationPartnershipLookupCode,
 } from './location-service';
 import { restoreLocation, runRecursiveLocationVisibility } from './location-actions';
-import type { CreateLocationInput, UploadLocationImageInput } from './location-service';
+import type { CreateLocationInput, RelocateLocationInput, UploadLocationImageInput } from './location-service';
 
 export const locationKeys = {
   all: ['locations'] as const,
   detail: (id: number | string) => ['locations', String(id)] as const,
+  editorLookup: (service: string, path: string) => ['locations', 'editor-lookup', service, path] as const,
+  partnership: (id: number | string, lookupCode?: string) =>
+    lookupCode ? (['locations', String(id), 'partnership', lookupCode] as const) : (['locations', String(id), 'partnership'] as const),
   list: (search: string) => ['locations', 'list', search] as const,
   stations: (id: number | string) => ['locations', String(id), 'stations'] as const,
   chargers: (id: number | string) => ['stations', String(id), 'chargers'] as const,
@@ -72,6 +80,86 @@ export function useLocationDetail(id: number | string) {
   });
 }
 
+export type UpdateLocationValues = Partial<
+  Pick<LocationRecord, 'address' | 'addressVn' | 'description' | 'descriptionVn' | 'latitude' | 'locationCode' | 'longitude' | 'name' | 'nameVn' | 'visible'>
+> & {
+  locationType?: string | null;
+  operationStatus?: string | null;
+  province?: string | null;
+  ward?: string | null;
+};
+
+export function useUpdateLocation(id: number | string) {
+  const queryClient = useQueryClient();
+
+  return useMutation<LocationRecord, Error, UpdateLocationValues>({
+    mutationFn: data => updateResource<LocationRecord>('api/locations', id, data),
+    onSuccess: async location => {
+      queryClient.setQueryData(locationKeys.detail(id), location);
+      await queryClient.invalidateQueries({ queryKey: locationKeys.all });
+    },
+  });
+}
+
+export function useLocationPartnership(location?: LocationRecord) {
+  const lookupCode = location ? getLocationPartnershipLookupCode(location) : undefined;
+
+  return useQuery({
+    enabled: !!location?.id,
+    queryFn: () => fetchLocationPartnership(location as LocationRecord),
+    queryKey: locationKeys.partnership(location?.id || '', lookupCode),
+  });
+}
+
+export function useLocationEditorLookups(enabled: boolean) {
+  const operationStatuses = useQuery({
+    enabled,
+    queryFn: () => fetchLocationEditorLookup('api/operation_statuses'),
+    queryKey: locationKeys.editorLookup('core', 'operation_statuses'),
+    staleTime: 1000 * 60 * 5,
+  });
+  const locationTypes = useQuery({
+    enabled,
+    queryFn: () => fetchLocationEditorLookup('api/location_types'),
+    queryKey: locationKeys.editorLookup('core', 'location_types'),
+    staleTime: 1000 * 60 * 5,
+  });
+  const provinces = useQuery({
+    enabled,
+    queryFn: () => fetchLocationEditorLookup('api/provinces'),
+    queryKey: locationKeys.editorLookup('core', 'provinces'),
+    staleTime: 1000 * 60 * 10,
+  });
+  const wards = useQuery({
+    enabled,
+    queryFn: () => fetchLocationEditorLookup('api/wards'),
+    queryKey: locationKeys.editorLookup('core', 'wards'),
+    staleTime: 1000 * 60 * 10,
+  });
+  const priceProfiles = useQuery({
+    enabled,
+    queryFn: () => fetchLocationEditorLookup('api/v1/partner/price-profile', 'building'),
+    queryKey: locationKeys.editorLookup('building', 'price_profiles'),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  return { locationTypes, operationStatuses, priceProfiles, provinces, wards };
+}
+
+export function useUpdateLocationPartnership(locationId: number | string, partnershipId?: number | string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, Error, Record<string, unknown>>({
+    mutationFn: data => {
+      if (!partnershipId) throw new Error('Partnership location is unavailable.');
+      return updateLocationPartnership(partnershipId, data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: locationKeys.partnership(locationId) });
+    },
+  });
+}
+
 export function useLocationStations(id: number | string) {
   return useQuery({
     enabled: !!id,
@@ -104,12 +192,25 @@ export function useUploadLocationImage() {
   });
 }
 
+export function useRelocateLocation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<LocationRecord, Error, RelocateLocationInput>({
+    mutationFn: input => relocateLocation(input),
+    onSuccess: async (_location, input) => {
+      await queryClient.invalidateQueries({ queryKey: locationKeys.all });
+      await queryClient.invalidateQueries({ queryKey: locationKeys.detail(input.id) });
+    },
+  });
+}
+
 export function useLocationActionMutations(locationId?: number | string) {
   const queryClient = useQueryClient();
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: locationKeys.all });
     if (locationId) {
       await queryClient.invalidateQueries({ queryKey: locationKeys.detail(locationId) });
+      await queryClient.invalidateQueries({ queryKey: locationKeys.partnership(locationId) });
       await queryClient.invalidateQueries({ queryKey: locationKeys.stations(locationId) });
     }
   };

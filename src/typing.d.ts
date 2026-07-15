@@ -173,15 +173,44 @@ type OngoingSessionRecord = {
 };
 
 type OperationStatus = {
+  id?: number;
+  iriId?: string;
   label?: string;
+  labelVn?: string;
+};
+
+type LocationType = {
+  id?: number;
+  iriId?: string;
+  name?: string | null;
+  nameVn?: string | null;
 };
 
 type LocationPartnership = {
+  address?: {
+    district?: number | null;
+    fullAddress?: string | null;
+    province?: number | null;
+    streetAddress?: string | null;
+    ward?: number | null;
+  } | null;
   contract?: string | { code?: string; name?: string; number?: string } | null;
   contractCode?: string | null;
+  contractEndDate?: string | null;
+  contractStartDate?: string | null;
+  detailAvailable?: boolean;
+  installationDate?: string | null;
+  locationCode?: string | null;
+  locationId?: number | null;
+  locationStatus?: string | null;
   mainUser?: { email?: string | null; name?: string | null; phone?: string | null; username?: string | null } | null;
+  name?: string | null;
   notes?: string | null;
-  tariff?: string | { name?: string; title?: string } | null;
+  priceProfileId?: number | null;
+  reportCode?: string | null;
+  reportName?: string | null;
+  serviceName?: string | null;
+  tariff?: string | { id?: number; name?: string; title?: string } | null;
 };
 
 type LocationRecord = {
@@ -209,10 +238,25 @@ type LocationRecord = {
   description?: string | null;
   descriptionVn?: string | null;
   latitude?: number | null;
+  locationCode?: string | null;
+  location_code?: string | null;
   longitude?: number | null;
   nameVn?: string | null;
+  locationType?: LocationType | null;
   partnership?: LocationPartnership | null;
   partnershipLocation?: LocationPartnership | null;
+  ward?: {
+    id?: number;
+    iriId?: string;
+    name?: string | null;
+    nameVn?: string | null;
+    province?: {
+      id?: number;
+      iriId?: string;
+      name?: string | null;
+      nameVn?: string | null;
+    } | null;
+  } | null;
 };
 
 type StationRecord = {
@@ -223,6 +267,8 @@ type StationRecord = {
   fullTime?: boolean;
   id: number;
   iriId?: string;
+  latitude?: number | string;
+  longitude?: number | string;
   images?: { originalName?: string | null; url?: string | null }[];
   name?: string;
   nameVn?: string;

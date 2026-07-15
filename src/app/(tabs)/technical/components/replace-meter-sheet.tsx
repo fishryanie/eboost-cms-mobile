@@ -1,18 +1,11 @@
 import { mhs } from 'themes/scaling';
-import {
-  BottomSheetBackdrop,
-  BottomSheetFlatList,
-  BottomSheetFooter,
-  BottomSheetModal,
-  BottomSheetTextInput,
-  type BottomSheetFooterProps,
-} from '@gorhom/bottom-sheet';
+import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, type BottomSheetFooterProps } from '@gorhom/bottom-sheet';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-import { ThemedText, ThemedView } from 'components/base';
+import { BottomSheetButton, ThemedText, ThemedView } from 'components/base';
 import { EmptyState, AppButton } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 
@@ -119,25 +112,14 @@ export function ReplaceMeterSheet({ onClose, visible }: ReplaceMeterSheetProps) 
 
   function renderFooter(props: BottomSheetFooterProps) {
     return (
-      <BottomSheetFooter {...props} bottomInset={0}>
-        <ThemedView
-          style={[
-            styles.footer,
-            {
-              gap: metrics.footerGap,
-              paddingBottom: Math.max(bottom, mhs(16)),
-              paddingHorizontal: metrics.footerPaddingHorizontal,
-              paddingTop: metrics.footerPaddingTop,
-            },
-          ]}>
-          <ThemedView flex={1}>
-            <AppButton block label='Cancel' onPress={close} variant='ghost' />
-          </ThemedView>
-          <ThemedView flex={1}>
-            <AppButton block disabled={!selectedChargerKey} label='Next' onPress={handleNext} />
-          </ThemedView>
-        </ThemedView>
-      </BottomSheetFooter>
+      <BottomSheetButton
+        disabled={!selectedChargerKey}
+        footerProps={props}
+        onPress={handleNext}
+        onSecondaryPress={close}
+        secondaryTitle='Cancel'
+        title='Next'
+      />
     );
   }
 
@@ -280,15 +262,6 @@ const styles = StyleSheet.create({
   flexInput: {
     flex: 1,
     minWidth: 0,
-  },
-  footer: {
-    backgroundColor: Palette.surfaceRaised,
-    borderTopColor: Palette.borderSubtle,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: mhs(8),
-    paddingHorizontal: mhs(12),
-    paddingTop: mhs(8),
   },
   header: {
     backgroundColor: Palette.surfaceRaised,

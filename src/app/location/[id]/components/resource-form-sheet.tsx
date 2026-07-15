@@ -1,10 +1,8 @@
 import { KeyboardAvoidingView, Pressable, ScrollView, Switch, TextInput, useWindowDimensions } from 'react-native';
 import Modal from 'react-native-modal';
 import { useState } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ThemedText, ThemedView } from 'components/base';
-import { AppButton } from 'components/ui';
+import { BottomButton, ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
 
 export type ResourceField = {
@@ -33,7 +31,6 @@ export function ResourceFormSheet({
   title: string;
 }) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues || {});
-  const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
 
   return (
@@ -57,26 +54,26 @@ export function ResourceFormSheet({
             borderBottomWidth={1}
             flexDirection='row'
             justifyContent='space-between'
-            padding={'four'}>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={20}>
+            padding={'three'}>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={18}>
               {title}
             </ThemedText>
             <Pressable disabled={loading} onPress={onClose}>
-              <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={14}>
+              <ThemedText color={Palette.accent} fontFamily={FontFamily.semibold} fontSize={13}>
                 Close
               </ThemedText>
             </Pressable>
           </ThemedView>
           <ScrollView
-            contentContainerStyle={{ gap: 16, padding: 16 }}
+            contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 112 }}
             contentInsetAdjustmentBehavior='automatic'
             keyboardShouldPersistTaps='handled'
             showsVerticalScrollIndicator={false}
             style={{ flexShrink: 1 }}>
             {fields.map(field =>
               field.type === 'switch' ? (
-                <ThemedView key={field.key} alignItems='center' flexDirection='row' justifyContent='space-between' minHeight={46}>
-                  <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={15}>
+                <ThemedView key={field.key} alignItems='center' flexDirection='row' justifyContent='space-between' minHeight={44}>
+                  <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={14}>
                     {field.label}
                   </ThemedText>
                   <Switch onValueChange={value => setValues(current => ({ ...current, [field.key]: value }))} value={Boolean(values[field.key])} />
@@ -100,10 +97,10 @@ export function ResourceFormSheet({
                       borderRadius: 14,
                       borderWidth: 1,
                       color: Palette.textPrimary,
-                      fontSize: 15,
-                      minHeight: field.multiline ? 96 : 48,
-                      paddingHorizontal: 14,
-                      paddingVertical: 12,
+                      fontSize: 14,
+                      minHeight: field.multiline ? 88 : 44,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
                       textAlignVertical: field.multiline ? 'top' : 'center',
                     }}
                     value={values[field.key] == null ? '' : String(values[field.key])}
@@ -112,15 +109,7 @@ export function ResourceFormSheet({
               ),
             )}
           </ScrollView>
-          <ThemedView
-            backgroundColor={Palette.surfaceBase}
-            borderTopColor={Palette.borderSubtle}
-            borderTopWidth={1}
-            paddingBottom={Math.max(insets.bottom, 34)}
-            paddingHorizontal={'four'}
-            paddingTop={'three'}>
-            <AppButton block label='Save changes' loading={loading} onPress={() => onSubmit(values)} />
-          </ThemedView>
+          <BottomButton loading={loading} onPress={() => onSubmit(values)} title='Save changes' />
         </ThemedView>
       </KeyboardAvoidingView>
     </Modal>

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { ThemedText, ThemedView } from 'components/base';
+import { BottomButton, ThemedText, ThemedView } from 'components/base';
 import { HeaderTitle } from 'components/base/HeaderTitle';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { AppButton } from 'components/ui';
@@ -152,12 +152,7 @@ export default function ModifyRankingScreen() {
         </ThemedView>
       </ScrollView>
 
-      {/* Bottom Button */}
-      <ThemedView backgroundColor={Palette.surfaceBase} paddingBottom={mhs(40)} paddingHorizontal={mhs(20)} paddingTop={mhs(16)}>
-        <AppButton disabled={!selectedUserId || !selectedIriId} onPress={onSubmit}>
-          Submit
-        </AppButton>
-      </ThemedView>
+      <BottomButton disabled={!selectedUserId || !selectedIriId} onPress={onSubmit} title='Submit' />
 
       <Modal
         avoidKeyboard
@@ -283,7 +278,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: mhs(20),
     paddingTop: mhs(24),
-    paddingBottom: mhs(40),
+    paddingBottom: mhs(112),
   },
   selectedUserContainer: {
     position: 'relative',
