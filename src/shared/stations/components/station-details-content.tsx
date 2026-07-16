@@ -1,17 +1,37 @@
-import { Alert, Pressable, Switch } from 'react-native';
+import { Alert, FlatList, Pressable, Switch } from 'react-native';
 import { Image } from 'expo-image';
-import { BatteryCharging, Bike, Car, Eye, EyeOff, MapPin, MoreHorizontal, Pencil, Power, RotateCcw, Zap } from 'lucide-react-native';
+import {
+  BadgeDollarSign,
+  BatteryCharging,
+  Bike,
+  Car,
+  ChevronRight,
+  CircleDollarSign,
+  CircleParking,
+  Clock3,
+  Eye,
+  EyeOff,
+  MapPin,
+  MoreHorizontal,
+  Pencil,
+  Power,
+  RotateCcw,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { useState } from 'react';
 
 import { ThemedText, ThemedView } from 'components/base';
-import { ActionSheet, AppButton, EmptyState, StatusChip } from 'components/ui';
+import { ActionSheet, AppButton, EmptyState } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
 import { rmhs } from 'themes/scaling';
 import { getDisplayImageUrl } from 'utils/media/image-url';
-import { useLocationResourceMutations, useStationChargers } from 'shared/locations/hooks';
+import { useLocationDetail, useLocationPartnership, useLocationPriceProfiles, useLocationResourceMutations, useStationChargers } from 'shared/locations/hooks';
 import { requestResetCharger, requestTriggerCharger, requestUnlockCharger } from 'app/location/[id]/features/charger-service';
 import { getWorkflowChargerIdentifier, getWorkflowChargerType } from 'app/location/[id]/features/charger-workflows';
 import { ResourceFormSheet } from 'app/location/[id]/components/resource-form-sheet';
+
+const vietnameseNumberFormatter = new Intl.NumberFormat('vi-VN');
 
 export function StationList({
   accentColor = Palette.accent,
@@ -191,6 +211,9 @@ export function StationDetailsContent({
   onContentHeightChange?: (height: number) => void;
   station: StationRecord;
 }) {
+  const locationQuery = useLocationDetail(locationId);
+  const partnershipQuery = useLocationPartnership(locationQuery.data);
+  const priceProfilesQuery = useLocationPriceProfiles(Boolean(locationQuery.data));
   const chargersQuery = useStationChargers(station.id);
   const mutations = useLocationResourceMutations(locationId, station.id);
   const [selected, setSelected] = useState<WorkflowChargerRecord>();
@@ -198,11 +221,17 @@ export function StationDetailsContent({
   const [editCharger, setEditCharger] = useState<WorkflowChargerRecord>();
   const [editPort, setEditPort] = useState<{ charger: WorkflowChargerRecord; port: ChargerPortRecord }>();
   const [createChargerType, setCreateChargerType] = useState<'bike' | 'car'>();
+  const [selectedChargerKey, setSelectedChargerKey] = useState<string>();
   const chargers = chargersQuery.data?.pages.flatMap(page => page.items) || [];
+  const activeCharger = chargers.find(charger => getChargerSelectionKey(charger) === selectedChargerKey) || chargers[0];
+  const activeChargerIndex = activeCharger ? chargers.indexOf(activeCharger) : -1;
   const outletCount = chargers.reduce(
     (total, charger) => total + (getWorkflowChargerType(charger) === 'car' ? charger.carConnectors?.length || 0 : charger.outlets?.length || 0),
     0,
   );
+  const partnership = partnershipQuery.data;
+  const inheritedPriceProfile =
+    priceProfilesQuery.data?.find(profile => String(profile.id) === String(partnership?.priceProfileId)) || partnership?.tariff || undefined;
   const toggleStation = () => mutations.patch.mutate({ data: { visible: station.visible === false }, id: station.id, path: 'api/stations' });
 
   return (
@@ -232,15 +261,23 @@ export function StationDetailsContent({
       ) : chargers.length === 0 ? (
         <EmptyState message='Assign a bike or car charger to this station from CMS.' title='No chargers' />
       ) : (
-        chargers.map((charger, index) => (
+        <ThemedView backgroundColor='transparent' gap={'two'}>
+          {chargers.length > 1 ? (
+            <ChargerSelector
+              chargers={chargers}
+              onSelect={charger => setSelectedChargerKey(getChargerSelectionKey(charger))}
+              selectedKey={getChargerSelectionKey(activeCharger)}
+            />
+          ) : null}
           <ChargerSection
-            charger={charger}
-            index={index}
-            key={`${charger.boxType}-${charger.id}`}
-            onActions={() => setSelected(charger)}
-            onEditPort={port => setEditPort({ charger, port })}
+            charger={activeCharger}
+            inheritedPriceProfile={inheritedPriceProfile}
+            index={activeChargerIndex}
+            key={getChargerSelectionKey(activeCharger)}
+            onActions={() => setSelected(activeCharger)}
+            onEditPort={port => setEditPort({ charger: activeCharger, port })}
           />
-        ))
+        </ThemedView>
       )}
 
       {chargersQuery.hasNextPage ? (
@@ -346,13 +383,83 @@ export function StationDetailsContent({
   );
 }
 
+function getChargerSelectionKey(charger: WorkflowChargerRecord) {
+  return `${getWorkflowChargerType(charger)}-${charger.id}`;
+}
+
+function ChargerSelector({
+  chargers,
+  onSelect,
+  selectedKey,
+}: {
+  chargers: WorkflowChargerRecord[];
+  onSelect: (charger: WorkflowChargerRecord) => void;
+  selectedKey: string;
+}) {
+  return (
+    <ThemedView backgroundColor='transparent' borderBottomColor={Palette.borderSubtle} borderBottomWidth={1}>
+      <FlatList
+        contentContainerStyle={{ gap: rmhs(20), paddingHorizontal: rmhs(4) }}
+        data={chargers}
+        horizontal
+        keyExtractor={getChargerSelectionKey}
+        renderItem={({ item: charger, index }) => {
+          const isCar = getWorkflowChargerType(charger) === 'car';
+          const chargerKey = getChargerSelectionKey(charger);
+          const isSelected = chargerKey === selectedKey;
+          const accentColor = isCar ? '#B86A13' : '#17834A';
+          const ports = isCar ? charger.carConnectors || [] : charger.outlets || [];
+
+          return (
+            <Pressable
+              accessibilityLabel={`Select ${charger.name || `charger ${index + 1}`}`}
+              accessibilityRole='button'
+              accessibilityState={{ selected: isSelected }}
+              onPress={() => onSelect(charger)}
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+              <ThemedView
+                alignItems='center'
+                backgroundColor='transparent'
+                borderBottomColor={isSelected ? accentColor : 'transparent'}
+                borderBottomWidth={2}
+                gap={3}
+                minHeight={48}
+                minWidth={rmhs(76)}
+                paddingBottom={8}
+                paddingHorizontal={2}
+                paddingTop={4}>
+                <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={5}>
+                  {isCar ? (
+                    <Car color={isSelected ? accentColor : Palette.textTertiary} size={14} />
+                  ) : (
+                    <Bike color={isSelected ? accentColor : Palette.textTertiary} size={14} />
+                  )}
+                  <ThemedText color={isSelected ? Palette.textPrimary : Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={11}>
+                    Charger {String(index + 1).padStart(2, '0')}
+                  </ThemedText>
+                </ThemedView>
+                <ThemedText color={isSelected ? accentColor : Palette.textTertiary} fontSize={9}>
+                  {ports.length} {isCar ? 'connectors' : 'outlets'}
+                </ThemedText>
+              </ThemedView>
+            </Pressable>
+          );
+        }}
+        showsHorizontalScrollIndicator={false}
+      />
+    </ThemedView>
+  );
+}
+
 function ChargerSection({
   charger,
+  inheritedPriceProfile,
   index,
   onActions,
   onEditPort,
 }: {
   charger: WorkflowChargerRecord;
+  inheritedPriceProfile?: LocationPartnership['tariff'] | Record<string, unknown>;
   index: number;
   onActions: () => void;
   onEditPort: (port: ChargerPortRecord) => void;
@@ -364,110 +471,365 @@ function ChargerSection({
   const standby = getChargerDisplayValue(rawCharger, ['standby', 'standbyKwh', 'standby_kwh']);
   const dateReport = getChargerDisplayValue(rawCharger, ['dateReport', 'date_report', 'reportDate', 'report_date']);
   const readMeter = getChargerDisplayValue(rawCharger, ['readMeter', 'read_meter']);
+  const accentColor = isCar ? '#B86A13' : '#17834A';
+  const accentTone = isCar ? '#FFF5E8' : '#EEF7F1';
+  const chargerIdentifier = getWorkflowChargerIdentifier(charger);
+  const chargerStatus = charger.enabled === false ? 'Disabled' : charger.visible === false ? 'Hidden' : 'Active';
+  const chargerStatusColor = charger.enabled === false || charger.visible === false ? '#B42318' : accentColor;
+  const readyPortCount = ports.filter(port => port.visible !== false && !port.used).length;
+  const busyPortCount = ports.filter(port => port.visible !== false && port.used).length;
+  const metadata = [
+    { label: 'Vendor', value: charger.vendorId },
+    { label: 'Offset', value: offset },
+    { label: 'Standby', value: standby },
+    { label: 'Date report', value: dateReport },
+    { label: 'Read meter', value: readMeter == null ? undefined : formatBooleanLike(readMeter) },
+  ].filter((item): item is { label: string; value: string } => typeof item.value === 'string' && item.value.trim() !== '' && item.value !== '--');
 
   return (
-    <ThemedView
-      backgroundColor='#FFFFFF'
-      borderColor={Palette.borderSubtle}
-      borderRadius={16}
-      borderTopColor={isCar ? '#D97706' : Palette.accent}
-      borderTopWidth={2}
-      borderWidth={1}
-      overflow='hidden'>
-      <Pressable onPress={onActions}>
-        <ThemedView alignItems='center' flexDirection='row' gap={'two'} padding={'three'} paddingBottom={'two'}>
-          <ThemedView alignItems='center' backgroundColor={isCar ? '#FFF5E8' : '#EEF7F1'} borderRadius={11} height={44} justifyContent='center' width={44}>
-            {isCar ? <Car color='#B86A13' size={20} /> : <Bike color='#17834A' size={20} />}
+    <ThemedView backgroundColor='#FFFFFF' borderBottomColor={Palette.borderSubtle} borderBottomWidth={1}>
+      <ThemedView backgroundColor='transparent' gap={'two'} paddingHorizontal={'three'} paddingVertical={'three'}>
+        <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'two'}>
+          <ThemedView alignItems='center' backgroundColor={accentTone} borderRadius={'pill'} height={38} justifyContent='center' width={38}>
+            {isCar ? <Car color={accentColor} size={18} /> : <Bike color={accentColor} size={18} />}
           </ThemedView>
-          <ThemedView flex={1} minWidth={0}>
-            <ThemedText color={isCar ? '#B45309' : Palette.accent} fontFamily={FontFamily.semibold} fontSize={10} textTransform='uppercase'>
-              Charger {String(index + 1).padStart(2, '0')} · {isCar ? 'Car' : 'Bike'}
+          <ThemedView backgroundColor='transparent' flex={1} minWidth={0}>
+            <ThemedText color={accentColor} fontFamily={FontFamily.semibold} fontSize={9} letterSpacing={0.7} textTransform='uppercase'>
+              {isCar ? 'Car' : 'Bike'} charger · {String(index + 1).padStart(2, '0')}
             </ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={14} numberOfLines={1}>
-              {charger.name || getWorkflowChargerIdentifier(charger) || `Charger #${charger.id}`}
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20} numberOfLines={1} selectable>
+              {charger.name || chargerIdentifier || `Charger #${charger.id}`}
             </ThemedText>
-            <ThemedText color={Palette.textSecondary} fontSize={12} marginTop={2} numberOfLines={1}>
-              {getWorkflowChargerIdentifier(charger)} · {ports.length} outlets
+            <ThemedText color={Palette.textSecondary} fontSize={10} lineHeight={14} numberOfLines={1} selectable>
+              {chargerIdentifier || 'Identifier not assigned'}
             </ThemedText>
           </ThemedView>
-          <ThemedView alignItems='flex-end' backgroundColor='transparent' gap={'one'}>
-            <StatusChip
-              label={charger.enabled === false ? 'Disabled' : charger.visible === false ? 'Hidden' : 'Active'}
-              tone={charger.enabled === false || charger.visible === false ? 'danger' : 'success'}
-            />
-            <MoreHorizontal color={Palette.textSecondary} size={18} />
+          <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={5}>
+            <ThemedView backgroundColor={chargerStatusColor} borderRadius={'pill'} height={7} width={7} />
+            <ThemedText color={chargerStatusColor} fontFamily={FontFamily.semibold} fontSize={10}>
+              {chargerStatus}
+            </ThemedText>
           </ThemedView>
+          <Pressable
+            accessibilityLabel={`Open actions for ${charger.name || chargerIdentifier || `charger ${charger.id}`}`}
+            accessibilityRole='button'
+            hitSlop={8}
+            onPress={onActions}>
+            <ThemedView alignItems='center' backgroundColor='transparent' height={32} justifyContent='center' width={28}>
+              <MoreHorizontal color={Palette.textSecondary} size={19} />
+            </ThemedView>
+          </Pressable>
         </ThemedView>
-      </Pressable>
-      <ThemedView backgroundColor='#F8F9F9' flexDirection='row' flexWrap='wrap' gap={'two'} marginHorizontal={'three'} padding={'two'}>
-        <ChargerMeta label='Vendor' value={charger.vendorId || '--'} />
-        <ChargerMeta label='Offset' value={offset || '--'} />
-        <ChargerMeta label='Standby' value={standby || '--'} />
-        <ChargerMeta label='Date report' value={dateReport || '--'} />
-        <ChargerMeta label='Read meter' value={readMeter == null ? '--' : formatBooleanLike(readMeter)} />
+        <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'one'} paddingLeft={46}>
+          <ThemedText color={accentColor} fontFamily={FontFamily.semibold} fontSize={10}>
+            {readyPortCount} ready
+          </ThemedText>
+          <ThemedText color={Palette.textTertiary} fontSize={10}>
+            ·
+          </ThemedText>
+          <ThemedText color={busyPortCount > 0 ? '#B45309' : Palette.textSecondary} fontSize={10}>
+            {busyPortCount} in use
+          </ThemedText>
+          <ThemedText color={Palette.textTertiary} fontSize={10}>
+            ·
+          </ThemedText>
+          <ThemedText color={Palette.textSecondary} fontSize={10}>
+            {ports.length} total
+          </ThemedText>
+        </ThemedView>
       </ThemedView>
-      <ThemedView backgroundColor='transparent' gap={'two'} padding={'three'}>
-        <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' justifyContent='space-between'>
-          <ThemedView backgroundColor='transparent'>
-            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={10} textTransform='uppercase'>
-              {isCar ? 'Connectors' : 'Outlets'}
-            </ThemedText>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={13} marginTop={1}>
-              {ports.length} {isCar ? 'charging connectors' : 'charging outlets'}
-            </ThemedText>
-          </ThemedView>
-          <Zap color={isCar ? '#D97706' : Palette.accent} size={18} />
-        </ThemedView>
-        <ThemedView backgroundColor='transparent' flexDirection='row' flexWrap='wrap' gap={'two'}>
-          {ports.map((port, index) => (
-            <Pressable key={port.id} onPress={() => onEditPort(port)}>
-              <ThemedView
-                backgroundColor={port.visible === false ? '#F5F6F6' : '#F2FBF5'}
-                borderColor={port.visible === false ? Palette.borderSubtle : '#D7F0DF'}
-                borderRadius={12}
-                borderWidth={1}
-                flexBasis='47%'
-                flexGrow={1}
-                gap={'one'}
-                minHeight={102}
-                minWidth={132}
-                padding={'three'}>
-                <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' justifyContent='space-between'>
-                  <ThemedView
-                    alignItems='center'
-                    backgroundColor={port.visible === false ? '#EEF1F0' : '#E7F8ED'}
-                    borderRadius={'pill'}
-                    height={34}
-                    justifyContent='center'
-                    width={34}>
-                    <BatteryCharging color={port.visible === false ? Palette.textTertiary : Palette.accent} size={17} />
-                  </ThemedView>
-                  <ThemedText
-                    color={port.visible === false ? Palette.textTertiary : port.used ? '#B45309' : Palette.accent}
-                    fontFamily={FontFamily.semibold}
-                    fontSize={10}>
-                    {port.visible === false ? 'Hidden' : port.used ? 'In use' : 'Ready'}
-                  </ThemedText>
-                </ThemedView>
-                <ThemedView backgroundColor='transparent' minWidth={0}>
-                  <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={9} textTransform='uppercase'>
-                    {isCar ? 'Connector' : 'Outlet'} {String(port.orderOnBox || index + 1).padStart(2, '0')}
-                  </ThemedText>
-                  <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={13} marginTop={1} numberOfLines={1}>
-                    {port.name || `${isCar ? 'Connector' : 'Outlet'} ${port.orderOnBox || index + 1}`}
-                  </ThemedText>
-                  <ThemedText color={Palette.textSecondary} fontSize={11} marginTop={1} numberOfLines={1}>
-                    {port.uniqueId || port.qrCode || `#${port.id}`}
-                    {port.power ? ` · ${port.power} kW` : ''}
-                  </ThemedText>
-                </ThemedView>
-              </ThemedView>
-            </Pressable>
+      {metadata.length > 0 ? (
+        <ThemedView
+          backgroundColor='transparent'
+          borderTopColor={Palette.borderSubtle}
+          borderTopWidth={1}
+          flexDirection='row'
+          flexWrap='wrap'
+          gap={'three'}
+          paddingHorizontal={'three'}
+          paddingVertical={'two'}>
+          {metadata.map(item => (
+            <ChargerMeta key={item.label} label={item.label} value={item.value} />
           ))}
         </ThemedView>
+      ) : null}
+      <ThemedView backgroundColor='#F7F8F8' gap={'two'} paddingVertical={'three'}>
+        <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' justifyContent='space-between' paddingHorizontal={'three'}>
+          <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'two'}>
+            <ThemedView backgroundColor='transparent'>
+              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={13}>
+                {isCar ? 'Connectors' : 'Outlets'}
+              </ThemedText>
+              <ThemedText color={Palette.textSecondary} fontSize={10} marginTop={1}>
+                Swipe to browse · tap to edit
+              </ThemedText>
+            </ThemedView>
+          </ThemedView>
+          <ThemedText color={accentColor} fontFamily={FontFamily.semibold} fontSize={11}>
+            {ports.length}
+          </ThemedText>
+        </ThemedView>
+        {ports.length > 0 ? (
+          <FlatList
+            contentContainerStyle={{ gap: rmhs(8), paddingHorizontal: rmhs(12), paddingRight: rmhs(20) }}
+            data={ports}
+            decelerationRate='fast'
+            horizontal
+            keyExtractor={port => String(port.id)}
+            renderItem={({ item: port, index: portIndex }) => {
+              const portNumber = typeof port.orderOnBox === 'number' ? port.orderOnBox + 1 : portIndex + 1;
+              const portLabel = `${isCar ? 'Connector' : 'Outlet'} ${String(portNumber).padStart(2, '0')}`;
+              const displayName = port.name || portLabel;
+              const repeatsLabel = displayName.trim().toLowerCase() === portLabel.toLowerCase();
+              const pricing = getPortPricing(port, inheritedPriceProfile, isCar ? 'car' : 'bike');
+
+              return (
+                <Pressable
+                  accessibilityLabel={`Edit ${portLabel}`}
+                  accessibilityRole='button'
+                  onPress={() => onEditPort(port)}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.68 : 1 })}>
+                  <ThemedView
+                    backgroundColor={port.visible === false ? '#FAFAFA' : '#FFFFFF'}
+                    borderColor={Palette.borderSubtle}
+                    borderRadius={12}
+                    borderWidth={1}
+                    gap={'three'}
+                    minHeight={134}
+                    padding={'three'}
+                    width={rmhs(180)}>
+                    <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'two'}>
+                      <BatteryCharging color={port.visible === false ? Palette.textTertiary : accentColor} size={17} />
+                      <ThemedView backgroundColor='transparent' flex={1} minWidth={0}>
+                        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18} numberOfLines={1} selectable>
+                          {displayName}
+                        </ThemedText>
+                        <ThemedText color={Palette.textSecondary} fontSize={10} lineHeight={15} numberOfLines={1} selectable>
+                          {[repeatsLabel ? undefined : portLabel, port.uniqueId || port.qrCode || `#${port.id}`, port.power ? `${port.power} kW` : undefined]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </ThemedText>
+                      </ThemedView>
+                      <ChevronRight color={Palette.textTertiary} size={15} />
+                    </ThemedView>
+                    <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={5}>
+                      <ThemedView
+                        backgroundColor={port.visible === false ? Palette.textTertiary : port.used ? '#D97706' : accentColor}
+                        borderRadius={'pill'}
+                        height={6}
+                        width={6}
+                      />
+                      <ThemedText
+                        color={port.visible === false ? Palette.textTertiary : port.used ? '#B45309' : accentColor}
+                        fontFamily={FontFamily.semibold}
+                        fontSize={9}>
+                        {port.visible === false ? 'Hidden' : port.used ? 'In use' : 'Ready'}
+                      </ThemedText>
+                    </ThemedView>
+                    <PortPricingSummary pricing={pricing} />
+                  </ThemedView>
+                </Pressable>
+              );
+            }}
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={rmhs(188)}
+          />
+        ) : (
+          <ThemedView alignItems='center' backgroundColor='transparent' paddingHorizontal={'three'} paddingVertical={'four'}>
+            <ThemedText color={Palette.textSecondary} fontSize={11} textAlign='center'>
+              No {isCar ? 'connectors' : 'outlets'} assigned
+            </ThemedText>
+          </ThemedView>
+        )}
       </ThemedView>
     </ThemedView>
   );
+}
+
+type PortPricing = {
+  energy?: string;
+  name: string;
+  parking?: string;
+  schedule?: string;
+  service?: string;
+};
+
+function getPortPricing(
+  port: ChargerPortRecord,
+  inheritedPriceProfile: LocationPartnership['tariff'] | Record<string, unknown> | undefined,
+  chargerType: 'bike' | 'car',
+): PortPricing | undefined {
+  const portRecord = port as unknown as Record<string, unknown>;
+  const profileValue = getUnknownValue(portRecord, ['priceProfile', 'price_profile', 'pricingProfile', 'pricing_profile', 'tariff']);
+  const profile = toRecord(profileValue) || toRecord(inheritedPriceProfile);
+  const rate = getFirstRecord(
+    profile || portRecord,
+    ['priceProfileDetails', 'price_profile_details', 'priceDetails', 'price_details', 'rates', 'prices', 'details'],
+    chargerType,
+  );
+  const sources = [rate, profile, portRecord].filter((source): source is Record<string, unknown> => Boolean(source));
+  const profileName =
+    getStringValue(portRecord, ['priceProfileName', 'price_profile_name', 'pricingProfileName', 'pricing_profile_name', 'tariffName', 'tariff_name']) ||
+    getStringValue(profile, ['name', 'title', 'label']) ||
+    (typeof profileValue === 'string' && !profileValue.startsWith('/') ? profileValue : undefined) ||
+    (typeof inheritedPriceProfile === 'string' ? inheritedPriceProfile : undefined);
+  const energy = getPriceValue(
+    sources,
+    [
+      'electricityPrice',
+      'electricity_price',
+      'energyPrice',
+      'energy_price',
+      'chargingPrice',
+      'charging_price',
+      'chargePrice',
+      'charge_price',
+      'pricePerKwh',
+      'price_per_kwh',
+      'unitPrice',
+      'unit_price',
+      'price',
+    ],
+    '/kWh',
+  );
+  const service = getPriceValue(sources, ['servicePrice', 'service_price', 'serviceFee', 'service_fee', 'priceService', 'price_service'], '/kWh');
+  const parking = getPriceValue(
+    sources,
+    ['parkingPrice', 'parking_price', 'parkingFee', 'parking_fee', 'idlePrice', 'idle_price', 'idleFee', 'idle_fee'],
+    '/min',
+  );
+  const startTime = getFirstStringValue(sources, ['startTime', 'start_time', 'fromTime', 'from_time']);
+  const endTime = getFirstStringValue(sources, ['endTime', 'end_time', 'toTime', 'to_time']);
+  const dayLabel =
+    getFirstStringValue(sources, ['dayLabel', 'day_label', 'days', 'dayOfWeek', 'day_of_week', 'weekday']) || (startTime || endTime ? 'Everyday' : undefined);
+  const schedule = [dayLabel, startTime && endTime ? `${startTime}–${endTime}` : startTime || endTime].filter(Boolean).join(' · ') || undefined;
+
+  if (!profileName && !energy && !service && !parking) return undefined;
+
+  return {
+    energy,
+    name: profileName || 'Price profile',
+    parking,
+    schedule,
+    service,
+  };
+}
+
+function PortPricingSummary({ pricing }: { pricing?: PortPricing }) {
+  if (!pricing) {
+    return (
+      <ThemedView
+        alignItems='center'
+        backgroundColor='transparent'
+        borderTopColor={Palette.borderSubtle}
+        borderTopWidth={1}
+        flexDirection='row'
+        gap={6}
+        paddingTop={'two'}>
+        <BadgeDollarSign color={Palette.textTertiary} size={13} />
+        <ThemedText color={Palette.textTertiary} flex={1} fontSize={10} lineHeight={14} numberOfLines={1}>
+          No price profile
+        </ThemedText>
+      </ThemedView>
+    );
+  }
+
+  const priceItems = [
+    { color: '#E98700', icon: Zap, key: 'energy', value: pricing.energy },
+    { color: '#6B7280', icon: CircleDollarSign, key: 'service', value: pricing.service },
+    { color: '#6B7280', icon: CircleParking, key: 'parking', value: pricing.parking },
+  ].filter((item): item is { color: string; icon: LucideIcon; key: string; value: string } => Boolean(item.value));
+
+  return (
+    <ThemedView backgroundColor='transparent' borderTopColor={Palette.borderSubtle} borderTopWidth={1} gap={5} paddingTop={'two'}>
+      <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={6}>
+        <BadgeDollarSign color={Palette.textSecondary} size={13} />
+        <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={10} lineHeight={14} numberOfLines={1} selectable>
+          {pricing.name}
+        </ThemedText>
+      </ThemedView>
+      {priceItems.length > 0 ? (
+        <ThemedView backgroundColor='transparent' flexDirection='row' flexWrap='wrap' gap={10}>
+          {priceItems.map(item => (
+            <PortPrice key={item.key} color={item.color} icon={item.icon} value={item.value} />
+          ))}
+        </ThemedView>
+      ) : (
+        <ThemedText color={Palette.textTertiary} fontSize={9} lineHeight={13}>
+          Pricing details unavailable
+        </ThemedText>
+      )}
+      {pricing.schedule ? (
+        <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={4}>
+          <Clock3 color={Palette.textTertiary} size={11} />
+          <ThemedText color={Palette.textSecondary} fontSize={9} lineHeight={13} numberOfLines={1} selectable>
+            {pricing.schedule}
+          </ThemedText>
+        </ThemedView>
+      ) : null}
+    </ThemedView>
+  );
+}
+
+function PortPrice({ color, icon: Icon, value }: { color: string; icon: LucideIcon; value: string }) {
+  return (
+    <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={4}>
+      <Icon color={color} size={12} />
+      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={10} lineHeight={14} selectable>
+        {value}
+      </ThemedText>
+    </ThemedView>
+  );
+}
+
+function toRecord(value: unknown) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+}
+
+function getUnknownValue(record: Record<string, unknown> | undefined, keys: string[]) {
+  if (!record) return undefined;
+  for (const key of keys) {
+    if (record[key] != null) return record[key];
+  }
+  return undefined;
+}
+
+function getStringValue(record: Record<string, unknown> | undefined, keys: string[]) {
+  const value = getUnknownValue(record, keys);
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  return undefined;
+}
+
+function getFirstStringValue(records: Record<string, unknown>[], keys: string[]) {
+  for (const record of records) {
+    const value = getStringValue(record, keys);
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function getFirstRecord(record: Record<string, unknown>, keys: string[], preferredBoxType?: 'bike' | 'car') {
+  const value = getUnknownValue(record, keys);
+  if (Array.isArray(value)) {
+    const records = value.map(toRecord).filter((item): item is Record<string, unknown> => Boolean(item));
+    return records.find(item => getStringValue(item, ['boxType', 'box_type', 'chargerType', 'charger_type'])?.toLowerCase() === preferredBoxType) || records[0];
+  }
+  return toRecord(value);
+}
+
+function getPriceValue(records: Record<string, unknown>[], keys: string[], unit = '') {
+  for (const record of records) {
+    const value = getUnknownValue(record, keys);
+    if (typeof value === 'number' && Number.isFinite(value)) return `${vietnameseNumberFormatter.format(value)} đ${unit}`;
+    if (typeof value !== 'string' || !value.trim()) continue;
+    const normalized = value.trim();
+    if (/^-?\d+(?:[.,]\d+)?$/.test(normalized)) {
+      const parsed = Number(normalized.replace(',', '.'));
+      if (Number.isFinite(parsed)) return `${vietnameseNumberFormatter.format(parsed)} đ${unit}`;
+    }
+    return /(?:đ|vnd|₫)/i.test(normalized) ? normalized : `${normalized} đ${unit}`;
+  }
+  return undefined;
 }
 
 function getChargerDisplayValue(record: Record<string, unknown>, keys: string[]) {
@@ -486,14 +848,14 @@ function formatBooleanLike(value: unknown) {
   return String(value);
 }
 
-function ChargerMeta({ label, value }: { label: string; value: boolean | string }) {
+function ChargerMeta({ label, value }: { label: string; value: string }) {
   return (
-    <ThemedView backgroundColor='transparent' flexBasis='30%' flexGrow={1} minWidth={86}>
-      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={9} numberOfLines={1} textTransform='uppercase'>
+    <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={4}>
+      <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={9} numberOfLines={1}>
         {label}
       </ThemedText>
-      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={12} marginTop={2} numberOfLines={1} selectable>
-        {typeof value === 'boolean' ? formatBooleanLike(value) : value}
+      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={9} numberOfLines={1} selectable>
+        {value}
       </ThemedText>
     </ThemedView>
   );
@@ -518,19 +880,16 @@ function StationSummary({
 }) {
   return (
     <ThemedView backgroundColor='#FFFFFF' borderColor={Palette.borderSubtle} borderRadius={18} borderWidth={1} gap={'three'} padding={'three'}>
-      <ThemedView alignItems='flex-start' backgroundColor='transparent' flexDirection='row' gap={'two'}>
-        <ThemedView alignItems='center' backgroundColor='#EEF7F1' borderRadius={13} height={44} justifyContent='center' width={44}>
-          <Zap color={Palette.accent} size={20} />
+      <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'two'}>
+        <ThemedView alignItems='center' backgroundColor='#EEF7F1' borderRadius={11} height={38} justifyContent='center' width={38}>
+          <Zap color={Palette.accent} size={18} />
         </ThemedView>
         <ThemedView flex={1} minWidth={0}>
-          <ThemedText color={Palette.accent} fontFamily={FontFamily.semibold} fontSize={10} textTransform='uppercase'>
+          <ThemedText color={Palette.accent} fontFamily={FontFamily.semibold} fontSize={10} letterSpacing={0.7} textTransform='uppercase'>
             Station details
           </ThemedText>
-          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={17} lineHeight={22} marginTop={'one'} selectable>
-            {station.name || `Station #${station.id}`}
-          </ThemedText>
           {station.description ? (
-            <ThemedText color={Palette.textSecondary} fontSize={13} lineHeight={19} marginTop={'one'} numberOfLines={3}>
+            <ThemedText color={Palette.textSecondary} fontSize={12} lineHeight={17} marginTop={2} numberOfLines={2} selectable>
               {station.description}
             </ThemedText>
           ) : null}

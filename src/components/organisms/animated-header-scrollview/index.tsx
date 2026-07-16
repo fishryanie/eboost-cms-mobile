@@ -1,5 +1,5 @@
 import { ChevronLeft } from 'lucide-react-native';
-import React, { memo } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
 import Animated, {
@@ -9,7 +9,6 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -28,6 +27,7 @@ import { Colors, HEADER_HEIGHT, MAX_BLUR_INTENSITY, spacing } from './conf';
 import type { AnimatedHeaderProps } from './types';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
+const AnimatedThemedText = Animated.createAnimatedComponent(ThemedText);
 
 const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
   largeTitle,
@@ -49,7 +49,7 @@ const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: event => {
-      scrollY.value = event.contentOffset.y;
+      scrollY.set(event.contentOffset.y);
     },
   });
 
@@ -58,34 +58,29 @@ const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
     const fontSizeStyle = (largeHeaderTitleStyle as any)?.fontSize;
     const fontSize = typeof fontSizeStyle === 'number' ? fontSizeStyle : 40;
 
-    return {
-      fontSize: interpolate(-scrollY.value, [0, 100], [fontSize, fontSize * 2], Extrapolation.CLAMP),
-    };
+    const animatedFontSize = interpolate(-scrollY.get(), [0, 100], [fontSize, fontSize * 2], Extrapolation.CLAMP);
+    return { fontSize: animatedFontSize, lineHeight: animatedFontSize * 1.18 };
   });
 
   const largeTitleOpacityStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [0, 60], [1, 0], Extrapolation.CLAMP),
+    opacity: interpolate(scrollY.get(), [0, 60], [1, 0], Extrapolation.CLAMP),
   }));
 
   const smallHeaderStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(interpolate(scrollY.value, [40, 80], [0, 1], Extrapolation.CLAMP), { duration: 300 }),
+    opacity: withTiming(interpolate(scrollY.get(), [40, 80], [0, 1], Extrapolation.CLAMP), { duration: 300 }),
     transform: [
       {
-        translateY: withTiming(interpolate(scrollY.value, [40, 80], [20, 0], Extrapolation.CLAMP), { duration: 300 }),
+        translateY: withTiming(interpolate(scrollY.get(), [40, 80], [20, 0], Extrapolation.CLAMP), { duration: 300 }),
       },
     ],
   }));
 
-  const smallSubtitleStyle = useAnimatedStyle(() => ({
-    opacity: withSpring(scrollY.value > 100 ? 0.5 : 0),
-  }));
-
   const headerBackgroundStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [0, 80], [0, 1], Extrapolation.CLAMP),
+    opacity: interpolate(scrollY.get(), [0, 80], [0, 1], Extrapolation.CLAMP),
   }));
 
   const headerBlurAnimatedProps = useAnimatedProps(() => ({
-    intensity: interpolate(scrollY.value, [0, 100], [0, MAX_BLUR_INTENSITY], Extrapolation.CLAMP),
+    intensity: interpolate(scrollY.get(), [0, 100], [0, MAX_BLUR_INTENSITY], Extrapolation.CLAMP),
   }));
 
   const mask = easeGradient({
@@ -103,7 +98,7 @@ const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
         style={[
           styles.headerBackground,
           {
-            height: HEADER_HEIGHT + insets.top + 50,
+            height: HEADER_HEIGHT + insets.top,
           },
           headerBackgroundStyle,
         ]}>
@@ -112,11 +107,18 @@ const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
           style={StyleSheet.absoluteFill}>
           <LinearGradient colors={['rgba(255,255,255,0.98)', 'rgba(255,255,255,0.94)', 'rgba(255,255,255,0)']} style={StyleSheet.absoluteFill} />
 
-          <AnimatedBlurView animatedProps={headerBlurAnimatedProps as any} blurMethod='dimezisBlurViewSdk31Plus' intensity={10} tint='light' style={StyleSheet.absoluteFill} />
+          <AnimatedBlurView
+            animatedProps={headerBlurAnimatedProps as any}
+            blurMethod='dimezisBlurViewSdk31Plus'
+            intensity={10}
+            tint='light'
+            style={StyleSheet.absoluteFill}
+          />
         </MaskedView>
       </Animated.View>
 
       <Animated.View
+        pointerEvents='none'
         style={[
           styles.fixedHeader,
           {
@@ -125,14 +127,16 @@ const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
           },
           smallHeaderStyle,
         ]}>
-        <ThemedView rowCenter justifyContent='space-between' paddingHorizontal={spacing.lg} height={HEADER_HEIGHT}>
-          <ThemedView flex={1} alignItems='center'>
-            <Animated.Text style={[styles.smallHeaderTitle, smallHeaderTitleStyle]}>{largeTitle}</Animated.Text>
+        <ThemedView alignItems='center' backgroundColor='transparent' height={HEADER_HEIGHT} justifyContent='center' paddingHorizontal={68}>
+          <AnimatedThemedText numberOfLines={1} style={[styles.smallHeaderTitle, smallHeaderTitleStyle]}>
+            {largeTitle}
+          </AnimatedThemedText>
 
-            {!!subtitle && <Animated.Text style={[styles.smallHeaderSubtitle, smallHeaderSubtitleStyle, smallSubtitleStyle]}>{subtitle}</Animated.Text>}
-          </ThemedView>
-
-          {rightComponent}
+          {!!subtitle && (
+            <AnimatedThemedText numberOfLines={1} style={[styles.smallHeaderSubtitle, smallHeaderSubtitleStyle]}>
+              {subtitle}
+            </AnimatedThemedText>
+          )}
         </ThemedView>
       </Animated.View>
 
@@ -154,12 +158,21 @@ const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
           paddingHorizontal={spacing.md}
           height={HEADER_HEIGHT}>
           {canGoBack ? (
-            <Pressable onPress={() => (onBack ? onBack() : router.back())} hitSlop={8} style={{ zIndex: 1 }}>
+            <Pressable
+              accessibilityLabel='Go back'
+              accessibilityRole='button'
+              hitSlop={8}
+              onPress={() => (onBack ? onBack() : router.back())}
+              style={{ alignItems: 'center', height: 40, justifyContent: 'center', width: 40, zIndex: 1 }}>
               <ChevronLeft color={Palette.textPrimary} size={28} />
             </Pressable>
           ) : (
-            <ThemedView />
+            <ThemedView backgroundColor='transparent' height={40} width={40} />
           )}
+
+          <ThemedView alignItems='flex-end' backgroundColor='transparent' height={40} justifyContent='center' width={40}>
+            {rightComponent}
+          </ThemedView>
         </ThemedView>
       </ThemedView>
 
@@ -175,7 +188,7 @@ const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
           },
         ]}>
         <Animated.View style={[styles.largeTitleContainer, largeTitleOpacityStyle]}>
-          <Animated.Text style={[styles.largeTitle, largeHeaderTitleStyle, animatedLargeTitleStyle]}>{largeTitle}</Animated.Text>
+          <AnimatedThemedText style={[styles.largeTitle, largeHeaderTitleStyle, animatedLargeTitleStyle]}>{largeTitle}</AnimatedThemedText>
 
           {!!subtitle && (
             <ThemedText color={Colors.gray[400]} fontSize={18} marginTop={spacing.xs} style={largeHeaderSubtitleStyle as any}>
@@ -190,7 +203,7 @@ const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
   );
 };
 
-export default memo(AnimatedHeaderScrollViewComponent);
+export default AnimatedHeaderScrollViewComponent;
 
 const styles = StyleSheet.create({
   headerBackground: {
@@ -214,15 +227,16 @@ const styles = StyleSheet.create({
     color: Palette.textPrimary,
     fontSize: 18,
     fontWeight: '600',
+    lineHeight: 21,
   },
 
   smallHeaderSubtitle: {
     color: Palette.textSecondary,
     fontSize: 12,
+    lineHeight: 15,
   },
 
   largeTitleContainer: {
-    paddingHorizontal: spacing.md,
     marginBottom: spacing.md,
   },
 

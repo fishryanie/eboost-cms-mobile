@@ -80,6 +80,12 @@ export function BottomButtonContent({
   title = '',
   TopComponent,
 }: BottomButtonProps) {
+  const gradientColors: [string, string] = disabled
+    ? [Palette.border, Palette.border]
+    : btnColor === 'transparent'
+      ? [Palette.accent, Palette.accentPressed]
+      : [btnColor, btnColor];
+
   return (
     <>
       {TopComponent}
@@ -99,11 +105,7 @@ export function BottomButtonContent({
             />
           </ThemedView>
         ) : null}
-        <LinearGradient
-          colors={[Palette.accent, Palette.accentPressed]}
-          end={{ x: 1, y: 0 }}
-          start={{ x: 0, y: 0 }}
-          style={{ flex: 1, borderRadius: mhs(radius) }}>
+        <LinearGradient colors={gradientColors} end={{ x: 1, y: 0 }} start={{ x: 0, y: 0 }} style={{ flex: 1, borderRadius: mhs(radius) }}>
           <AppButton
             block
             buttonColor={disabled ? Palette.border : btnColor}

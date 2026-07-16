@@ -21,7 +21,7 @@ export const colors = {
 export type CmsSectionKey = 'marketing' | 'operation';
 type TabKey = CmsSectionKey | 'technical';
 
-export type CmsMobilePanel = {
+export type CmsMobilePage = {
   description: string;
   icon: TabIconName;
   key: string;
@@ -35,7 +35,7 @@ type TabConfig = {
   key: TabKey;
   label: string;
   name: string;
-  panels: CmsMobilePanel[];
+  pages: CmsMobilePage[];
   title?: string;
 };
 
@@ -52,7 +52,7 @@ export const tabs: TabConfig[] = [
     key: 'technical',
     label: 'Technical',
     name: 'technical/index',
-    panels: [
+    pages: [
       { description: 'Charger inventory and status.', icon: 'technical', key: 'chargers', title: 'Chargers' },
       { description: 'Hourly meter readings.', icon: 'technical', key: 'meter-hourly', title: 'Meter Hourly' },
       { description: 'Charger status history.', icon: 'technical', key: 'status-logs', title: 'Status Logs' },
@@ -67,7 +67,7 @@ export const tabs: TabConfig[] = [
     key: 'marketing',
     label: 'Marketing',
     name: 'marketing/index',
-    panels: [
+    pages: [
       { description: 'Campaign setup, discount rules, and promo performance.', icon: 'promotion', key: 'promotions', title: 'Promotions' },
       { description: 'Bonus credit packages and top-up incentives.', icon: 'gift', key: 'bonus-topup', title: 'Bonus Topup' },
       { description: 'Referral programs, rewards, and invite activity.', icon: 'gift', key: 'referral-gift', title: 'Referral Gift' },
@@ -91,7 +91,7 @@ export const tabs: TabConfig[] = [
     key: 'operation',
     label: 'Operation',
     name: 'operation/index',
-    panels: [
+    pages: [
       { description: 'Customer accounts, wallet state, and account lifecycle.', icon: 'users', key: 'users', title: 'Users' },
       { description: 'Charging prices, plan rules, and tariff assignments.', icon: 'tariff', key: 'tariff', title: 'Tariff' },
       { description: 'Station records, address data, and operating information.', icon: 'location', key: 'locations', title: 'Locations' },
@@ -107,9 +107,4 @@ export const tabs: TabConfig[] = [
 
 export function getMenuSection(key: CmsSectionKey) {
   return tabs.find((tab): tab is CmsMobileSection => tab.key === key)!;
-}
-
-export function getMenuPanel(sectionKey: CmsSectionKey, panelKey?: string | string[]) {
-  const key = Array.isArray(panelKey) ? panelKey[0] : panelKey;
-  return getMenuSection(sectionKey).panels.find(panel => panel.key === key);
 }

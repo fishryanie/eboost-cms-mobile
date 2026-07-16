@@ -15,7 +15,7 @@ type Action = {
   icon: TabIconName;
   key: string;
   label: string;
-  panel: string;
+  page: string;
   section: 'marketing' | 'operation' | 'technical';
 };
 
@@ -25,7 +25,7 @@ export function Popup({ colors, onClose, routeName }: PopupProps) {
   const actions: Action[] =
     tabs
       .find(tab => tab.key === section)
-      ?.panels.map(panel => ({ icon: panel.icon, key: `${section}-${panel.key}`, label: panel.title, panel: panel.key, section })) ?? [];
+      ?.pages.map(page => ({ icon: page.icon, key: `${section}-${page.key}`, label: page.title, page: page.key, section })) ?? [];
 
   if (actions.length === 0) return null;
 
@@ -36,7 +36,7 @@ export function Popup({ colors, onClose, routeName }: PopupProps) {
           <Pressable
             key={action.key}
             onPress={() => {
-              router.push({ pathname: `/${action.section}/[panel]`, params: { panel: action.panel } } as never);
+              router.push(`/${action.section}/${action.page}` as never);
               onClose();
             }}
             style={({ pressed }) => ({

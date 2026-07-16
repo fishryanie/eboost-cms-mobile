@@ -280,13 +280,39 @@ type StationRecord = {
   visible?: boolean;
 };
 
+type ChargerPriceProfileRecord = {
+  boxType?: 'bike' | 'car' | string;
+  box_type?: 'bike' | 'car' | string;
+  chargingPrice?: number | string;
+  electricityPrice?: number | string;
+  energyPrice?: number | string;
+  endTime?: string;
+  id?: number | string;
+  idlePrice?: number | string;
+  name?: string;
+  parkingPrice?: number | string;
+  price?: number | string;
+  priceProfileDetails?: ChargerPriceProfileRecord[];
+  prices?: ChargerPriceProfileRecord[];
+  profit?: number | string;
+  servicePrice?: number | string;
+  startTime?: string;
+  title?: string;
+  unitPrice?: number | string;
+  vat?: number | string;
+};
+
 type ChargerPortRecord = {
   id: number;
   name?: string;
   orderOnBox?: number;
   power?: number;
+  priceProfile?: ChargerPriceProfileRecord | string | null;
+  priceProfileName?: string;
+  pricingProfile?: ChargerPriceProfileRecord | string | null;
   qrCode?: string;
   status?: boolean | string;
+  tariff?: ChargerPriceProfileRecord | string | null;
   uniqueId?: string;
   used?: boolean;
   visible?: boolean;

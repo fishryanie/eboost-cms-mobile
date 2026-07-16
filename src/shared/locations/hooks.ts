@@ -111,6 +111,15 @@ export function useLocationPartnership(location?: LocationRecord) {
   });
 }
 
+export function useLocationPriceProfiles(enabled = true) {
+  return useQuery({
+    enabled,
+    queryFn: () => fetchLocationEditorLookup('api/v1/partner/price-profile', 'building'),
+    queryKey: locationKeys.editorLookup('building', 'price_profiles'),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useLocationEditorLookups(enabled: boolean) {
   const operationStatuses = useQuery({
     enabled,
@@ -136,12 +145,7 @@ export function useLocationEditorLookups(enabled: boolean) {
     queryKey: locationKeys.editorLookup('core', 'wards'),
     staleTime: 1000 * 60 * 10,
   });
-  const priceProfiles = useQuery({
-    enabled,
-    queryFn: () => fetchLocationEditorLookup('api/v1/partner/price-profile', 'building'),
-    queryKey: locationKeys.editorLookup('building', 'price_profiles'),
-    staleTime: 1000 * 60 * 5,
-  });
+  const priceProfiles = useLocationPriceProfiles(enabled);
 
   return { locationTypes, operationStatuses, priceProfiles, provinces, wards };
 }

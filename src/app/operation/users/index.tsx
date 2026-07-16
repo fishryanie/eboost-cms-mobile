@@ -10,7 +10,7 @@ import { UserCard } from 'shared/users/components/user-card';
 import { useInfiniteUsers } from 'shared/users/hooks';
 import { AppButton, EmptyState } from 'components/ui';
 
-export default function UsersScreen({ onBack }: { onBack?: () => void } = {}) {
+export default function UsersPage() {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -71,15 +71,13 @@ export default function UsersScreen({ onBack }: { onBack?: () => void } = {}) {
         ListHeaderComponent={
           <ThemedView gap={'four'} padding={'four'}>
             <ThemedView alignItems='center' flexDirection='row' gap={'three'} justifyContent='space-between'>
-              {onBack ? (
-                <Pressable
-                  accessibilityLabel='Back'
-                  accessibilityRole='button'
-                  onPress={onBack}
-                  style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
-                  <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
-                </Pressable>
-              ) : null}
+              <Pressable
+                accessibilityLabel='Back'
+                accessibilityRole='button'
+                onPress={() => router.back()}
+                style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+                <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
+              </Pressable>
               <ThemedView flex={1} minWidth={0}>
                 <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={27} letterSpacing={0} lineHeight={34}>
                   Users

@@ -17,7 +17,7 @@ import { useCreateLocation, useLocations, useUploadLocationImage } from 'shared/
 import { AppButton, EmptyState } from 'components/ui';
 import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 
-export default function LocationScreen({ onBack }: { onBack?: () => void } = {}) {
+export default function LocationsPage() {
   const router = useRouter();
   const params = useLocalSearchParams<{ action?: string }>();
   const [search, setSearch] = useState('');
@@ -124,8 +124,8 @@ export default function LocationScreen({ onBack }: { onBack?: () => void } = {})
       <AnimatedHeaderFlatList
         largeTitle='Locations'
         subtitle={`${filteredLocations.length.toLocaleString()} of ${locations.length.toLocaleString()} locations`}
-        canGoBack={Boolean(onBack)}
-        onBack={onBack}
+        canGoBack
+        onBack={() => router.back()}
         largeRightComponent={<CreateLocationButton onPress={() => setCreateOpenState(true)} />}
         rightComponent={<CreateLocationButton onPress={() => setCreateOpenState(true)} />}
         searchBar={

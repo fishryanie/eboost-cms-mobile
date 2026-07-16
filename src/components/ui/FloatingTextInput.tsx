@@ -18,6 +18,7 @@ const labelRestingTop = (inputHeight - inputLineHeight) / 2;
 const moneyFormatter = new Intl.NumberFormat('en-US');
 
 type FloatingTextInputProps = Omit<TextInputProps, 'style'> & {
+  accentColor?: string;
   error?: string;
   isMoney?: boolean;
   isPassword?: boolean;
@@ -28,6 +29,7 @@ type FloatingTextInputProps = Omit<TextInputProps, 'style'> & {
 };
 
 export default function FloatingTextInput({
+  accentColor = Palette.accent,
   error,
   isMoney,
   isPassword,
@@ -74,11 +76,11 @@ export default function FloatingTextInput({
 
   const labelAnimatedStyle = useAnimatedStyle(() => {
     return {
-      color: error ? '#B42318' : interpolateColor(animation.value, [0, 1], [Palette.textTertiary, Palette.accent]),
+      color: error ? '#B42318' : interpolateColor(animation.value, [0, 1], [Palette.textTertiary, accentColor]),
       fontSize: interpolate(animation.value, [0, 1], [labelFontSize, floatingLabelFontSize]),
       top: interpolate(animation.value, [0, 1], [labelRestingTop, -8]),
     };
-  });
+  }, [accentColor, error]);
 
   return (
     <ThemedView style={[styles.container, style]}>
@@ -93,7 +95,13 @@ export default function FloatingTextInput({
             height: inputHeight,
             justifyContent: 'center',
           },
-          isFocused && styles.focusedFrame,
+          isFocused && {
+            borderColor: accentColor,
+            shadowColor: accentColor,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.12,
+            shadowRadius: 18,
+          },
           Boolean(error) && styles.errorFrame,
         ]}>
         <Animated.Text
@@ -127,7 +135,7 @@ export default function FloatingTextInput({
           }}
           placeholderTextColor={isFloating ? '#8A948E' : 'transparent'}
           secureTextEntry={isPassword && !showPassword}
-          selectionColor={Palette.accent}
+          selectionColor={accentColor}
           style={[styles.input, (onClear || isPassword) && Boolean(value) && { paddingRight: mhs(40) }]}
           value={value}
         />
@@ -166,13 +174,6 @@ const styles = StyleSheet.create({
     top: 0,
     width: mhs(40),
     zIndex: 2,
-  },
-  focusedFrame: {
-    borderColor: Palette.accent,
-    shadowColor: Palette.accent,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
   },
   input: {
     color: Palette.textPrimary,

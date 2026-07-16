@@ -97,9 +97,9 @@ export function LocationEditScreen() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'This change could not be saved.';
       setEditorError(operationSaved ? `Operation saved. Partnership update failed: ${message}` : message);
-    } finally {
-      setSaving(false);
     }
+
+    setSaving(false);
   }
 
   if (locationQuery.isLoading) {
@@ -131,7 +131,7 @@ export function LocationEditScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <AnimatedHeaderScrollViewComponent
         canGoBack
-        contentContainerStyle={{ backgroundColor: Palette.surfaceBase, gap: 26, paddingHorizontal: 16 }}
+        contentContainerStyle={{ backgroundColor: Palette.surfaceBase, gap: 24, paddingHorizontal: 18 }}
         largeHeaderSubtitleStyle={{ color: Palette.textSecondary, fontFamily: FontFamily.regular, fontSize: 16 }}
         largeHeaderTitleStyle={{ color: Palette.textPrimary, fontFamily: FontFamily.semibold, fontSize: 34 }}
         largeTitle='Edit location'
@@ -140,11 +140,12 @@ export function LocationEditScreen() {
             <ThemedView
               alignItems='center'
               backgroundColor={Palette.surfaceMuted}
+              borderCurve='continuous'
               borderRadius={'pill'}
-              height={36}
+              height={40}
               justifyContent='center'
               opacity={refreshing ? 0.6 : 1}
-              width={36}>
+              width={40}>
               {refreshing ? <ActivityIndicator color={Palette.accent} size='small' /> : <RefreshCcw color={Palette.textPrimary} size={17} />}
             </ThemedView>
           </Pressable>
@@ -153,7 +154,7 @@ export function LocationEditScreen() {
         smallHeaderSubtitleStyle={{ color: Palette.textSecondary, fontFamily: FontFamily.regular }}
         smallHeaderTitleStyle={{ color: Palette.textPrimary, fontFamily: FontFamily.semibold }}
         subtitle={location.nameVn || location.name}>
-        <ThemedView backgroundColor='transparent' gap={4} paddingHorizontal={4}>
+        <ThemedView backgroundColor='transparent' gap={3} paddingHorizontal={2}>
           <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={20} lineHeight={26}>
             Edit details
           </ThemedText>
@@ -165,10 +166,10 @@ export function LocationEditScreen() {
           </ThemedText>
         </ThemedView>
 
-        <ThemedView backgroundColor='transparent' gap={26} paddingBottom={28}>
+        <ThemedView backgroundColor='transparent' gap={24} paddingBottom={20}>
           {locationEditorSections.map(section => (
             <ThemedView backgroundColor='transparent' gap={9} key={section.title}>
-              <ThemedView backgroundColor='transparent' gap={2} paddingHorizontal={4}>
+              <ThemedView backgroundColor='transparent' gap={3} paddingHorizontal={2}>
                 <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={12} letterSpacing={0.5} textTransform='uppercase'>
                   {section.title}
                 </ThemedText>
@@ -181,7 +182,13 @@ export function LocationEditScreen() {
                 <PartnershipNotice isError={partnershipQuery.isError} isLoading={partnershipQuery.isLoading} partnership={partnership} />
               ) : null}
 
-              <ThemedView backgroundColor={Palette.surfaceMuted} borderCurve='continuous' borderRadius={16} overflow='hidden'>
+              <ThemedView
+                backgroundColor={Palette.surfaceMuted}
+                borderColor={Palette.borderSubtle}
+                borderCurve='continuous'
+                borderRadius={18}
+                borderWidth={1}
+                overflow='hidden'>
                 {section.fields.map((field, index) => {
                   const value = getLocationEditorValue(field.key, location, partnership);
                   const options = optionsFor(field);
@@ -202,10 +209,10 @@ export function LocationEditScreen() {
                           backgroundColor='transparent'
                           flexDirection='row'
                           gap={10}
-                          minHeight={58}
-                          paddingHorizontal={14}
-                          paddingVertical={10}>
-                          <ThemedText color={Palette.textPrimary} flex={0.86} fontFamily={FontFamily.medium} fontSize={14} lineHeight={19}>
+                          minHeight={60}
+                          paddingHorizontal={16}
+                          paddingVertical={11}>
+                          <ThemedText color={Palette.textPrimary} flex={0.9} fontFamily={FontFamily.medium} fontSize={14} lineHeight={19}>
                             {field.label}
                           </ThemedText>
                           <ThemedText
@@ -221,7 +228,7 @@ export function LocationEditScreen() {
                           {!field.readOnly ? <ChevronRight color='#B8B8BD' size={17} strokeWidth={2.2} /> : null}
                         </ThemedView>
                       </Pressable>
-                      {index < section.fields.length - 1 ? <ThemedView backgroundColor={Palette.borderSubtle} height={1} marginLeft={14} /> : null}
+                      {index < section.fields.length - 1 ? <ThemedView backgroundColor={Palette.borderSubtle} height={1} marginLeft={16} /> : null}
                     </ThemedView>
                   );
                 })}
@@ -250,7 +257,7 @@ export function LocationEditScreen() {
 function PartnershipNotice({ isError, isLoading, partnership }: { isError: boolean; isLoading: boolean; partnership?: LocationPartnership | null }) {
   if (isLoading) {
     return (
-      <ThemedView alignItems='center' backgroundColor='#EEF7F2' borderRadius={12} flexDirection='row' gap={10} padding={12}>
+      <ThemedView alignItems='center' backgroundColor='#EEF7F2' borderCurve='continuous' borderRadius={12} flexDirection='row' gap={10} padding={12}>
         <ActivityIndicator color={Palette.accent} size='small' />
         <ThemedText color={Palette.textSecondary} flex={1} fontSize={12} lineHeight={17}>
           Checking partnership data...
@@ -261,7 +268,7 @@ function PartnershipNotice({ isError, isLoading, partnership }: { isError: boole
 
   if (isError || !partnership) {
     return (
-      <ThemedView backgroundColor='#FFF4E8' borderRadius={12} padding={12}>
+      <ThemedView backgroundColor='#FFF4E8' borderCurve='continuous' borderRadius={12} padding={12}>
         <ThemedText color='#8A541E' fontSize={12} lineHeight={17}>
           {isError ? 'Partnership data could not be loaded.' : 'No partnership record is linked to this location.'}
         </ThemedText>
@@ -271,7 +278,7 @@ function PartnershipNotice({ isError, isLoading, partnership }: { isError: boole
 
   if (partnership.detailAvailable === false) {
     return (
-      <ThemedView backgroundColor='#FFF4E8' borderRadius={12} padding={12}>
+      <ThemedView backgroundColor='#FFF4E8' borderCurve='continuous' borderRadius={12} padding={12}>
         <ThemedText color='#8A541E' fontSize={12} lineHeight={17}>
           Some partnership details are unavailable. Available values can still be edited.
         </ThemedText>

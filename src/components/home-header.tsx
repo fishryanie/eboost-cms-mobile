@@ -125,19 +125,13 @@ function HeaderIcon({ accessibilityLabel, icon: Icon, onPress }: { accessibility
 
 function getHeaderSearchItems(): HeaderSearchItem[] {
   return tabs.flatMap(tab =>
-    tab.panels.map(panel => ({
+    tab.pages.map(page => ({
       accentColor: sectionAccent[tab.key],
-      description: panel.description,
-      href:
-        tab.key === 'technical'
-          ? (`/technical/${panel.key}` as Href)
-          : ({
-              pathname: `/${tab.key}/[panel]`,
-              params: { panel: panel.key },
-            } as Href),
-      id: `${tab.key}-${panel.key}`,
+      description: page.description,
+      href: tab.key === 'technical' ? (`/technical/${page.key}` as Href) : (`/${tab.key}/${page.key}` as Href),
+      id: `${tab.key}-${page.key}`,
       section: tab.label,
-      title: panel.title,
+      title: page.title,
     })),
   );
 }

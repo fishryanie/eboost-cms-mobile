@@ -1,21 +1,23 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BottomButton, HeaderTitle, ThemedText, ThemedView } from 'components/base';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
 import { useRouter } from 'expo-router';
 import { CheckCircle2 } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import { FontFamily, Palette } from 'themes';
 import { mhs } from 'themes/scaling';
 import { createBonusCampaign } from './service';
 import type { BonusBlacklistUser, BonusRule } from './types';
 
+const marketingAccent = '#D64A7F';
+
 function ToggleRow({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress}>
       <ThemedView
         alignItems='center'
-        backgroundColor={active ? Palette.accent : Palette.surfaceMuted}
+        backgroundColor={active ? marketingAccent : Palette.surfaceMuted}
         borderRadius={16}
         flexDirection='row'
         gap={'two'}
@@ -32,6 +34,7 @@ function ToggleRow({ active, label, onPress }: { active: boolean; label: string;
 
 export default function CreateBonusCampaignScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [nameVn, setNameVn] = useState('');
   const [description, setDescription] = useState('');
@@ -49,46 +52,29 @@ export default function CreateBonusCampaignScreen() {
   const [rule, setRule] = useState<BonusRule>({ isPercent: false, maxAmount: '', minAmount: '', value: '' });
   const [blacklistText, setBlacklistText] = useState('');
   const [blacklistReason, setBlacklistReason] = useState('');
-  const mutation = useMutation({ mutationFn: createBonusCampaign });
-  const canSubmit = useMemo(
-    () =>
-      Boolean(
-        name.trim() &&
-        nameVn.trim() &&
-        beginAt.trim() &&
-        endAt.trim() &&
-        topUpAmountMin.trim() &&
-        topUpAmountMax.trim() &&
-        bonusAmountMin.trim() &&
-        bonusAmountMax.trim() &&
-        rule.minAmount.trim() &&
-        rule.maxAmount.trim() &&
-        rule.value.trim(),
-      ) && !mutation.isPending,
-    [
-      beginAt,
-      bonusAmountMax,
-      bonusAmountMin,
-      endAt,
-      mutation.isPending,
-      name,
-      nameVn,
-      rule.maxAmount,
-      rule.minAmount,
-      rule.value,
-      topUpAmountMax,
-      topUpAmountMin,
-    ],
-  );
-  const blacklistUsers = useMemo<BonusBlacklistUser[]>(
-    () =>
-      blacklistText
-        .split(',')
-        .map(user => user.trim())
-        .filter(Boolean)
-        .map(user => ({ reason: blacklistReason.trim(), user: `/api/users/${user.replace(/^\/?api\/users\//, '')}` })),
-    [blacklistReason, blacklistText],
-  );
+  const mutation = useMutation({
+    mutationFn: createBonusCampaign,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cms-page', 'api/money_top_up_events'] }),
+  });
+  const canSubmit =
+    Boolean(
+      name.trim() &&
+      nameVn.trim() &&
+      beginAt.trim() &&
+      endAt.trim() &&
+      topUpAmountMin.trim() &&
+      topUpAmountMax.trim() &&
+      bonusAmountMin.trim() &&
+      bonusAmountMax.trim() &&
+      rule.minAmount.trim() &&
+      rule.maxAmount.trim() &&
+      rule.value.trim(),
+    ) && !mutation.isPending;
+  const blacklistUsers: BonusBlacklistUser[] = blacklistText
+    .split(',')
+    .map(user => user.trim())
+    .filter(Boolean)
+    .map(user => ({ reason: blacklistReason.trim(), user: `/api/users/${user.replace(/^\/?api\/users\//, '')}` }));
 
   async function submit() {
     if (!canSubmit) {
@@ -129,42 +115,77 @@ export default function CreateBonusCampaignScreen() {
           <ThemedText color={Palette.textSecondary} fontSize={14} lineHeight={20}>
             Create a top-up bonus campaign in inactive approval state.
           </ThemedText>
-          <FloatingTextInput label='* Name (English)' value={name} onChangeText={setName} />
-          <FloatingTextInput label='* Name (Vietnamese)' value={nameVn} onChangeText={setNameVn} />
-          <FloatingTextInput label='Description (English)' value={description} onChangeText={setDescription} multiline style={{ height: 84 }} />
-          <FloatingTextInput label='Description (Vietnamese)' value={descriptionVn} onChangeText={setDescriptionVn} multiline style={{ height: 84 }} />
+          <FloatingTextInput accentColor={marketingAccent} label='* Name (English)' value={name} onChangeText={setName} />
+          <FloatingTextInput accentColor={marketingAccent} label='* Name (Vietnamese)' value={nameVn} onChangeText={setNameVn} />
+          <FloatingTextInput
+            accentColor={marketingAccent}
+            label='Description (English)'
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            style={{ height: 84 }}
+          />
+          <FloatingTextInput
+            accentColor={marketingAccent}
+            label='Description (Vietnamese)'
+            value={descriptionVn}
+            onChangeText={setDescriptionVn}
+            multiline
+            style={{ height: 84 }}
+          />
           <ThemedView flexDirection='row' flexWrap='wrap' gap={'two'}>
             <ToggleRow active={userType === '0'} label='All User' onPress={() => setUserType('0')} />
             <ToggleRow active={userType === '1'} label='New User' onPress={() => setUserType('1')} />
             <ToggleRow active={userType === '2'} label='Old User' onPress={() => setUserType('2')} />
           </ThemedView>
           {userType !== '0' ? (
-            <FloatingTextInput label='User Affected At' value={userAffectedAt} onChangeText={setUserAffectedAt} placeholder='YYYY-MM-DD' />
+            <FloatingTextInput
+              accentColor={marketingAccent}
+              label='User Affected At'
+              value={userAffectedAt}
+              onChangeText={setUserAffectedAt}
+              placeholder='YYYY-MM-DD'
+            />
           ) : null}
-          <FloatingTextInput label='* Begin At' value={beginAt} onChangeText={setBeginAt} placeholder='YYYY-MM-DD' />
-          <FloatingTextInput label='* End At' value={endAt} onChangeText={setEndAt} placeholder='YYYY-MM-DD' />
-          <FloatingTextInput label='* Top-up Min' value={topUpAmountMin} onChangeText={setTopUpAmountMin} isMoney />
-          <FloatingTextInput label='* Top-up Max' value={topUpAmountMax} onChangeText={setTopUpAmountMax} isMoney />
-          <FloatingTextInput label='* Bonus Min' value={bonusAmountMin} onChangeText={setBonusAmountMin} isMoney />
-          <FloatingTextInput label='* Bonus Max' value={bonusAmountMax} onChangeText={setBonusAmountMax} isMoney />
-          <FloatingTextInput label='Total Usage Limit' value={maxTotalUsage} onChangeText={setMaxTotalUsage} keyboardType='number-pad' />
-          <FloatingTextInput label='Usage Per User' value={maxUsagePerUser} onChangeText={setMaxUsagePerUser} keyboardType='number-pad' />
+          <FloatingTextInput accentColor={marketingAccent} label='* Begin At' value={beginAt} onChangeText={setBeginAt} placeholder='YYYY-MM-DD' />
+          <FloatingTextInput accentColor={marketingAccent} label='* End At' value={endAt} onChangeText={setEndAt} placeholder='YYYY-MM-DD' />
+          <FloatingTextInput accentColor={marketingAccent} label='* Top-up Min' value={topUpAmountMin} onChangeText={setTopUpAmountMin} isMoney />
+          <FloatingTextInput accentColor={marketingAccent} label='* Top-up Max' value={topUpAmountMax} onChangeText={setTopUpAmountMax} isMoney />
+          <FloatingTextInput accentColor={marketingAccent} label='* Bonus Min' value={bonusAmountMin} onChangeText={setBonusAmountMin} isMoney />
+          <FloatingTextInput accentColor={marketingAccent} label='* Bonus Max' value={bonusAmountMax} onChangeText={setBonusAmountMax} isMoney />
+          <FloatingTextInput
+            accentColor={marketingAccent}
+            label='Total Usage Limit'
+            value={maxTotalUsage}
+            onChangeText={setMaxTotalUsage}
+            keyboardType='number-pad'
+          />
+          <FloatingTextInput
+            accentColor={marketingAccent}
+            label='Usage Per User'
+            value={maxUsagePerUser}
+            onChangeText={setMaxUsagePerUser}
+            keyboardType='number-pad'
+          />
           <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15}>
             Bonus Rule
           </ThemedText>
           <FloatingTextInput
+            accentColor={marketingAccent}
             label='* Rule Min Amount'
             value={rule.minAmount}
             onChangeText={value => setRule(current => ({ ...current, minAmount: value }))}
             isMoney
           />
           <FloatingTextInput
+            accentColor={marketingAccent}
             label='* Rule Max Amount'
             value={rule.maxAmount}
             onChangeText={value => setRule(current => ({ ...current, maxAmount: value }))}
             isMoney
           />
           <FloatingTextInput
+            accentColor={marketingAccent}
             label='* Rule Value'
             value={rule.value}
             onChangeText={value => setRule(current => ({ ...current, value }))}
@@ -175,11 +196,17 @@ export default function CreateBonusCampaignScreen() {
             label='Rule value is percent'
             onPress={() => setRule(current => ({ ...current, isPercent: !current.isPercent }))}
           />
-          <FloatingTextInput label='Blacklist User IDs' value={blacklistText} onChangeText={setBlacklistText} placeholder='123,456' />
-          <FloatingTextInput label='Blacklist Reason' value={blacklistReason} onChangeText={setBlacklistReason} />
+          <FloatingTextInput
+            accentColor={marketingAccent}
+            label='Blacklist User IDs'
+            value={blacklistText}
+            onChangeText={setBlacklistText}
+            placeholder='123,456'
+          />
+          <FloatingTextInput accentColor={marketingAccent} label='Blacklist Reason' value={blacklistReason} onChangeText={setBlacklistReason} />
         </ThemedView>
       </ScrollView>
-      <BottomButton disabled={!canSubmit} loading={mutation.isPending} onPress={submit} title='Create Campaign' />
+      <BottomButton btnColor={marketingAccent} disabled={!canSubmit} loading={mutation.isPending} onPress={submit} title='Create Campaign' />
     </ThemedView>
   );
 }
