@@ -16,6 +16,7 @@ export const SearchBar = ({
   placeholder = 'Search',
   onSearch,
   onClear,
+  initialValue = '',
   style,
   renderLeadingIcons,
   renderTrailingIcons,
@@ -28,14 +29,14 @@ export const SearchBar = ({
   centerWhenUnfocused = true,
   ...props
 }: SearchBarProps) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialValue);
   const [, setIsFocused] = useState(false);
   const [containerDimensions, setContainerDimensions] = useState({ width: 0 });
   const inputRef = useRef<TextInput>(null);
 
   const focusProgress = useSharedValue(0);
-  const clearButtonScale = useSharedValue(0);
-  const clearButtonOpacity = useSharedValue(0);
+  const clearButtonScale = useSharedValue(query ? 1 : 0);
+  const clearButtonOpacity = useSharedValue(query ? 1 : 0);
   const textOpacity = useSharedValue(1);
   const textScale = useSharedValue(1);
   const textTranslateY = useSharedValue(0);
@@ -218,11 +219,7 @@ export const SearchBar = ({
                   onPress={handleClear}
                   style={[styles.clearButton, animatedClearButtonStyle]}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  {renderTrailingIcons ? (
-                    renderTrailingIcons()
-                  ) : (
-                    <CircleX color='#98A2B3' size={18} />
-                  )}
+                  {renderTrailingIcons ? renderTrailingIcons() : <CircleX color='#98A2B3' size={18} />}
                 </AnimatedTouchable>
               )}
             </AnimatedView>

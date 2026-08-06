@@ -15,6 +15,10 @@ export interface SearchBarProps {
    */
   onClear?: () => void;
   /**
+   * Initial search value.
+   */
+  initialValue?: string;
+  /**
    * Additional style for the container
    */
   style?: ViewStyle;

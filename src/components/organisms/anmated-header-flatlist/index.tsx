@@ -2,16 +2,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import React, { memo } from 'react';
 import { FlatList, FlatListProps, ListRenderItem, Pressable, StyleSheet, TextStyle } from 'react-native';
 
-import Animated, {
-  Extrapolation,
-  interpolate,
-  useAnimatedProps,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { Extrapolation, interpolate, useAnimatedProps, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 import MaskedView from '@react-native-masked-view/masked-view';
 import { BlurView } from 'expo-blur';
@@ -88,16 +79,16 @@ function AnimatedHeaderFlatListComponent<T>({
   }));
 
   const smallHeaderStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(interpolate(scrollY.value, [40, 80], [0, 1], Extrapolation.CLAMP), { duration: 300 }),
+    opacity: interpolate(scrollY.value, [40, 80], [0, 1], Extrapolation.CLAMP),
     transform: [
       {
-        translateY: withTiming(interpolate(scrollY.value, [40, 80], [20, 0], Extrapolation.CLAMP), { duration: 300 }),
+        translateY: interpolate(scrollY.value, [40, 80], [12, 0], Extrapolation.CLAMP),
       },
     ],
   }));
 
   const smallSubtitleStyle = useAnimatedStyle(() => ({
-    opacity: withSpring(scrollY.value > 100 ? 0.5 : 0),
+    opacity: interpolate(scrollY.value, [80, 100], [0, 0.5], Extrapolation.CLAMP),
   }));
 
   const headerBackgroundStyle = useAnimatedStyle(() => ({
@@ -151,14 +142,25 @@ function AnimatedHeaderFlatListComponent<T>({
           },
           smallHeaderStyle,
         ]}>
-        <ThemedView rowCenter justifyContent='space-between' paddingHorizontal={spacing.lg} height={HEADER_HEIGHT}>
-          <ThemedView flex={1} alignItems='center'>
+        <ThemedView pointerEvents='box-none' height={HEADER_HEIGHT}>
+          <ThemedView
+            pointerEvents='none'
+            position='absolute'
+            top={0}
+            right={0}
+            bottom={0}
+            left={0}
+            alignItems='center'
+            justifyContent='center'
+            paddingHorizontal={64}>
             <Animated.Text style={[styles.smallHeaderTitle, smallHeaderTitleStyle]}>{largeTitle}</Animated.Text>
 
             {!!subtitle && <Animated.Text style={[styles.smallHeaderSubtitle, smallHeaderSubtitleStyle, smallSubtitleStyle]}>{subtitle}</Animated.Text>}
           </ThemedView>
 
-          {rightComponent}
+          <ThemedView pointerEvents='box-none' flex={1} alignItems='flex-end' justifyContent='center' paddingHorizontal={spacing.md}>
+            {rightComponent}
+          </ThemedView>
         </ThemedView>
       </Animated.View>
 

@@ -10,6 +10,7 @@ import {
   fetchLocationPartnership,
   fetchLocations,
   fetchLocationStations,
+  fetchAssignableChargers,
   fetchStationChargers,
   relocateLocation,
   syncPartnershipLocation,
@@ -30,6 +31,7 @@ export const locationKeys = {
   list: (search: string) => ['locations', 'list', search] as const,
   stations: (id: number | string) => ['locations', String(id), 'stations'] as const,
   chargers: (id: number | string) => ['stations', String(id), 'chargers'] as const,
+  assignableChargers: (type?: ChargerVehicle) => (type ? (['stations', 'assignable-chargers', type] as const) : (['stations', 'assignable-chargers'] as const)),
 };
 
 export function useLocations(search: string) {
@@ -49,12 +51,22 @@ export function useStationChargers(id: number | string) {
   });
 }
 
+export function useAssignableChargers(type?: ChargerVehicle, enabled = true) {
+  return useQuery({
+    enabled: enabled && Boolean(type),
+    queryFn: () => fetchAssignableChargers(type as ChargerVehicle),
+    queryKey: locationKeys.assignableChargers(type),
+    staleTime: 1000 * 30,
+  });
+}
+
 export function useLocationResourceMutations(locationId: number | string, stationId?: number | string) {
   const queryClient = useQueryClient();
   const invalidate = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: locationKeys.detail(locationId) }),
       queryClient.invalidateQueries({ queryKey: locationKeys.stations(locationId) }),
+      queryClient.invalidateQueries({ queryKey: locationKeys.assignableChargers() }),
       ...(stationId ? [queryClient.invalidateQueries({ queryKey: locationKeys.chargers(stationId) })] : []),
     ]);
   };

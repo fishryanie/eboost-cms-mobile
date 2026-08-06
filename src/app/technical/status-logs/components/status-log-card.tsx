@@ -1,33 +1,47 @@
-import { AlertCircle, Cable, Clock, Zap } from 'lucide-react-native';
-
 import { ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
 
-import { StatusPill, formatShortTime, screenHorizontalPadding } from 'components/technical/common';
-
 const STATUS_COLORS: Record<string, string> = {
-  Available: '#52c41a',
-  Ready: '#1677ff',
-  Charging: '#13c2c2',
-  ChargeFull: '#52c41a',
-  Unplugged: '#8c8c8c',
-  NoPower: '#fa541c',
-  NoFuse: '#eb2f96',
-  NoRelay: '#722ed1',
-  OverCurrent: '#fa8c16',
-  TotalOverCurrent: '#f5222d',
-  OverMoney: '#faad14',
-  OverTime: '#2f54eb',
-  RelayBroken: '#ff85c0',
-  StoppedFromApp: '#a0d911',
-  EmergencyStop: '#ff4d4f',
-  Preparing: '#faad14',
-  Finishing: '#eb2f96',
-  SuspendedEV: '#1677ff',
-  SuspendedEVSE: '#2f54eb',
-  Reserved: '#722ed1',
-  Unavailable: '#fa8c16',
-  Faulted: '#ff4d4f',
+  Available: '#52C41A',
+  ChargeFull: '#52C41A',
+  Charging: '#13C2C2',
+  EmergencyStop: '#FF4D4F',
+  Faulted: '#FF4D4F',
+  Finishing: '#EB2F96',
+  NoFuse: '#EB2F96',
+  NoPower: '#FA541C',
+  NoRelay: '#722ED1',
+  OverCurrent: '#FA8C16',
+  OverMoney: '#FAAD14',
+  OverTime: '#2F54EB',
+  Preparing: '#FAAD14',
+  Ready: '#1677FF',
+  RelayBroken: '#FF85C0',
+  Reserved: '#722ED1',
+  StoppedFromApp: '#A0D911',
+  SuspendedEV: '#1677FF',
+  SuspendedEVSE: '#2F54EB',
+  TotalOverCurrent: '#F5222D',
+  Unavailable: '#FA8C16',
+  Unplugged: '#8C8C8C',
+  default: '#98A2B3',
+};
+
+const OCPP_ERROR_CODE_LABELS: Record<string, string> = {
+  A0108: 'Nhấn Emergency Stop',
+  A0112: 'Cảm biến cửa',
+  A0113: 'Cảnh báo mở nắp bất thường',
+  A0302: 'Lỗi giao tiếp OCPP và PCBA',
+  A0401: 'Lỗi giao tiếp',
+  A0413: 'InputOverVoltage',
+  A0416: 'Sai thứ tự lắp đặt',
+  A0902: 'Lỗi Contactor',
+  A1303: 'Lỗi tiếp địa',
+  B0415: 'Không tìm thấy module',
+  B0418: 'N/A',
+  B2004: 'Lỗi điện áp CP',
+  C0402: 'Module mất kết nối',
+  D0209: 'Lỗi hiển thị',
 };
 
 function formatStatus(value: StatusLogRecord['status'], vehicle: TechnicalVehicle) {
@@ -55,161 +69,71 @@ function formatStatus(value: StatusLogRecord['status'], vehicle: TechnicalVehicl
   return bikeStatus[Number(value)] || String(value);
 }
 
-export function StatusLogCard({
-  item,
-  vehicle,
-  isTimeline,
-  isLast,
-}: {
-  item: StatusLogRecord;
-  vehicle: TechnicalVehicle;
-  isTimeline?: boolean;
-  isLast?: boolean;
-}) {
-  const chargerId = item.chargePointID || item.vendor_id || item.box_id || item.boxId || '-';
-  const errorCode = item.errorCode || item.error_code || item.vendorErrorCode || item.vendor_error_code || '';
+function formatErrorCode(errorCode: string) {
+  if (!errorCode || errorCode === 'NoError') return '';
+  return OCPP_ERROR_CODE_LABELS[errorCode] ? `${errorCode} - ${OCPP_ERROR_CODE_LABELS[errorCode]}` : errorCode;
+}
+
+export function StatusLogCard({ isLast, item, vehicle }: { isLast?: boolean; item: StatusLogRecord; vehicle: TechnicalVehicle }) {
   const status = formatStatus(item.status, vehicle);
   const color = STATUS_COLORS[status] || STATUS_COLORS.default;
-  const isWarning = !!errorCode || status === 'Faulted' || status === 'NoPower';
-
-  if (isTimeline) {
-    const timestamp = item.timestamp || item.receivedAt;
-    const date = timestamp ? new Date(timestamp) : new Date();
-    const dayStr = !Number.isNaN(date.getTime()) ? date.getDate().toString() : '--';
-    const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-    const textStr = !Number.isNaN(date.getTime()) ? days[date.getDay()] : '---';
-    const timeStr = !Number.isNaN(date.getTime()) ? date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '--:--';
-
-    return (
-      <ThemedView flexDirection='row' paddingHorizontal={'four'} width='100%'>
-        {/* Left Column: Date & Day */}
-        <ThemedView alignItems='center' marginRight={'three'} width={40}>
-          <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={16}>
-            {dayStr}
-          </ThemedText>
-          <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={11}>
-            {textStr}
-          </ThemedText>
-          <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={10} marginTop={'one'}>
-            {timeStr}
-          </ThemedText>
-        </ThemedView>
-
-        {/* Middle Column: Dot & Line */}
-        <ThemedView alignItems='center' marginRight={'three'} width={24}>
-          <ThemedView
-            style={{
-              backgroundColor: color,
-              borderColor: Palette.surfaceBase,
-              borderRadius: 7,
-              borderWidth: 2,
-              height: 14,
-              marginTop: 4,
-              width: 14,
-              zIndex: 2,
-            }}
-          />
-          {!isLast && (
-            <ThemedView
-              style={{
-                backgroundColor: Palette.borderSubtle,
-                flex: 1,
-                marginBottom: -24,
-                marginTop: -8,
-                width: 2,
-              }}
-            />
-          )}
-        </ThemedView>
-
-        {/* Right Column: Content */}
-        <ThemedView flex={1} paddingBottom={'five'}>
-          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15}>
-            {status}
-          </ThemedText>
-
-          <ThemedView marginTop={'one'}>
-            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={13} numberOfLines={2}>
-              {vehicle === 'bike' ? 'Outlet' : 'Connector'} {item.connectorID ?? item.connector_id ?? '-'}
-              <ThemedText color={Palette.textTertiary}> • </ThemedText>
-              <ThemedText color={isWarning ? Palette.danger : Palette.textSecondary} fontFamily={FontFamily.regular}>
-                {errorCode || item.info || 'Normal event'}
-              </ThemedText>
-            </ThemedText>
-          </ThemedView>
-        </ThemedView>
-      </ThemedView>
-    );
-  }
+  const errorCode = formatErrorCode(item.errorCode || item.error_code || '');
+  const vendorErrorCode = formatErrorCode(item.vendorErrorCode || item.vendor_error_code || '');
+  const displayText = vendorErrorCode || errorCode || (item.info && item.info !== 'Normal event' && item.info !== 'NoError' ? item.info : '');
+  const isWarning = Boolean(errorCode || vendorErrorCode || displayText || status === 'Faulted' || status === 'NoPower');
+  const connectorPrefix = vehicle === 'bike' ? 'O' : 'C';
+  const connectorNumber = item.connectorID ?? item.connector_id ?? '-';
+  const timestamp = item.timestamp || item.receivedAt;
+  const date = timestamp ? new Date(timestamp) : undefined;
+  const hasValidDate = Boolean(date && !Number.isNaN(date.getTime()));
+  const day = hasValidDate ? date!.getDate().toString() : '--';
+  const month = hasValidDate ? (date!.getMonth() + 1).toString() : '';
+  const weekDay = hasValidDate ? ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][date!.getDay()] : '---';
+  const time = hasValidDate ? date!.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '--:--';
 
   return (
-    <ThemedView
-      backgroundColor={Palette.surfaceBase}
-      borderColor={isWarning ? '#FFA39E' : Palette.borderSubtle}
-      borderRadius={'large'}
-      borderWidth={1}
-      boxShadow='0 8px 20px rgba(15, 23, 42, 0.08)'
-      gap={'three'}
-      marginHorizontal={screenHorizontalPadding}
-      padding={'three'}
-      width='auto'>
-      {/* Top row: Charger ID and Connector */}
-      <ThemedView flexDirection='row' gap={'two'} justifyContent='space-between' alignItems='center'>
-        <ThemedView flex={1} minWidth={0}>
-          <ThemedView alignItems='center' flexDirection='row' gap={'one'}>
-            <Cable color={Palette.accent} size={16} />
-            <ThemedText color={Palette.textPrimary} flexShrink={1} fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20} numberOfLines={1}>
-              {chargerId}
+    <ThemedView flexDirection='row' paddingHorizontal={'four'} width='100%'>
+      <ThemedView alignItems='center' marginRight={'three'} width={44}>
+        <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={16}>
+          {day}
+          {month ? (
+            <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={11}>
+              /{month}
             </ThemedText>
-          </ThemedView>
-        </ThemedView>
-
-        <ThemedView alignItems='flex-end' minWidth={66}>
-          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={12} lineHeight={16}>
-            {vehicle === 'bike' ? 'Outlet ' : 'Conn '}
-            {item.connectorID ?? item.connector_id ?? '-'}
-          </ThemedText>
-        </ThemedView>
+          ) : null}
+        </ThemedText>
+        <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={10} marginTop={'one'}>
+          {time}
+        </ThemedText>
+        <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={11}>
+          {weekDay}
+        </ThemedText>
       </ThemedView>
 
-      {/* Middle row: Status Pill and Time */}
-      <ThemedView flexDirection='row' flexWrap='wrap' gap={'two'} alignItems='center'>
-        <StatusPill label={status} tone={isWarning ? 'danger' : 'neutral'} customColor={color} />
+      <ThemedView alignItems='center' marginRight={'three'} width={24}>
         <ThemedView
-          alignItems='center'
-          backgroundColor={Palette.surfaceMuted}
-          borderColor={Palette.borderSubtle}
-          borderRadius={'small'}
-          borderWidth={1}
-          flexDirection='row'
-          gap={'one'}
-          paddingHorizontal={'two'}
-          paddingVertical={'one'}>
-          <Clock color={Palette.textSecondary} size={12} />
-          <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
-            {formatShortTime(item.timestamp || item.receivedAt)}
-          </ThemedText>
-        </ThemedView>
+          backgroundColor={color}
+          borderColor={Palette.surfaceBase}
+          borderRadius={7}
+          borderWidth={2}
+          height={14}
+          marginTop={4}
+          width={14}
+          zIndex={2}
+        />
+        {!isLast ? <ThemedView backgroundColor={Palette.borderSubtle} flex={1} marginBottom={-24} marginTop={-8} width={2} /> : null}
       </ThemedView>
 
-      <ThemedView backgroundColor={Palette.borderSubtle} height={1} />
-
-      {/* Bottom row: Raw log info */}
-      <ThemedView alignItems='flex-start' flexDirection='row' gap={'two'}>
-        <ThemedView
-          alignItems='center'
-          backgroundColor={isWarning ? '#FFF1F0' : Palette.surfaceMuted}
-          borderRadius={16}
-          height={32}
-          justifyContent='center'
-          width={32}>
-          {isWarning ? <AlertCircle color={Palette.danger} size={16} /> : <Zap color={Palette.textSecondary} size={16} />}
-        </ThemedView>
-        <ThemedView flex={1} gap={'one'} justifyContent='center' minWidth={0}>
-          <ThemedText color={isWarning ? Palette.danger : Palette.textPrimary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={18}>
-            {errorCode || item.info || 'Normal event'}
+      <ThemedView flex={1} paddingBottom={'five'}>
+        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={15} selectable>
+          {connectorPrefix}
+          {connectorNumber}-{status}
+        </ThemedText>
+        {displayText ? (
+          <ThemedText color={isWarning ? Palette.danger : color} fontFamily={FontFamily.regular} fontSize={13} marginTop={'one'} numberOfLines={2} selectable>
+            {displayText}
           </ThemedText>
-        </ThemedView>
+        ) : null}
       </ThemedView>
     </ThemedView>
   );

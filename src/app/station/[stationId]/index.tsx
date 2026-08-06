@@ -1,18 +1,27 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, MapPin, RefreshCcw, Zap } from 'lucide-react-native';
-import { Pressable, RefreshControl } from 'react-native';
+import { ChevronLeft, MapPin, Plus, RefreshCcw, Zap } from 'lucide-react-native';
+import { useRef, useState } from 'react';
+import { Animated as NativeAnimated, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, RefreshControl } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-import { ThemedText, ThemedView } from 'components/base';
+import { BottomButton, ThemedText, ThemedView } from 'components/base';
 import { AnimatedScrollView } from 'components/organisms/parallax-header';
-import { StationDetailsContent } from 'shared/stations/components/station-details-content';
+import { AssignChargerSheet } from 'shared/stations/components/assign-charger-sheet';
+import { ChargerTabs, StationDetailsContent } from 'shared/stations/components/station-details-content';
+import { getChargerSelectionKey } from 'shared/stations/charger-utils';
 import { AppButton, EmptyState } from 'components/ui';
-import { useLocationDetail, useLocationStations } from 'shared/locations/hooks';
+import { useLocationDetail, useLocationStations, useStationChargers } from 'shared/locations/hooks';
 import { FontFamily, Palette } from 'themes';
+import { rmhs } from 'themes/scaling';
 import { getDisplayImageUrl } from 'utils/media/image-url';
 
 const HEADER_HEIGHT = 300;
+const TOP_BAR_HEIGHT = 104;
+const CONTENT_OVERLAP = 24;
+const CONTENT_TOP_PADDING = 8;
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
 
 export default function StationDetailsScreen() {
   const router = useRouter();
@@ -21,14 +30,46 @@ export default function StationDetailsScreen() {
   const stationId = String(params.stationId || '');
   const locationQuery = useLocationDetail(locationId);
   const stationsQuery = useLocationStations(locationId);
+  const chargersQuery = useStationChargers(stationId);
+  const scrollOffsetRef = useRef(0);
+  const stickyVisibleRef = useRef(false);
+  const chargerTabThresholdRef = useRef<number | undefined>(undefined);
+  const [chargerPagePosition] = useState(() => new NativeAnimated.Value(0));
+  const [chargerPageOffset] = useState(() => new NativeAnimated.Value(0));
+  const [selectedChargerKey, setSelectedChargerKey] = useState<string>();
+  const [stickyTabsVisible, setStickyTabsVisible] = useState(false);
+  const [assignChargerOpen, setAssignChargerOpen] = useState(false);
   const location = locationQuery.data;
   const station = stationsQuery.data?.find(item => String(item.id) === stationId);
+  const chargers = chargersQuery.data?.pages.flatMap(page => page.items) || [];
+  const activeCharger = chargers.find(charger => getChargerSelectionKey(charger) === selectedChargerKey) || chargers[0];
   const imageUrl = getDisplayImageUrl(station?.images?.[0]?.url || location?.images?.[0]?.url || location?.image_url || location?.imageUrl || location?.image);
-  const refreshing = locationQuery.isRefetching || stationsQuery.isRefetching;
+  const refreshing = locationQuery.isRefetching || stationsQuery.isRefetching || chargersQuery.isRefetching;
 
   const refresh = () => {
     locationQuery.refetch();
     stationsQuery.refetch();
+    chargersQuery.refetch();
+  };
+
+  const updateStickyVisibility = (offset: number, threshold?: number) => {
+    const effectiveThreshold = threshold ?? chargerTabThresholdRef.current;
+    const nextVisible = effectiveThreshold != null && chargers.length > 1 && offset >= effectiveThreshold;
+    if (stickyVisibleRef.current === nextVisible) return;
+    stickyVisibleRef.current = nextVisible;
+    setStickyTabsVisible(nextVisible);
+  };
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offset = event.nativeEvent.contentOffset.y;
+    scrollOffsetRef.current = offset;
+    updateStickyVisibility(offset);
+  };
+
+  const handleChargerTabLayout = (y: number) => {
+    const threshold = HEADER_HEIGHT - CONTENT_OVERLAP + CONTENT_TOP_PADDING + y - TOP_BAR_HEIGHT;
+    chargerTabThresholdRef.current = threshold;
+    updateStickyVisibility(scrollOffsetRef.current, threshold);
   };
 
   if (stationsQuery.isLoading || locationQuery.isLoading) {
@@ -108,6 +149,7 @@ export default function StationDetailsScreen() {
       <AnimatedScrollView
         contentInsetAdjustmentBehavior='never'
         headerMaxHeight={HEADER_HEIGHT}
+        onScroll={handleScroll}
         refreshControl={<RefreshControl onRefresh={refresh} refreshing={refreshing} tintColor='#FFFFFF' />}
         renderHeaderComponent={() => (
           <ThemedView backgroundColor='#173629' flex={1}>
@@ -144,11 +186,48 @@ export default function StationDetailsScreen() {
         )}
         renderTopNavBarComponent={() => nav(true)}
         showsVerticalScrollIndicator={false}
-        topBarHeight={104}>
-        <ThemedView backgroundColor={Palette.surfaceBase} borderTopLeftRadius={28} borderTopRightRadius={28} marginTop={-24} overflow='hidden' paddingTop={8}>
-          <StationDetailsContent locationId={locationId} station={station} />
+        topBarHeight={TOP_BAR_HEIGHT}>
+        <ThemedView
+          backgroundColor={Palette.surfaceBase}
+          borderTopLeftRadius={28}
+          borderTopRightRadius={28}
+          marginTop={-24}
+          overflow='hidden'
+          paddingBottom={96}
+          paddingTop={8}>
+          <StationDetailsContent
+            chargerPageOffset={chargerPageOffset}
+            chargerPagePosition={chargerPagePosition}
+            locationId={locationId}
+            onChargerTabLayout={handleChargerTabLayout}
+            onSelectedChargerKeyChange={setSelectedChargerKey}
+            selectedChargerKey={selectedChargerKey}
+            station={station}
+          />
         </ThemedView>
       </AnimatedScrollView>
+      {stickyTabsVisible && activeCharger ? (
+        <AnimatedThemedView
+          backgroundColor={Palette.surfaceBase}
+          entering={FadeIn.duration(140)}
+          exiting={FadeOut.duration(120)}
+          left={0}
+          paddingHorizontal={rmhs(12)}
+          position='absolute'
+          right={0}
+          top={TOP_BAR_HEIGHT}
+          zIndex={30}>
+          <ChargerTabs
+            chargers={chargers}
+            onSelect={charger => setSelectedChargerKey(getChargerSelectionKey(charger))}
+            pageOffset={chargerPageOffset}
+            pagePosition={chargerPagePosition}
+            selectedKey={getChargerSelectionKey(activeCharger)}
+          />
+        </AnimatedThemedView>
+      ) : null}
+      <BottomButton icon={<Plus color='#FFFFFF' size={20} strokeWidth={2.4} />} onPress={() => setAssignChargerOpen(true)} title='Assign charger' />
+      <AssignChargerSheet locationId={locationId} onClose={() => setAssignChargerOpen(false)} station={station} visible={assignChargerOpen} />
     </ThemedView>
   );
 }

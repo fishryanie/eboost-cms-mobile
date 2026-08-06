@@ -262,12 +262,14 @@ type LocationRecord = {
 type StationRecord = {
   bikeBoxes?: BikeBoxRecord[];
   carBoxes?: CarBoxRecord[];
+  createdAt?: string | null;
   description?: string | null;
   descriptionVn?: string | null;
   fullTime?: boolean;
   id: number;
   iriId?: string;
   latitude?: number | string;
+  location?: LocationRecord | null;
   longitude?: number | string;
   images?: { originalName?: string | null; url?: string | null }[];
   name?: string;
@@ -275,22 +277,40 @@ type StationRecord = {
   numberOfBikeBoxes?: number;
   numberOfCarBoxes?: number;
   public?: boolean;
-  stationAreaType?: { name?: string };
-  stationOpenProfile?: { name?: string };
+  stationAreaType?: {
+    id?: number;
+    name?: string;
+    nameVn?: string;
+    outside?: boolean;
+  } | null;
+  stationOpenProfile?: {
+    id?: number;
+    name?: string;
+    nameVn?: string;
+  } | null;
+  updatedAt?: string | null;
   visible?: boolean;
 };
 
 type ChargerPriceProfileRecord = {
+  activationFee?: number | string;
   boxType?: 'bike' | 'car' | string;
   box_type?: 'bike' | 'car' | string;
+  chargingFee?: number | string;
   chargingPrice?: number | string;
+  currentDirection?: { id?: number | string; iriId?: string; name?: string; type?: string } | string;
   electricityPrice?: number | string;
   energyPrice?: number | string;
   endTime?: string;
   id?: number | string;
   idlePrice?: number | string;
+  iriId?: string;
+  minimumFee?: number | string;
   name?: string;
+  nameVn?: string;
+  parkingFee?: number | string;
   parkingPrice?: number | string;
+  portFeeSchedules?: ChargerPriceProfileRecord[];
   price?: number | string;
   priceProfileDetails?: ChargerPriceProfileRecord[];
   prices?: ChargerPriceProfileRecord[];
@@ -300,12 +320,31 @@ type ChargerPriceProfileRecord = {
   title?: string;
   unitPrice?: number | string;
   vat?: number | string;
+  weekday?: { name?: string; nameVn?: string } | string;
+};
+
+type ChargerFeeScheduleTimeRecord = {
+  activationFee?: number | string;
+  begin?: string;
+  chargingFee?: number | string;
+  currentDirection?: { id?: number | string; iriId?: string; name?: string; type?: string } | string;
+  end?: string;
+  parkingFee?: number | string;
+};
+
+type ChargerFeeScheduleRecord = {
+  day?: string;
+  dayVn?: string;
+  times?: ChargerFeeScheduleTimeRecord[];
 };
 
 type ChargerPortRecord = {
+  feeSchedules?: ChargerFeeScheduleRecord[];
   id: number;
   name?: string;
   orderOnBox?: number;
+  portProfile?: ChargerPriceProfileRecord | string | null;
+  portProfileName?: string;
   power?: number;
   priceProfile?: ChargerPriceProfileRecord | string | null;
   priceProfileName?: string;

@@ -243,6 +243,20 @@ export async function fetchStationChargers(stationId: number | string, page = 1,
   };
 }
 
+export async function fetchAssignableChargers(type: ChargerVehicle) {
+  const path = type === 'car' ? 'api/car_boxes' : 'api/bike_boxes';
+  const response = await apiRequest<CollectionResponse<WorkflowChargerRecord>>(path, {
+    params: {
+      'exists[station]': false,
+      pagination: false,
+    },
+  });
+
+  return unwrapCollection(response)
+    .filter(charger => !charger.station)
+    .map(charger => ({ ...charger, boxType: type }));
+}
+
 export function updateResource<T>(path: string, id: number | string, data: Record<string, unknown>) {
   return apiRequest<T>(`${path}/${id}`, { data, method: 'PATCH' });
 }

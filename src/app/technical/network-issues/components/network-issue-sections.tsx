@@ -64,7 +64,7 @@ export function NetworkIssueCard({ item, isLast }: { item: NetworkIssue; isLast?
   return (
     <Pressable
       onPress={() =>
-        router.push({ pathname: '/technical/box-status-logs', params: { id: item.chargePointID, vehicle: item.vehicle, station: item.stationName } } as never)
+        router.push({ pathname: '/technical/status-logs', params: { id: item.chargePointID, vehicle: item.vehicle, station: item.stationName } } as never)
       }
       style={({ pressed }) => [{ flexDirection: 'row', width: '100%' }, pressed && styles.pressed]}>
       {/* Left Column: Date & Day */}
