@@ -27,9 +27,6 @@ export type AtRiskUserItem = {
 const screenHorizontalPadding = 18;
 
 const styles = StyleSheet.create({
-  packageLargeTitleContainer: {
-    marginHorizontal: -screenHorizontalPadding,
-  },
   packageListContent: {
     gap: mhs(8),
     paddingBottom: 120,
@@ -49,7 +46,13 @@ const styles = StyleSheet.create({
 });
 
 export default function AtRiskUsersScreen() {
-  const atRiskQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<AtRiskUserItem[]>>('api/controller/statistic/at-risk-users', { params: { limit: 5, low_quota_ratio: 0.2, near_end_days: 7, page: 1, renew: 'all', risk: 'all' } }), queryKey: ['operation', 'at-risk-users'] });
+  const atRiskQuery = useQuery({
+    queryFn: () =>
+      apiRequest<DashboardApiData<AtRiskUserItem[]>>('api/controller/statistic/at-risk-users', {
+        params: { limit: 5, low_quota_ratio: 0.2, near_end_days: 7, page: 1, renew: 'all', risk: 'all' },
+      }),
+    queryKey: ['operation', 'at-risk-users'],
+  });
   const items = getCollectionItems(atRiskQuery.data) || [];
 
   return (
@@ -58,7 +61,6 @@ export default function AtRiskUsersScreen() {
         canGoBack
         largeTitle='At-risk Subscriptions'
         subtitle='Users with subscriptions approaching expiration'
-        largeTitleContainerStyle={styles.packageLargeTitleContainer}
         contentContainerStyle={styles.packageListContent}
         data={items}
         keyExtractor={item => String(item.subscription_id)}

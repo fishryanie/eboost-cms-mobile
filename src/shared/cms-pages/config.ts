@@ -65,6 +65,7 @@ export type CmsSectionConfig = {
   endpoint: string;
   fields: CmsFieldConfig[];
   imagePaths?: string[];
+  itemVariant?: 'default' | 'transaction-session';
   key: string;
   label: string;
   params?: Record<string, boolean | number | string>;
@@ -297,6 +298,7 @@ export const cmsPageConfigs = {
           { format: 'dateTime', label: 'Started', paths: ['startTime', 'startTimeDate'] },
           { label: 'Station', paths: ['carBox.station.name', 'outlet.name', 'carBox.uniqueId'] },
         ],
+        itemVariant: 'transaction-session',
         key: 'car',
         label: 'Cars',
         searchParam: 'invoiceId',
@@ -312,6 +314,7 @@ export const cmsPageConfigs = {
           { format: 'dateTime', label: 'Started', paths: ['startTime', 'startTimeDate'] },
           { label: 'Station', paths: ['bikeBox.station.name', 'outlet.name', 'bikeBox.uniqueId'] },
         ],
+        itemVariant: 'transaction-session',
         key: 'bike',
         label: 'Bikes',
         searchParam: 'invoiceId',

@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { buildChargingProfileChartData, filterMobileChartSeries } from '../../../../../components/technical/charging-profile-chart.helpers.ts';
+import {
+  buildChargingProfileChartData,
+  buildMobileChartAxisDomains,
+  defaultMobileChartPreset,
+  filterMobileChartSeries,
+  getMobileChartAxisTicks,
+  normalizeMobileChartValue,
+} from '../../../../../components/technical/charging-profile-chart.helpers.ts';
 import {
   formatSessionDuration,
   formatSessionTime,
@@ -76,12 +83,24 @@ describe('ongoing session presentation helpers', () => {
 
     assert.deepEqual(
       data?.mobileSeries.map(series => series.label),
-      ['Power', 'Current', 'L1', 'L2', 'L3', 'SoC', 'Voltage', 'V L1'],
+      ['Power', 'Current', 'L1', 'L2', 'L3', 'SoC', 'V L1', 'Voltage'],
     );
-    assert.equal(data?.mobileCurrentSet, undefined);
+    assert.equal(defaultMobileChartPreset, 'all');
+    assert.deepEqual(
+      data?.mobileSeries.map(series => series.axis),
+      ['electrical', 'electrical', 'electrical', 'electrical', 'electrical', 'soc', 'voltage', 'voltage'],
+    );
     assert.deepEqual(
       filterMobileChartSeries(data?.mobileSeries, 'current')?.map(series => series.label),
       ['Current', 'L1', 'L2', 'L3'],
     );
+
+    const domains = buildMobileChartAxisDomains(data?.mobileSeries ?? []);
+    assert.deepEqual(domains.electrical, [0, 100]);
+    assert.deepEqual(domains.soc, [0, 100]);
+    assert.deepEqual(domains.voltage, [220, 360]);
+    assert.equal(normalizeMobileChartValue(50, domains.electrical), 0.5);
+    assert.deepEqual(getMobileChartAxisTicks(domains.soc), [100, 80, 60, 40, 20, 0]);
+    assert.deepEqual(getMobileChartAxisTicks([0, 160], 8), [160, 140, 120, 100, 80, 60, 40, 20, 0]);
   });
 });

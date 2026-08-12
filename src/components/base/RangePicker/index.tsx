@@ -8,12 +8,13 @@ import { ViewTheme } from '../ThemedView';
 
 interface RangePickerProps {
   onChange: (value: number[]) => void;
+  value?: number[];
 }
 export interface RangePickerMethods {
   open: () => void;
 }
 
-export const RangePicker = forwardRef<RangePickerMethods, RangePickerProps>(({ onChange }, ref) => {
+export const RangePicker = forwardRef<RangePickerMethods, RangePickerProps>(({ onChange, value }, ref) => {
   const [isShow, setShow] = useState(false);
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
@@ -41,9 +42,17 @@ export const RangePicker = forwardRef<RangePickerMethods, RangePickerProps>(({ o
     }
   };
 
-  useImperativeHandle(ref, () => ({
-    open: () => setShow(true),
-  }));
+  useImperativeHandle(
+    ref,
+    () => ({
+      open: () => {
+        setStartDate(value?.[0] ? new Date(value[0] * 1000) : undefined);
+        setEndDate(value?.[1] ? new Date(value[1] * 1000) : undefined);
+        setShow(true);
+      },
+    }),
+    [value],
+  );
 
   return (
     <Modal
@@ -73,3 +82,5 @@ export const RangePicker = forwardRef<RangePickerMethods, RangePickerProps>(({ o
     </Modal>
   );
 });
+
+RangePicker.displayName = 'RangePicker';

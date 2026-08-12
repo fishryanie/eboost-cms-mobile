@@ -48,7 +48,6 @@ export default function NetworkIssuesScreen() {
       <AnimatedHeaderFlatList
         largeTitle='Network Issues'
         subtitle='Chargers currently offline'
-        largeTitleContainerStyle={styles.issueLargeTitleContainer}
         canGoBack
         onBack={() => router.back()}
         searchBar={<SearchBar placeholder='Search charger or station' onSearch={setIssueSearch} centerWhenUnfocused={false} />}

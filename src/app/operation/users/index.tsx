@@ -1,14 +1,14 @@
 import { mhs } from 'themes/scaling';
 import { useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
 import { UserCard } from 'shared/users/components/user-card';
 import { useInfiniteUsers } from 'shared/users/hooks';
 import { AppButton, EmptyState } from 'components/ui';
+import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 
 export default function UsersPage() {
   const router = useRouter();
@@ -35,8 +35,26 @@ export default function UsersPage() {
   );
 
   return (
-    <ThemedView safePaddingTop flex={1} backgroundColor={Palette.surfaceBase}>
-      <FlatList
+    <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
+      <AnimatedHeaderFlatList
+        largeTitle='Users'
+        subtitle={`${totalItems.toLocaleString()} ${totalItems === 1 ? 'account' : 'accounts'}`}
+        canGoBack
+        onBack={() => router.back()}
+        largeRightComponent={searchInput ? <ClearSearchButton onPress={() => setSearchInput('')} /> : null}
+        rightComponent={searchInput ? <ClearSearchButton onPress={() => setSearchInput('')} /> : null}
+        searchBar={
+          <TextInput
+            autoCapitalize='none'
+            autoCorrect={false}
+            onChangeText={setSearchInput}
+            placeholder='Search ID, phone, or email'
+            placeholderTextColor='#98A2B3'
+            returnKeyType='search'
+            style={styles.search}
+            value={searchInput}
+          />
+        }
         contentContainerStyle={styles.content}
         data={users}
         keyboardShouldPersistTaps='handled'
@@ -68,44 +86,6 @@ export default function UsersPage() {
             </Pressable>
           ) : null
         }
-        ListHeaderComponent={
-          <ThemedView gap={'four'} padding={'four'}>
-            <ThemedView alignItems='center' flexDirection='row' gap={'three'} justifyContent='space-between'>
-              <Pressable
-                accessibilityLabel='Back'
-                accessibilityRole='button'
-                onPress={() => router.back()}
-                style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
-                <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
-              </Pressable>
-              <ThemedView flex={1} minWidth={0}>
-                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={27} letterSpacing={0} lineHeight={34}>
-                  Users
-                </ThemedText>
-                <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} marginTop={3}>
-                  {totalItems.toLocaleString()} {totalItems === 1 ? 'account' : 'accounts'}
-                </ThemedText>
-              </ThemedView>
-              {searchInput ? (
-                <Pressable onPress={() => setSearchInput('')} style={styles.clearButton}>
-                  <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20}>
-                    Clear
-                  </ThemedText>
-                </Pressable>
-              ) : null}
-            </ThemedView>
-            <TextInput
-              autoCapitalize='none'
-              autoCorrect={false}
-              onChangeText={setSearchInput}
-              placeholder='Search ID, phone, or email'
-              placeholderTextColor='#98A2B3'
-              returnKeyType='search'
-              style={styles.search}
-              value={searchInput}
-            />
-          </ThemedView>
-        }
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         refreshControl={
@@ -122,14 +102,17 @@ export default function UsersPage() {
   );
 }
 
+function ClearSearchButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable accessibilityLabel='Clear search' accessibilityRole='button' hitSlop={8} onPress={onPress} style={styles.clearButton}>
+      <ThemedText color={Palette.accent} fontFamily={FontFamily.bold} fontSize={14} lineHeight={20}>
+        Clear
+      </ThemedText>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  backButton: {
-    alignItems: 'center',
-    borderRadius: mhs(16),
-    height: 34,
-    justifyContent: 'center',
-    width: 34,
-  },
   clearButton: {
     paddingHorizontal: 4,
     paddingVertical: 8,
@@ -144,7 +127,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
   },
-
   search: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.border,
@@ -155,8 +137,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     height: 48,
     paddingHorizontal: mhs(16),
-  },
-  pressed: {
-    opacity: 0.72,
   },
 });

@@ -364,7 +364,13 @@ type BikeBoxRecord = WorkflowChargerRecord & { numberOfOutlets?: number; outlets
 type UserLevel = {
   backgroundColor?: string | null;
   id: number;
-  image?: { url?: string | null } | null;
+  image?: {
+    fileSize?: number | null;
+    iriId?: string | null;
+    mimeType?: string | null;
+    originalName?: string | null;
+    url?: string | null;
+  } | null;
   iriId?: string;
   name: string;
   nameVn?: string | null;
@@ -397,16 +403,66 @@ type BalanceHistoryItem = {
   wallet: number;
 };
 
+type UserProfileRecord = Record<string, unknown>;
+
+type UserMomoHistoryItem = UserProfileRecord & {
+  amount: number;
+  createdAt: string;
+  id: number;
+  orderCode?: string | null;
+  status?: string | null;
+  transactionCode?: string | null;
+};
+
+type UserPromotionHistoryItem = UserProfileRecord & {
+  code: string;
+  discountAmount?: number | null;
+  discountPercent?: number | null;
+  id: number;
+  invoiceId?: string | null;
+  isUsed?: boolean;
+  usedAt?: string | null;
+  vehicleType?: string | null;
+};
+
+type UserRecentStation = {
+  full_time?: boolean | number;
+  id: number;
+  name?: string | null;
+  name_vn?: string | null;
+  public?: boolean | number;
+  usageCount?: number;
+};
+
 type UserProfile = UserListItem & {
   address?: string | null;
+  alePayHistories?: UserProfileRecord[];
   autoApplyPromotionCode?: boolean;
   autoCharge?: boolean;
   balanceHistory?: BalanceHistoryItem[];
   citizenIdentification?: string | null;
   createdAt?: string | null;
   dateOfBirth?: string | null;
+  deletedAt?: string | null;
+  groups?: UserProfileRecord[];
   isCitizenVerified?: boolean;
   isNew?: boolean;
+  moneyTopUpUsageHistories?: UserProfileRecord[];
+  momoHistories?: UserMomoHistoryItem[];
+  promotionCodeHistories?: UserPromotionHistoryItem[];
+  promotionCodes?: UserProfileRecord[];
+  promotionMoneyHistories?: UserProfileRecord[];
+  promotionMoneys?: UserProfileRecord[];
+  recentStations?: UserRecentStation[];
+  referralCode?: string | null;
+  referralUsers?: UserProfileRecord[];
+  reports?: UserProfileRecord[];
+  smsHistories?: UserProfileRecord[];
+  subscriptionHistories?: UserProfileRecord[];
+  totalCharged?: number;
+  totalChargedPaid?: number;
+  totalConsumed?: number;
+  totalTopUp?: number;
   userIdentifier?: string | null;
-  userVehicles?: unknown[];
+  userVehicles?: UserProfileRecord[];
 };

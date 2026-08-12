@@ -1,4 +1,4 @@
-import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, type InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import {
@@ -10,6 +10,7 @@ import {
   Clock3,
   FileText,
   Gift,
+  ListFilter,
   Megaphone,
   MessageSquareText,
   PanelsTopLeft,
@@ -24,7 +25,7 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
@@ -36,11 +37,22 @@ import { mhs } from 'themes/scaling';
 
 import type { CmsFieldConfig, CmsPageConfig, CmsSectionConfig, CmsValueFormat } from './config';
 import { fetchCmsSectionPage, type CmsPage, type CmsRecord } from './service';
+import {
+  buildTransactionApiFilters,
+  createDefaultTransactionFilters,
+  getTransactionActiveFilterCount,
+  TransactionFilterSheet,
+  type TransactionFilterValues,
+  type TransactionVehicle,
+} from './transaction-filter-sheet';
+import { TransactionListSkeleton } from './transaction-list-skeleton';
+import { TransactionQuickFilters } from './transaction-quick-filters';
+import { TransactionSessionCard } from './transaction-session-card';
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
 const numberFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
-
 type StatusTone = 'danger' | 'muted' | 'success' | 'warning';
+type TransactionChange = { filters: TransactionFilterValues } | { vehicle: TransactionVehicle };
 
 const statusColors: Record<StatusTone, string> = {
   danger: '#D92D20',
@@ -177,7 +189,9 @@ function getSectionIcon(section: CmsSectionConfig): LucideIcon {
 }
 
 function getRecordKey(record: CmsRecord, index: number, section: CmsSectionConfig) {
-  return `${section.key}-${String(getRecordId(record) ?? firstValue(record, section.titlePaths) ?? index)}`;
+  const keyPrefix = section.itemVariant === 'transaction-session' ? 'transaction' : section.key;
+  const recordKey = String(getRecordId(record) ?? firstValue(record, section.titlePaths) ?? index);
+  return section.itemVariant === 'transaction-session' ? `${keyPrefix}-${recordKey}-${index}` : `${keyPrefix}-${recordKey}`;
 }
 
 function getPreviewText(record: CmsRecord, section: CmsSectionConfig) {
@@ -222,10 +236,25 @@ function getPreviewText(record: CmsRecord, section: CmsSectionConfig) {
 
 export function CmsPageScreen({ config, editorPathname, onBack }: { config: CmsPageConfig; editorPathname?: string; onBack: () => void }) {
   const router = useRouter();
+  const [, startDeferredTransactionChange] = useTransition();
   const [activeSectionKey, setActiveSectionKey] = useState(config.sections[0].key);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+  const [transactionTransition, setTransactionTransition] = useState<{ id: number; startedAt: number } | null>(null);
+  const [transactionFilters, setTransactionFilters] = useState(createDefaultTransactionFilters);
+  const [transactionFilterDraft, setTransactionFilterDraft] = useState(createDefaultTransactionFilters);
+  const [transactionFilterVisible, setTransactionFilterVisible] = useState(false);
+  const transactionChangeFrameRef = useRef<number | null>(null);
+  const transactionTransitionIdRef = useRef(0);
   const activeSection = config.sections.find(section => section.key === activeSectionKey) || config.sections[0];
+  const usesTransactionCards = activeSection.itemVariant === 'transaction-session';
+  const transactionVehicle = activeSection.key === 'car' ? 'car' : 'bike';
+  const transactionApiFilters = useMemo(
+    () => (usesTransactionCards ? buildTransactionApiFilters(transactionFilters, transactionVehicle) : undefined),
+    [transactionFilters, transactionVehicle, usesTransactionCards],
+  );
+  const transactionActiveFilterCount = usesTransactionCards ? getTransactionActiveFilterCount(transactionFilters, transactionVehicle) : 0;
 
   useEffect(() => {
     const timeout = setTimeout(() => setSearch(searchInput.trim()), 350);
@@ -235,11 +264,66 @@ export function CmsPageScreen({ config, editorPathname, onBack }: { config: CmsP
   const query = useInfiniteQuery<CmsPage, Error, InfiniteData<CmsPage>, readonly unknown[], number>({
     getNextPageParam: lastPage => lastPage.nextPage,
     initialPageParam: 1,
-    queryFn: ({ pageParam }) => fetchCmsSectionPage({ page: pageParam, search, section: activeSection }),
-    queryKey: ['cms-page', activeSection.endpoint, activeSection.key, search, activeSection.params],
+    queryFn: ({ pageParam }) =>
+      fetchCmsSectionPage({
+        filters: transactionApiFilters,
+        page: pageParam,
+        search,
+        section: activeSection,
+      }),
+    queryKey: ['cms-page', activeSection.endpoint, activeSection.key, search, activeSection.params, transactionApiFilters],
+    placeholderData: usesTransactionCards ? keepPreviousData : undefined,
   });
 
-  const items = useMemo(() => query.data?.pages.flatMap(page => page.items) || [], [query.data]);
+  useEffect(
+    () => () => {
+      if (transactionChangeFrameRef.current !== null) cancelAnimationFrame(transactionChangeFrameRef.current);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!transactionTransition || transactionChangeFrameRef.current !== null || query.isFetching || query.isFetchingNextPage || isPullRefreshing)
+      return undefined;
+
+    const remainingDuration = Math.max(0, 240 - (Date.now() - transactionTransition.startedAt));
+    const transitionId = transactionTransition.id;
+    const timeout = setTimeout(() => {
+      setTransactionTransition(current => (current?.id === transitionId ? null : current));
+    }, remainingDuration);
+
+    return () => clearTimeout(timeout);
+  }, [activeSection.key, isPullRefreshing, query.isFetching, query.isFetchingNextPage, transactionApiFilters, transactionTransition]);
+
+  function scheduleTransactionChange(change: TransactionChange) {
+    const transitionId = transactionTransitionIdRef.current + 1;
+    transactionTransitionIdRef.current = transitionId;
+    setTransactionTransition({ id: transitionId, startedAt: Date.now() });
+
+    if (transactionChangeFrameRef.current !== null) cancelAnimationFrame(transactionChangeFrameRef.current);
+    transactionChangeFrameRef.current = requestAnimationFrame(() => {
+      transactionChangeFrameRef.current = null;
+      if (transactionTransitionIdRef.current !== transitionId) return;
+
+      startDeferredTransactionChange(() => {
+        if ('vehicle' in change) {
+          setActiveSectionKey(change.vehicle);
+          setSearchInput('');
+          setSearch('');
+          return;
+        }
+
+        setTransactionFilters(change.filters);
+        setTransactionFilterDraft(change.filters);
+      });
+    });
+  }
+
+  const isTransactionFilterLoading = usesTransactionCards && Boolean(transactionTransition) && !isPullRefreshing;
+  const items = useMemo(
+    () => (isTransactionFilterLoading ? [] : query.data?.pages.flatMap(page => page.items) || []),
+    [isTransactionFilterLoading, query.data],
+  );
   const totalItems = query.data?.pages[0]?.totalItems || 0;
   const loadMore = useCallback(() => {
     if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
@@ -254,21 +338,38 @@ export function CmsPageScreen({ config, editorPathname, onBack }: { config: CmsP
   ) : config.action ? (
     <HeaderActionButton accentColor={config.accentColor} label={config.action.label} onPress={() => router.push(config.action!.href as never)} />
   ) : undefined;
+  const topHeaderAction = usesTransactionCards ? (
+    <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'two'}>
+      <HeaderFilterButton
+        activeCount={transactionActiveFilterCount}
+        onPress={() => {
+          setTransactionFilterDraft(transactionFilters);
+          setTransactionFilterVisible(true);
+        }}
+      />
+      {actionButton}
+    </ThemedView>
+  ) : undefined;
+  const collapsibleHeaderAction = usesTransactionCards ? undefined : actionButton;
 
   return (
     <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
       <AnimatedHeaderFlatList
         canGoBack
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: usesTransactionCards ? 12 : 0 }}
         data={items}
         keyboardShouldPersistTaps='handled'
         keyExtractor={(item, index) => getRecordKey(item, index, activeSection)}
-        largeHeaderTitleStyle={{ fontFamily: FontFamily.bold, fontSize: 36, letterSpacing: -0.7, lineHeight: 42 }}
-        largeRightComponent={actionButton}
+        largeTitleStretchEnabled={!usesTransactionCards}
+        largeRightComponent={collapsibleHeaderAction}
         largeTitle={config.title}
         ListEmptyComponent={
-          query.isLoading ? (
-            <LocationListSkeleton />
+          query.isLoading || isTransactionFilterLoading ? (
+            usesTransactionCards ? (
+              <TransactionListSkeleton />
+            ) : (
+              <LocationListSkeleton />
+            )
           ) : query.isError ? (
             <ThemedView gap={'four'} paddingHorizontal={'four'} paddingTop={'five'}>
               <EmptyState
@@ -294,8 +395,18 @@ export function CmsPageScreen({ config, editorPathname, onBack }: { config: CmsP
           ) : null
         }
         ListHeaderComponent={
-          config.sections.length > 1 ? (
-            <ThemedView paddingBottom={'two'} paddingHorizontal={12}>
+          usesTransactionCards ? (
+            <TransactionQuickFilters
+              filters={transactionFilters}
+              onChangeFilters={values => {
+                const nextValues = { ...transactionFilters, ...values };
+                scheduleTransactionChange({ filters: nextValues });
+              }}
+              onChangeVehicle={vehicle => scheduleTransactionChange({ vehicle })}
+              vehicle={transactionVehicle}
+            />
+          ) : config.sections.length > 1 ? (
+            <ThemedView gap={'three'} paddingBottom={usesTransactionCards ? 16 : 'two'} paddingHorizontal={usesTransactionCards ? 0 : 12}>
               <ScrollView contentContainerStyle={{ gap: mhs(8) }} horizontal showsHorizontalScrollIndicator={false}>
                 {config.sections.map(section => (
                   <SectionChip
@@ -317,30 +428,43 @@ export function CmsPageScreen({ config, editorPathname, onBack }: { config: CmsP
         onEndReached={loadMore}
         onEndReachedThreshold={0.45}
         refreshControl={
-          <RefreshControl onRefresh={() => query.refetch()} refreshing={query.isRefetching && !query.isFetchingNextPage} tintColor={config.accentColor} />
-        }
-        renderItem={({ item, index }) => (
-          <CmsRecordRow
-            accentColor={config.accentColor}
-            index={index}
-            onEdit={
-              !editorPathname || activeSection.editor?.update === false
-                ? undefined
-                : activeSection.editor
-                  ? () =>
-                      router.push({
-                        pathname: editorPathname,
-                        params: { id: String(getRecordId(item) ?? ''), mode: 'update', section: activeSection.key },
-                      } as never)
-                  : undefined
-            }
-            record={item}
-            section={activeSection}
+          <RefreshControl
+            onRefresh={() => {
+              setIsPullRefreshing(true);
+              void query.refetch().finally(() => setIsPullRefreshing(false));
+            }}
+            refreshing={isPullRefreshing}
+            tintColor={config.accentColor}
           />
-        )}
-        rightComponent={actionButton}
+        }
+        renderItem={({ item, index }) =>
+          usesTransactionCards ? (
+            <ThemedView paddingBottom={16}>
+              <TransactionSessionCard item={item} />
+            </ThemedView>
+          ) : (
+            <CmsRecordRow
+              accentColor={config.accentColor}
+              index={index}
+              onEdit={
+                !editorPathname || activeSection.editor?.update === false
+                  ? undefined
+                  : activeSection.editor
+                    ? () =>
+                        router.push({
+                          pathname: editorPathname,
+                          params: { id: String(getRecordId(item) ?? ''), mode: 'update', section: activeSection.key },
+                        } as never)
+                    : undefined
+              }
+              record={item}
+              section={activeSection}
+            />
+          )
+        }
+        rightComponent={collapsibleHeaderAction}
         searchBar={
-          activeSection.searchParam ? (
+          activeSection.searchParam && !usesTransactionCards ? (
             <ThemedView justifyContent='center'>
               <ThemedView left={14} pointerEvents='none' position='absolute' zIndex={1}>
                 <Search color={Palette.textTertiary} size={17} />
@@ -371,9 +495,50 @@ export function CmsPageScreen({ config, editorPathname, onBack }: { config: CmsP
         }
         showsVerticalScrollIndicator={false}
         smallHeaderTitleStyle={{ fontFamily: FontFamily.semibold }}
-        subtitle={`${totalItems.toLocaleString()} ${totalItems === 1 ? 'record' : 'records'}`}
+        subtitle={usesTransactionCards ? undefined : `${totalItems.toLocaleString()} ${totalItems === 1 ? 'record' : 'records'}`}
+        topRightComponent={topHeaderAction}
+      />
+      <TransactionFilterSheet
+        onApply={filters => scheduleTransactionChange({ filters })}
+        onChange={setTransactionFilterDraft}
+        onClose={() => setTransactionFilterVisible(false)}
+        values={transactionFilterDraft}
+        vehicle={transactionVehicle}
+        visible={transactionFilterVisible}
       />
     </ThemedView>
+  );
+}
+
+function HeaderFilterButton({ activeCount, onPress }: { activeCount: number; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityLabel={activeCount ? `Filter transactions, ${activeCount} active` : 'Filter transactions'}
+      accessibilityRole='button'
+      onPress={onPress}
+      style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}>
+      <ThemedView alignItems='center' backgroundColor='#0B9B55' borderRadius={'pill'} height={40} justifyContent='center' width={40}>
+        <ListFilter color='#FFFFFF' size={20} strokeWidth={2.4} />
+        {activeCount ? (
+          <ThemedView
+            alignItems='center'
+            backgroundColor='#EF4444'
+            borderColor={Palette.surfaceBase}
+            borderRadius={'pill'}
+            borderWidth={2}
+            height={20}
+            justifyContent='center'
+            position='absolute'
+            right={-5}
+            top={-5}
+            width={20}>
+            <ThemedText color='#FFFFFF' fontFamily={FontFamily.bold} fontSize={10} lineHeight={12}>
+              {activeCount > 9 ? '9+' : activeCount}
+            </ThemedText>
+          </ThemedView>
+        ) : null}
+      </ThemedView>
+    </Pressable>
   );
 }
 

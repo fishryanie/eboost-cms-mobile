@@ -1,6 +1,6 @@
 import type { BlurTint } from 'expo-blur';
 import type { LinearGradientPoint } from 'expo-linear-gradient';
-import type { ColorValue, StyleProp, TextStyle, ViewStyle } from 'react-native';
+import type { ColorValue, RefreshControlProps, StyleProp, TextStyle, ViewStyle } from 'react-native';
 
 interface GradientConfig {
   colors: readonly [ColorValue, ColorValue, ...ColorValue[]];
@@ -25,6 +25,7 @@ interface AnimatedHeaderProps {
   readonly subtitle?: string;
   readonly children: React.ReactNode;
   readonly rightComponent?: React.ReactNode;
+  readonly refreshControl?: React.ReactElement<RefreshControlProps>;
   readonly showsVerticalScrollIndicator?: boolean;
   readonly contentContainerStyle?: StyleProp<ViewStyle>;
   readonly headerBackgroundGradient?: GradientConfig;

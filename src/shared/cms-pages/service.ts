@@ -116,13 +116,24 @@ export async function uploadCmsImage({
   });
 }
 
-export async function fetchCmsSectionPage({ page, search, section }: { page: number; search: string; section: CmsSectionConfig }) {
+export async function fetchCmsSectionPage({
+  filters,
+  page,
+  search,
+  section,
+}: {
+  filters?: Record<string, boolean | number | string>;
+  page: number;
+  search: string;
+  section: CmsSectionConfig;
+}) {
   const response = await apiRequest<unknown>(section.endpoint, {
     headers: { Accept: 'application/ld+json' },
     params: {
       itemsPerPage: PAGE_SIZE,
       page,
       ...section.params,
+      ...filters,
       ...(section.searchParam && search ? { [section.searchParam]: search } : {}),
     },
   });

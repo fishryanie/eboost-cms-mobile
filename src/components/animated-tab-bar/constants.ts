@@ -93,14 +93,14 @@ export const tabs: TabConfig[] = [
     name: 'operation/index',
     pages: [
       { description: 'Customer accounts, wallet state, and account lifecycle.', icon: 'users', key: 'users', title: 'Users' },
-      { description: 'Charging prices, plan rules, and tariff assignments.', icon: 'tariff', key: 'tariff', title: 'Tariff' },
       { description: 'Station records, address data, and operating information.', icon: 'location', key: 'locations', title: 'Locations' },
-      { description: 'Reservation windows, usage, and booking history.', icon: 'reservation', key: 'reservations', title: 'Reservations' },
-      { description: 'Payment activity, methods, and reconciliation details.', icon: 'balance', key: 'payments', title: 'Payments' },
       { description: 'Charging sessions, wallet movements, and transaction logs.', icon: 'transfer', key: 'transactions', title: 'Transactions' },
+      { description: 'Payment activity, methods, and reconciliation details.', icon: 'balance', key: 'payments', title: 'Payments' },
+      { description: 'Charging prices, plan rules, and tariff assignments.', icon: 'tariff', key: 'tariff', title: 'Tariff' },
+      { description: 'Opening schedule definitions for sites and stations.', icon: 'reservation', key: 'opening-hours', title: 'Opening Hours' },
+      { description: 'Reservation windows, usage, and booking history.', icon: 'reservation', key: 'reservations', title: 'Reservations' },
       { description: 'CMS banners, pages, and app-facing content.', icon: 'content', key: 'contents', title: 'Contents' },
       { description: 'Vehicle brands, models, and compatibility records.', icon: 'vehicle', key: 'brands', title: 'Brands & Models' },
-      { description: 'Opening schedule definitions for sites and stations.', icon: 'reservation', key: 'opening-hours', title: 'Opening Hours' },
     ],
   },
 ];

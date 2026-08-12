@@ -34,6 +34,7 @@ const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
   subtitle,
   children,
   rightComponent,
+  refreshControl,
   showsVerticalScrollIndicator,
   contentContainerStyle,
   canGoBack,
@@ -178,6 +179,7 @@ const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
 
       <Animated.ScrollView
         onScroll={onScroll}
+        refreshControl={refreshControl}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
         contentContainerStyle={[

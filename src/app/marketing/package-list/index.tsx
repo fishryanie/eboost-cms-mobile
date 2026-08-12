@@ -97,9 +97,6 @@ const styles = StyleSheet.create({
     borderRadius: mhs(16),
     padding: mhs(12),
   },
-  packageLargeTitleContainer: {
-    marginHorizontal: -screenHorizontalPadding,
-  },
   packageListContent: {
     gap: mhs(8),
     paddingBottom: 120,
@@ -178,7 +175,6 @@ export default function SubscriptionPackageListScreen() {
       <AnimatedHeaderFlatList
         largeTitle='Package Performance'
         subtitle={`${monthRange.start} - ${monthRange.end}`}
-        largeTitleContainerStyle={styles.packageLargeTitleContainer}
         canGoBack
         onBack={onBack}
         contentContainerStyle={styles.packageListContent}

@@ -26,7 +26,7 @@ export function StatusFilterSheet({ onClose, onSelect, options, selectedStatus, 
       return () => cancelAnimationFrame(frame);
     }
 
-    ref.current?.dismiss();
+    if (isPresentedRef.current) ref.current?.dismiss();
     return undefined;
   }, [visible]);
 

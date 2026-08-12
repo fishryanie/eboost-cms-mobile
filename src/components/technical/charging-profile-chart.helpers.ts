@@ -21,19 +21,25 @@ export type TransactionDetail = {
 export type ChartPoint = {
   date?: string;
   label?: string;
+  timestamp?: number;
   value: number;
 };
 
+export type ChartAxis = 'electrical' | 'soc' | 'voltage';
+export type ChartAxisDomain = readonly [number, number];
+export type ChartAxisDomains = Record<ChartAxis, ChartAxisDomain>;
+
 export type ChartSeries = {
+  axis: ChartAxis;
   color: string;
   data: ChartPoint[];
-  dataPointsColor: string;
-  endFillColor?: string;
   label: string;
-  startFillColor?: string;
+  unit: 'A' | 'kW' | '%' | 'V';
 };
 
 export type MobileChartPreset = 'core' | 'current' | 'voltage' | 'all';
+
+export const defaultMobileChartPreset: MobileChartPreset = 'all';
 
 export const mobileChartPresets: { label: string; value: MobileChartPreset }[] = [
   { label: 'Core', value: 'core' },
@@ -42,10 +48,10 @@ export const mobileChartPresets: { label: string; value: MobileChartPreset }[] =
   { label: 'All', value: 'all' },
 ];
 
-const mobileChartPresetLabels: Record<Exclude<MobileChartPreset, 'all'>, string[]> = {
-  core: ['Power', 'Current', 'SoC'],
-  current: ['Current', 'L1', 'L2', 'L3'],
-  voltage: ['Voltage', 'V L1', 'V L2', 'V L3', 'V L1-N', 'V L2-N', 'V L3-N'],
+const mobileChartPresetLabels: Record<Exclude<MobileChartPreset, 'all'>, ReadonlySet<string>> = {
+  core: new Set(['Power', 'Current', 'SoC']),
+  current: new Set(['Current', 'L1', 'L2', 'L3']),
+  voltage: new Set(['Voltage', 'V L1', 'V L2', 'V L3', 'V L1-N', 'V L2-N', 'V L3-N']),
 };
 
 export const chartColors = {
@@ -67,16 +73,15 @@ function getSampleValue(meterValue: MeterValue, measurand: string, phase?: strin
   return Number.isFinite(value) ? value : 0;
 }
 
-function createSeries(label: string, color: string, data: ChartPoint[]) {
+function createSeries(label: string, unit: ChartSeries['unit'], axis: ChartAxis, color: string, data: ChartPoint[]) {
   if (!data.some(point => point.value !== 0)) return undefined;
 
   return {
+    axis,
     color,
     data,
-    dataPointsColor: color,
-    endFillColor: color,
     label,
-    startFillColor: color,
+    unit,
   };
 }
 
@@ -85,14 +90,96 @@ export function filterMobileChartSeries(series: ChartSeries[] | undefined, prese
   if (preset === 'all') return series;
 
   const allowedLabels = mobileChartPresetLabels[preset];
-  return series.filter(item => allowedLabels.includes(item.label));
+  return series.filter(item => allowedLabels.has(item.label));
+}
+
+function getNiceTickStep(min: number, max: number, count = 5) {
+  const rawStep = Math.abs(max - min) / Math.max(1, count);
+  if (!Number.isFinite(rawStep) || rawStep === 0) return 1;
+
+  const power = Math.floor(Math.log10(rawStep));
+  const error = rawStep / 10 ** power;
+  const factor = error >= Math.sqrt(50) ? 10 : error >= Math.sqrt(10) ? 5 : error >= Math.sqrt(2) ? 2 : 1;
+  return factor * 10 ** power;
+}
+
+function resolveNiceDomain(values: number[], includeZero: boolean): ChartAxisDomain {
+  if (!values.length) return [0, 1];
+
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+
+  if (includeZero) {
+    min = Math.min(0, min);
+    max = Math.max(0, max);
+    max += Math.max(1, (max - min) * 0.05);
+  }
+
+  if (min === max) {
+    const padding = Math.max(1, Math.abs(min) * 0.005);
+    min -= padding;
+    max += padding;
+  }
+
+  const step = getNiceTickStep(min, max);
+  let niceMin = Math.floor(min / step) * step;
+  let niceMax = Math.ceil(max / step) * step;
+
+  if (!includeZero && niceMin === min) niceMin -= step;
+  if (!includeZero && niceMax === max) niceMax += step;
+
+  return [niceMin, niceMax];
+}
+
+export function buildMobileChartAxisDomains(series: ChartSeries[]): ChartAxisDomains {
+  const values: Record<ChartAxis, number[]> = {
+    electrical: [],
+    soc: [],
+    voltage: [],
+  };
+
+  series.forEach(item => {
+    item.data.forEach(point => {
+      if (Number.isFinite(point.value)) values[item.axis].push(point.value);
+    });
+  });
+
+  const positiveVoltageValues = values.voltage.filter(value => value > 0);
+
+  return {
+    electrical: resolveNiceDomain(values.electrical, true),
+    soc: [0, 100],
+    voltage: resolveNiceDomain(positiveVoltageValues.length ? positiveVoltageValues : values.voltage, false),
+  };
+}
+
+export function normalizeMobileChartValue(value: number, domain: ChartAxisDomain) {
+  const span = domain[1] - domain[0];
+  if (!Number.isFinite(value) || span <= 0) return 0;
+  return Math.min(1, Math.max(0, (value - domain[0]) / span));
+}
+
+export function getMobileChartAxisTicks(domain: ChartAxisDomain, count = 5) {
+  if (count <= 1) return [domain[1]];
+
+  const step = getNiceTickStep(domain[0], domain[1], count);
+  const epsilon = step * 1e-10;
+  const first = Math.ceil(domain[0] / step) * step;
+  const ticks: number[] = [];
+
+  for (let value = first; value <= domain[1] + epsilon; value += step) {
+    ticks.push(Number(value.toPrecision(12)));
+  }
+
+  return ticks.reverse();
 }
 
 export function buildChargingProfileChartData(data?: TransactionDetail) {
   if (!data?.meterValues?.length) return null;
 
   const sampleStep = Math.max(1, Math.ceil(data.meterValues.length / 80));
-  const meterValues = data.meterValues.filter((_, index) => index % sampleStep === 0);
+  const lastMeterValueIndex = data.meterValues.length - 1;
+  const meterValues = data.meterValues.filter((_, index) => index % sampleStep === 0 || index === lastMeterValueIndex);
   const labelStep = Math.max(1, Math.floor(meterValues.length / 6));
 
   const powerData: ChartPoint[] = [];
@@ -116,8 +203,10 @@ export function buildChargingProfileChartData(data?: TransactionDetail) {
 
   meterValues.forEach((meterValue, index) => {
     const date = meterValue.timestamp ? new Date(meterValue.timestamp) : null;
-    const label = date ? `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}` : '';
+    const isValidDate = Boolean(date && !Number.isNaN(date.getTime()));
+    const label = isValidDate ? `${date!.getHours().toString().padStart(2, '0')}:${date!.getMinutes().toString().padStart(2, '0')}` : '';
     const pointLabel = index % labelStep === 0 ? label : '';
+    const timestamp = isValidDate ? date!.getTime() : undefined;
 
     const power = getSampleValue(meterValue, 'Power.Active.Import') / 1000;
     const current = getSampleValue(meterValue, 'Current.Import');
@@ -138,35 +227,35 @@ export function buildChargingProfileChartData(data?: TransactionDetail) {
     if (voltage > 0 || voltageL1 > 0 || voltageL1N > 0) latestVoltage = voltage || voltageL1 || voltageL1N;
     if (label) latestLabel = label;
 
-    powerData.push({ date: label, label: pointLabel, value: power });
-    currentData.push({ date: label, label: pointLabel, value: current });
-    currentL1Data.push({ date: label, label: pointLabel, value: currentL1 });
-    currentL2Data.push({ date: label, label: pointLabel, value: currentL2 });
-    currentL3Data.push({ date: label, label: pointLabel, value: currentL3 });
-    socData.push({ date: label, label: pointLabel, value: soc });
-    voltageData.push({ date: label, label: pointLabel, value: voltage });
-    voltageL1Data.push({ date: label, label: pointLabel, value: voltageL1 });
-    voltageL2Data.push({ date: label, label: pointLabel, value: voltageL2 });
-    voltageL3Data.push({ date: label, label: pointLabel, value: voltageL3 });
-    voltageL1NData.push({ date: label, label: pointLabel, value: voltageL1N });
-    voltageL2NData.push({ date: label, label: pointLabel, value: voltageL2N });
-    voltageL3NData.push({ date: label, label: pointLabel, value: voltageL3N });
+    powerData.push({ date: label, label: pointLabel, timestamp, value: power });
+    currentData.push({ date: label, label: pointLabel, timestamp, value: current });
+    currentL1Data.push({ date: label, label: pointLabel, timestamp, value: currentL1 });
+    currentL2Data.push({ date: label, label: pointLabel, timestamp, value: currentL2 });
+    currentL3Data.push({ date: label, label: pointLabel, timestamp, value: currentL3 });
+    socData.push({ date: label, label: pointLabel, timestamp, value: soc });
+    voltageData.push({ date: label, label: pointLabel, timestamp, value: voltage });
+    voltageL1Data.push({ date: label, label: pointLabel, timestamp, value: voltageL1 });
+    voltageL2Data.push({ date: label, label: pointLabel, timestamp, value: voltageL2 });
+    voltageL3Data.push({ date: label, label: pointLabel, timestamp, value: voltageL3 });
+    voltageL1NData.push({ date: label, label: pointLabel, timestamp, value: voltageL1N });
+    voltageL2NData.push({ date: label, label: pointLabel, timestamp, value: voltageL2N });
+    voltageL3NData.push({ date: label, label: pointLabel, timestamp, value: voltageL3N });
   });
 
   const mobileSeries = [
-    createSeries('Power', chartColors.power, powerData),
-    createSeries('Current', chartColors.current, currentData),
-    createSeries('L1', chartColors.currentL1, currentL1Data),
-    createSeries('L2', chartColors.currentL2, currentL2Data),
-    createSeries('L3', chartColors.currentL3, currentL3Data),
-    createSeries('SoC', chartColors.soc, socData),
-    createSeries('Voltage', chartColors.voltage, voltageData),
-    createSeries('V L1', chartColors.voltageL1, voltageL1Data),
-    createSeries('V L2', chartColors.voltageL2, voltageL2Data),
-    createSeries('V L3', chartColors.voltageL3, voltageL3Data),
-    createSeries('V L1-N', chartColors.voltageL1, voltageL1NData),
-    createSeries('V L2-N', chartColors.voltageL2, voltageL2NData),
-    createSeries('V L3-N', chartColors.voltageL3, voltageL3NData),
+    createSeries('Power', 'kW', 'electrical', chartColors.power, powerData),
+    createSeries('Current', 'A', 'electrical', chartColors.current, currentData),
+    createSeries('L1', 'A', 'electrical', chartColors.currentL1, currentL1Data),
+    createSeries('L2', 'A', 'electrical', chartColors.currentL2, currentL2Data),
+    createSeries('L3', 'A', 'electrical', chartColors.currentL3, currentL3Data),
+    createSeries('SoC', '%', 'soc', chartColors.soc, socData),
+    createSeries('V L1', 'V', 'voltage', chartColors.voltageL1, voltageL1Data),
+    createSeries('V L2', 'V', 'voltage', chartColors.voltageL2, voltageL2Data),
+    createSeries('V L3', 'V', 'voltage', chartColors.voltageL3, voltageL3Data),
+    createSeries('V L1-N', 'V', 'voltage', chartColors.voltageL1, voltageL1NData),
+    createSeries('V L2-N', 'V', 'voltage', chartColors.voltageL2, voltageL2NData),
+    createSeries('V L3-N', 'V', 'voltage', chartColors.voltageL3, voltageL3NData),
+    createSeries('Voltage', 'V', 'voltage', chartColors.voltage, voltageData),
   ].filter(Boolean) as ChartSeries[];
 
   const primarySeries = filterMobileChartSeries(mobileSeries, 'core');

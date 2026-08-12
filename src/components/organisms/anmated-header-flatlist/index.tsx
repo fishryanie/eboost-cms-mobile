@@ -27,11 +27,13 @@ export interface AnimatedHeaderFlatListProps<T> extends Omit<FlatListProps<T>, '
   subtitle?: string;
   renderItem?: ListRenderItem<T>;
   rightComponent?: React.ReactNode;
+  topRightComponent?: React.ReactNode;
   largeRightComponent?: React.ReactNode;
   searchBar?: React.ReactNode;
   canGoBack?: boolean;
   onBack?: () => void;
   largeTitleContainerStyle?: any;
+  largeTitleStretchEnabled?: boolean;
 
   largeHeaderTitleStyle?: TextStyle;
   largeHeaderSubtitleStyle?: TextStyle;
@@ -45,11 +47,13 @@ function AnimatedHeaderFlatListComponent<T>({
   subtitle,
   renderItem,
   rightComponent,
+  topRightComponent,
   largeRightComponent,
   searchBar,
   canGoBack,
   onBack,
   largeTitleContainerStyle,
+  largeTitleStretchEnabled = true,
   largeHeaderTitleStyle,
   largeHeaderSubtitleStyle,
   smallHeaderTitleStyle,
@@ -59,6 +63,13 @@ function AnimatedHeaderFlatListComponent<T>({
   const scrollY = useSharedValue(0);
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const flattenedContentStyle = StyleSheet.flatten(flatListProps.contentContainerStyle) || {};
+  const contentPaddingLeft = getNumericStyleValue(
+    flattenedContentStyle.paddingLeft ?? flattenedContentStyle.paddingHorizontal ?? flattenedContentStyle.padding,
+  );
+  const contentPaddingRight = getNumericStyleValue(
+    flattenedContentStyle.paddingRight ?? flattenedContentStyle.paddingHorizontal ?? flattenedContentStyle.padding,
+  );
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: event => {
@@ -68,6 +79,8 @@ function AnimatedHeaderFlatListComponent<T>({
 
   const animatedLargeTitleStyle = useAnimatedStyle(() => {
     const fontSize = typeof largeHeaderTitleStyle?.fontSize === 'number' ? largeHeaderTitleStyle.fontSize : 40;
+
+    if (!largeTitleStretchEnabled) return { fontSize };
 
     return {
       fontSize: interpolate(-scrollY.value, [0, 100], [fontSize, fontSize * 2], Extrapolation.CLAMP),
@@ -158,7 +171,7 @@ function AnimatedHeaderFlatListComponent<T>({
             {!!subtitle && <Animated.Text style={[styles.smallHeaderSubtitle, smallHeaderSubtitleStyle, smallSubtitleStyle]}>{subtitle}</Animated.Text>}
           </ThemedView>
 
-          <ThemedView pointerEvents='box-none' flex={1} alignItems='flex-end' justifyContent='center' paddingHorizontal={spacing.md}>
+          <ThemedView pointerEvents='box-none' flex={1} alignItems='flex-end' justifyContent='center' paddingHorizontal={12}>
             {rightComponent}
           </ThemedView>
         </ThemedView>
@@ -179,7 +192,7 @@ function AnimatedHeaderFlatListComponent<T>({
           flexDirection='row'
           alignItems='center'
           justifyContent='space-between'
-          paddingHorizontal={spacing.md}
+          paddingHorizontal={12}
           height={HEADER_HEIGHT}>
           {canGoBack ? (
             <Pressable onPress={() => (onBack ? onBack() : router.back())} hitSlop={8} style={{ zIndex: 1 }}>
@@ -188,6 +201,7 @@ function AnimatedHeaderFlatListComponent<T>({
           ) : (
             <ThemedView />
           )}
+          {topRightComponent}
         </ThemedView>
       </ThemedView>
 
@@ -205,7 +219,13 @@ function AnimatedHeaderFlatListComponent<T>({
         ]}
         ListHeaderComponent={
           <>
-            <Animated.View style={[styles.largeTitleContainer, largeTitleContainerStyle, largeTitleOpacityStyle]}>
+            <Animated.View
+              style={[
+                styles.largeTitleContainer,
+                { marginLeft: -contentPaddingLeft, marginRight: -contentPaddingRight },
+                largeTitleContainerStyle,
+                largeTitleOpacityStyle,
+              ]}>
               <ThemedView alignItems='center' flexDirection='row' gap={'three'} justifyContent='space-between'>
                 <ThemedView flex={1} minWidth={0}>
                   <Animated.Text style={[styles.largeTitle, largeHeaderTitleStyle, animatedLargeTitleStyle]}>{largeTitle}</Animated.Text>
@@ -230,6 +250,10 @@ function AnimatedHeaderFlatListComponent<T>({
       />
     </ThemedView>
   );
+}
+
+function getNumericStyleValue(value: unknown) {
+  return typeof value === 'number' ? value : 0;
 }
 
 export const AnimatedHeaderFlatList = memo(AnimatedHeaderFlatListComponent) as typeof AnimatedHeaderFlatListComponent;
@@ -264,7 +288,7 @@ const styles = StyleSheet.create({
   },
 
   largeTitleContainer: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 12,
     marginBottom: spacing.md,
   },
 

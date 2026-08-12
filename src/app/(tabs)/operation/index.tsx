@@ -8,7 +8,7 @@ import { ArrowRightLeft, ChevronLeft, ChevronsRight, CreditCard, Lock, Mail, Shi
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BarChart } from 'react-native-gifted-charts';
+import { BarChart, type CartesianChartTheme } from 'react-native-chart-kit/v2';
 import { useScrollStore } from 'utils/scroll-store';
 import { mhs } from 'themes/scaling';
 import { AppButton, EmptyState } from 'components/ui';
@@ -90,6 +90,21 @@ type OperationService = {
 const screenHorizontalPadding = 18;
 const serviceTileSize = 82;
 const operationAccent = '#E46B2C';
+const growthChartTheme: CartesianChartTheme = {
+  axis: Palette.borderSubtle,
+  background: 'transparent',
+  grid: Palette.borderSubtle,
+  mutedText: Palette.textTertiary,
+  plotBackground: 'transparent',
+  text: Palette.textSecondary,
+  tooltip: {
+    background: '#10291D',
+    border: '#28573F',
+    mutedText: '#B7E5C9',
+    text: '#FFFFFF',
+  },
+  typography: { axisLabelSize: 10, fontFamily: FontFamily.medium, legendLabelSize: 10 },
+};
 const emptyUsers: UserListItem[] = [];
 const emptyTopUsers: TopUserPerformanceItem[] = [];
 const emptyTopStations: TopStationPerformanceItem[] = [];
@@ -530,23 +545,13 @@ function getTopUserRankTone(index: number) {
 
 
 function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[]; summary?: UserGrowthSummary }) {
-  const maxValue = Math.max(...growth.map(item => Number(item.total_users) || 0), 10);
-  const chartItems = growth.slice(-12);
-
-  const barData = chartItems.flatMap(item => [
-    {
-      value: Number(item.total_users) || 0,
-      frontColor: '#059669', // Stronger green
-      gradientColor: '#05C75A', // Eboost green
-      spacing: 6,
-      label: formatGrowthMonth(item.time),
-    },
-    {
-      value: Number(item.new_users) || 0,
-      frontColor: '#1D4ED8', // Stronger blue
-      gradientColor: '#3B82F6', // Normal blue
-    },
-  ]);
+  const [chartWidth, setChartWidth] = useState(0);
+  const chartItems = growth.slice(-12).map(item => ({
+    month: formatGrowthMonth(item.time),
+    newUsers: Number(item.new_users) || 0,
+    totalUsers: Number(item.total_users) || 0,
+  }));
+  const maxValue = Math.max(...chartItems.map(item => item.totalUsers), 10);
 
   return (
     <ThemedView gap={'three'}>
@@ -583,36 +588,43 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
           <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.bold} fontSize={10} textTransform='uppercase'>
             Trend - Last 12 months
           </ThemedText>
-          {chartItems.length ? (
-            <BarChart
-              data={barData}
-              barWidth={16}
-              initialSpacing={10}
-              endSpacing={20}
-              spacing={14}
-              barBorderRadius={4}
-              showGradient
-              yAxisThickness={0}
-              xAxisType={'dashed'}
-              xAxisColor={Palette.borderSubtle}
-              yAxisTextStyle={{color: Palette.textTertiary, fontSize: 10, fontFamily: FontFamily.medium}}
-              maxValue={maxValue * 1.1}
-              noOfSections={4}
-              labelWidth={40}
-              xAxisLabelTextStyle={{color: Palette.textSecondary, textAlign: 'center', fontSize: 10, fontFamily: FontFamily.medium}}
-              showLine
-              lineConfig={{
-                color: operationAccent,
-                thickness: 3,
-                curved: true,
-                hideDataPoints: true,
-                shiftY: 20,
-                initialSpacing: -30,
-              }}
-            />
-          ) : (
-            <EmptyState message='No growth data returned.' title='No data' />
-          )}
+          <ThemedView
+            minHeight={chartItems.length ? 260 : undefined}
+            onLayout={event => {
+              const nextWidth = Math.floor(event.nativeEvent.layout.width);
+              setChartWidth(currentWidth => (currentWidth === nextWidth ? currentWidth : nextWidth));
+            }}>
+            {chartItems.length ? (
+              chartWidth > 0 ? (
+                <BarChart
+                  accessibilityLabel='Monthly total and new user growth for the last 12 months'
+                  barGapRatio={0.18}
+                  barRadius={4}
+                  barWidthRatio={0.76}
+                  data={chartItems}
+                  height={260}
+                  interaction='tap'
+                  labelStrategy='auto'
+                  legend
+                  mode='grouped'
+                  series={[
+                    { color: '#059669', label: 'Total users', yKey: 'totalUsers' },
+                    { color: '#3B82F6', label: 'New users', yKey: 'newUsers' },
+                  ]}
+                  showHorizontalGridLines
+                  theme={growthChartTheme}
+                  tooltip
+                  width={chartWidth}
+                  xKey='month'
+                  yDomain={{ includeZero: true, max: maxValue * 1.1, nice: true }}
+                  yKeys={['totalUsers', 'newUsers']}
+                  yTickCount={4}
+                />
+              ) : null
+            ) : (
+              <EmptyState message='No growth data returned.' title='No data' />
+            )}
+          </ThemedView>
         </ThemedView>
       </ThemedView>
     </ThemedView>

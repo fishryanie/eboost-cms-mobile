@@ -10,7 +10,7 @@
     "ios": {
       "icon": "./src/assets/images/icon.png",
       "bundleIdentifier": "com.evida.eboost.cms",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "infoPlist": {
         "CFBundleDisplayName": "Eboost CMS",
         "ITSAppUsesNonExemptEncryption": false
@@ -19,7 +19,10 @@
     "android": {
       "icon": "./src/assets/images/icon.png",
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.USE_BIOMETRIC", "android.permission.USE_FINGERPRINT"],
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ],
       "package": "com.evida.eboost.cms"
     },
     "plugins": [

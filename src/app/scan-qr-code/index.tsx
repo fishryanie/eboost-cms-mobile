@@ -1,14 +1,13 @@
-import { CameraView, useCameraPermissions, type BarcodeScanningResult, type CameraCapturedPicture, type CameraType } from 'expo-camera';
+import { CameraView, scanFromURLAsync, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import { useIsFocused, useRouter } from 'expo-router';
-import { Camera, CameraOff, ChevronLeft, Copy, ExternalLink, Flashlight, FlashlightOff, QrCode, RotateCcw, Settings, SwitchCamera } from 'lucide-react-native';
+import { Camera, CameraOff, ChevronLeft, Copy, ExternalLink, Flashlight, FlashlightOff, QrCode, RotateCcw } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
@@ -18,14 +17,9 @@ import { mhs, mvs, width } from 'themes/scaling';
 
 import qrScannerAnimation from 'assets/lotties/scan-qr-code.json';
 
-const MAX_ZOOM = 1;
-const MIN_ZOOM = 0;
-const ZOOM_STEP = 0.04;
-const CAPTURE_BUTTON_SIZE = 78;
 const SCANNER_ANIMATION_SIZE = Math.min(width - mhs(32), mhs(340));
 const SHOULD_CHECK_CAMERA_AVAILABILITY = Platform.OS === 'web';
 
-const clampZoom = (value: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
 const getScannedLink = (value: string) => {
   const trimmedValue = value.trim();
   if (/^https?:\/\//i.test(trimmedValue)) return trimmedValue;
@@ -37,18 +31,13 @@ export default function ScanQrCodeScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
-  const cameraRef = useRef<CameraView>(null);
   const lastScannedCode = useRef<string | null>(null);
   const scanLockedRef = useRef(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const [facing, setFacing] = useState<CameraType>('back');
   const [torchEnabled, setTorchEnabled] = useState(false);
-  const [zoom, setZoom] = useState(0);
-  const [cameraReady, setCameraReady] = useState(false);
   const [isCameraAvailable, setIsCameraAvailable] = useState(!SHOULD_CHECK_CAMERA_AVAILABILITY);
   const [scannedValue, setScannedValue] = useState<string | null>(null);
 
-  const pinchStartZoom = useSharedValue(0);
   const cameraIsActive = isFocused && Boolean(permission?.granted) && isCameraAvailable;
   const effectiveTorchEnabled = cameraIsActive && torchEnabled;
 
@@ -76,19 +65,6 @@ export default function ScanQrCodeScreen() {
     }
   }, [permission, requestPermission]);
 
-  const updateZoom = useCallback((nextZoom: number) => {
-    setZoom(clampZoom(nextZoom));
-  }, []);
-
-  const pinchGesture = Gesture.Pinch()
-    .runOnJS(true)
-    .onBegin(() => {
-      pinchStartZoom.value = zoom;
-    })
-    .onUpdate(event => {
-      updateZoom(pinchStartZoom.value + (event.scale - 1) * 0.35);
-    });
-
   const handleBarcodeScanned = useCallback((result: BarcodeScanningResult) => {
     if (!result.data || scanLockedRef.current || lastScannedCode.current === result.data) return;
 
@@ -103,29 +79,37 @@ export default function ScanQrCodeScreen() {
     });
   }, []);
 
-  const handleTakePhoto = useCallback(async () => {
-    if (!cameraReady || !cameraRef.current) return;
-
+  const handlePickQrImage = useCallback(async () => {
     try {
-      const photo: CameraCapturedPicture = await cameraRef.current.takePictureAsync({
+      const pickerResult = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: false,
+        mediaTypes: ['images'],
         quality: 1,
-        shutterSound: false,
       });
+      const selectedImage = pickerResult.assets?.[0];
+      if (pickerResult.canceled || !selectedImage) return;
 
-      Toast.show({
-        type: 'success',
-        text1: 'Photo captured',
-        text2: photo.uri,
-      });
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      const [qrResult] = await scanFromURLAsync(selectedImage.uri, ['qr']);
+      if (!qrResult?.data) {
+        Toast.show({
+          type: 'info',
+          text1: 'No QR code found',
+          text2: 'Please choose a clearer QR code image.',
+        });
+        return;
+      }
+
+      scanLockedRef.current = false;
+      lastScannedCode.current = null;
+      handleBarcodeScanned(qrResult);
     } catch (error) {
       Toast.show({
         type: 'error',
-        text1: 'Cannot take photo',
+        text1: 'Cannot scan this image',
         text2: error instanceof Error ? error.message : 'Please try again.',
       });
     }
-  }, [cameraReady]);
+  }, [handleBarcodeScanned]);
 
   const handleResetScan = useCallback(() => {
     scanLockedRef.current = false;
@@ -171,22 +155,9 @@ export default function ScanQrCodeScreen() {
     await Linking.openURL(link);
   }, [scannedValue]);
 
-  const handleFlipCamera = useCallback(() => {
-    setFacing(current => (current === 'back' ? 'front' : 'back'));
-    setTorchEnabled(false);
-  }, []);
-
   const handleToggleTorch = useCallback(() => {
     setTorchEnabled(current => !current);
   }, []);
-
-  const nudgeZoomIn = useCallback(() => {
-    updateZoom(zoom + ZOOM_STEP);
-  }, [updateZoom, zoom]);
-
-  const nudgeZoomOut = useCallback(() => {
-    updateZoom(zoom - ZOOM_STEP);
-  }, [updateZoom, zoom]);
 
   if (!isCameraAvailable) {
     return (
@@ -218,65 +189,39 @@ export default function ScanQrCodeScreen() {
 
   return (
     <ThemedView flex={1} backgroundColor='#05070B'>
-      <GestureDetector gesture={pinchGesture}>
-        <ThemedView flex={1}>
-          <CameraView
-            ref={cameraRef}
-            active={cameraIsActive}
-            animateShutter={false}
-            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-            enableTorch={effectiveTorchEnabled}
-            facing={facing}
-            flash={effectiveTorchEnabled ? 'on' : 'off'}
-            mode='picture'
-            onBarcodeScanned={scannedValue ? undefined : handleBarcodeScanned}
-            onCameraReady={() => setCameraReady(true)}
-            onMountError={event => {
-              Toast.show({
-                type: 'error',
-                text1: 'Camera error',
-                text2: event.message,
-              });
-            }}
-            responsiveOrientationWhenOrientationLocked
-            style={StyleSheet.absoluteFill}
-            zoom={zoom}
+      <CameraView
+        active={cameraIsActive}
+        barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+        enableTorch={effectiveTorchEnabled}
+        onBarcodeScanned={scannedValue ? undefined : handleBarcodeScanned}
+        onMountError={event => {
+          Toast.show({
+            type: 'error',
+            text1: 'Camera error',
+            text2: event.message,
+          });
+        }}
+        responsiveOrientationWhenOrientationLocked
+        style={StyleSheet.absoluteFill}
+      />
+
+      <ThemedView absoluteFillObject contentCenter pointerEvents='none'>
+        <LottieView autoPlay loop source={qrScannerAnimation} style={styles.scannerAnimation} />
+      </ThemedView>
+
+      <ThemedView absoluteFillObject pointerEvents='box-none'>
+        <TopControls top={insets.top} onBack={router.back} />
+        <BottomControls bottom={insets.bottom} torchEnabled={torchEnabled} onPickQrImage={handlePickQrImage} onToggleTorch={handleToggleTorch} />
+        {scannedValue ? (
+          <ScannedValuePanel
+            bottom={insets.bottom}
+            value={scannedValue}
+            onCopy={handleCopyScannedValue}
+            onOpen={handleOpenScannedLink}
+            onReset={handleResetScan}
           />
-
-          <ThemedView absoluteFillObject contentCenter pointerEvents='none'>
-            <LottieView autoPlay loop source={qrScannerAnimation} style={styles.scannerAnimation} />
-          </ThemedView>
-
-          <ThemedView absoluteFillObject pointerEvents='box-none'>
-            <TopControls top={insets.top} onBack={router.back} />
-            <SideControls
-              top={insets.top}
-              torchEnabled={torchEnabled}
-              zoom={zoom}
-              onFlipCamera={handleFlipCamera}
-              onToggleTorch={handleToggleTorch}
-              onZoomIn={nudgeZoomIn}
-              onZoomOut={nudgeZoomOut}
-            />
-            {scannedValue ? (
-              <ScannedValuePanel
-                bottom={insets.bottom}
-                value={scannedValue}
-                onCopy={handleCopyScannedValue}
-                onOpen={handleOpenScannedLink}
-                onReset={handleResetScan}
-              />
-            ) : null}
-            <CaptureButton
-              bottom={insets.bottom}
-              disabled={!cameraReady || !cameraIsActive}
-              zoom={zoom}
-              onCapture={handleTakePhoto}
-              onZoomChange={updateZoom}
-            />
-          </ThemedView>
-        </ThemedView>
-      </GestureDetector>
+        ) : null}
+      </ThemedView>
     </ThemedView>
   );
 }
@@ -302,7 +247,7 @@ function ScannedValuePanel({
       borderColor='rgba(255,255,255,0.14)'
       borderRadius={18}
       borderWidth={1}
-      bottom={bottom + 124}
+      bottom={bottom + mvs(88)}
       gap={12}
       left={16}
       padding={14}
@@ -352,104 +297,34 @@ function TopControls({ onBack, top }: { onBack: () => void; top: number }) {
   );
 }
 
-function SideControls({
-  onFlipCamera,
+function BottomControls({
+  bottom,
+  onPickQrImage,
   onToggleTorch,
-  onZoomIn,
-  onZoomOut,
   torchEnabled,
-  top,
-  zoom,
 }: {
-  onFlipCamera: () => void;
+  bottom: number;
+  onPickQrImage: () => void;
   onToggleTorch: () => void;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
   torchEnabled: boolean;
-  top: number;
-  zoom: number;
 }) {
   return (
-    <ThemedView gap={12} position='absolute' right={15} top={top + 15}>
-      <RoundIconButton accessibilityLabel='Flip camera' onPress={onFlipCamera}>
-        <SwitchCamera color='#FFFFFF' size={24} />
+    <ThemedView
+      backgroundColor='transparent'
+      bottom={bottom + mvs(24)}
+      flexDirection='row'
+      justifyContent='space-between'
+      left={mhs(16)}
+      pointerEvents='box-none'
+      position='absolute'
+      right={mhs(16)}>
+      <RoundIconButton accessibilityLabel='Upload QR code image' onPress={onPickQrImage}>
+        <QrCode color='#FFFFFF' size={23} />
       </RoundIconButton>
       <RoundIconButton accessibilityLabel='Toggle torch' onPress={onToggleTorch}>
         {torchEnabled ? <Flashlight color='#FFFFFF' size={23} /> : <FlashlightOff color='#FFFFFF' size={23} />}
       </RoundIconButton>
-      <RoundIconButton accessibilityLabel='Zoom in' onPress={onZoomIn}>
-        <ThemedText color='#FFFFFF' fontFamily={FontFamily.bold} fontSize={18} lineHeight={22}>
-          +
-        </ThemedText>
-      </RoundIconButton>
-      <RoundIconButton accessibilityLabel='Zoom out' onPress={onZoomOut}>
-        <ThemedText color='#FFFFFF' fontFamily={FontFamily.bold} fontSize={20} lineHeight={22}>
-          -
-        </ThemedText>
-      </RoundIconButton>
-      <ThemedView backgroundColor='rgba(0,0,0,0.4)' contentCenter round={40}>
-        <ThemedText color='#FFFFFF' fontFamily={FontFamily.bold} fontSize={11} lineHeight={13} textAlign='center'>
-          {`${Math.round(zoom * 100)}\nZOOM`}
-        </ThemedText>
-      </ThemedView>
-      <RoundIconButton accessibilityLabel='Camera settings'>
-        <Settings color='#FFFFFF' size={23} />
-      </RoundIconButton>
-      <RoundIconButton accessibilityLabel='QR scanner'>
-        <QrCode color='#FFFFFF' size={23} />
-      </RoundIconButton>
     </ThemedView>
-  );
-}
-
-function CaptureButton({
-  bottom,
-  disabled,
-  onCapture,
-  onZoomChange,
-  zoom,
-}: {
-  bottom: number;
-  disabled: boolean;
-  onCapture: () => void;
-  onZoomChange: (zoom: number) => void;
-  zoom: number;
-}) {
-  const isPressing = useSharedValue(false);
-  const dragStartZoom = useSharedValue(0);
-  const buttonStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(disabled ? 0.35 : 1, { duration: 120 }),
-    transform: [{ scale: withSpring(isPressing.value ? 0.94 : 1) }],
-  }));
-
-  const panGesture = Gesture.Pan()
-    .runOnJS(true)
-    .onBegin(() => {
-      isPressing.value = true;
-      dragStartZoom.value = zoom;
-    })
-    .onUpdate(event => {
-      onZoomChange(dragStartZoom.value + Math.max(0, -event.translationY) / 280);
-    })
-    .onFinalize(() => {
-      isPressing.value = false;
-    });
-
-  return (
-    <GestureDetector gesture={panGesture}>
-      <Animated.View style={[styles.captureButtonWrap, { bottom: bottom + mvs(32) }, buttonStyle]}>
-        <Pressable accessibilityLabel='Take photo' accessibilityRole='button' disabled={disabled} onPress={onCapture} style={styles.captureButton}>
-          <ThemedView
-            backgroundColor='transparent'
-            borderColor='#FFFFFF'
-            borderRadius={CAPTURE_BUTTON_SIZE / 2}
-            borderWidth={8}
-            height={CAPTURE_BUTTON_SIZE}
-            width={CAPTURE_BUTTON_SIZE}
-          />
-        </Pressable>
-      </Animated.View>
-    </GestureDetector>
   );
 }
 
@@ -462,16 +337,6 @@ function RoundIconButton({ accessibilityLabel, children, onPress }: { accessibil
 }
 
 const styles = StyleSheet.create({
-  captureButton: {
-    alignItems: 'center',
-    height: mhs(CAPTURE_BUTTON_SIZE),
-    justifyContent: 'center',
-    width: mhs(CAPTURE_BUTTON_SIZE),
-  },
-  captureButtonWrap: {
-    alignSelf: 'center',
-    position: 'absolute',
-  },
   permissionButton: {
     alignItems: 'center',
     backgroundColor: Palette.accent,
@@ -500,10 +365,10 @@ const styles = StyleSheet.create({
   roundButton: {
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: mhs(20),
-    height: mhs(40),
+    borderRadius: mhs(24),
+    height: mhs(48),
     justifyContent: 'center',
-    width: mhs(40),
+    width: mhs(48),
   },
   scannerAnimation: {
     height: SCANNER_ANIMATION_SIZE,

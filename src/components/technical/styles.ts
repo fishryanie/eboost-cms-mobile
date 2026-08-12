@@ -151,9 +151,6 @@ export const styles = StyleSheet.create({
   issueHeader: {
     backgroundColor: Palette.surfaceBase,
   },
-  issueLargeTitleContainer: {
-    marginHorizontal: -screenHorizontalPadding,
-  },
   issueAge: {
     textAlign: 'right',
     width: 54,
