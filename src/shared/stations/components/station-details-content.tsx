@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated as NativeAnimated, FlatList, Pressable, ScrollView, Switch, useWindowDimensions } from 'react-native';
+import { Alert, Animated as NativeAnimated, FlatList, Pressable, Switch, useWindowDimensions } from 'react-native';
 import PagerView from 'react-native-pager-view';
 
 import { ResourceFormSheet } from 'app/location/[id]/components/resource-form-sheet';
@@ -23,6 +23,7 @@ import { requestResetCharger, requestTriggerCharger, requestUnlockCharger } from
 import { getWorkflowChargerIdentifier, getWorkflowChargerType } from 'app/location/[id]/features/charger-workflows';
 import { ThemedText, ThemedView } from 'components/base';
 import { AppButton, EmptyState } from 'components/ui';
+import { HorizontalActionList } from 'components/ui/horizontal-action-list';
 import { useLocationDetail, useLocationPartnership, useLocationPriceProfiles, useLocationResourceMutations, useStationChargers } from 'shared/locations/hooks';
 import { getChargerSelectionKey } from 'shared/stations/charger-utils';
 import { FontFamily, Palette } from 'themes';
@@ -697,57 +698,57 @@ function ChargerSection({
           </ThemedView>
         </ThemedView>
       </ThemedView>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingBottom: 16 }}
-        style={{ marginHorizontal: -16 }}>
-        <ChargerActionButton icon={Pencil} label='Edit' onPress={onEditCharger} />
-        <ChargerActionButton
-          icon={Zap}
-          label='Trigger'
-          onPress={() =>
-            chargerIdentifier &&
-            run(
-              requestTriggerCharger(chargerIdentifier, { connector: firstPort?.orderOnBox || 0, requestedMessage: 'StatusNotification' }),
-              'Status requested.',
-            )
-          }
-        />
-        <ChargerActionButton
-          icon={RotateCcw}
-          label='S-Reset'
-          onPress={() => chargerIdentifier && run(requestResetCharger(chargerIdentifier, 'Soft'), 'Soft reset requested.')}
-        />
-        <ChargerActionButton
-          icon={RotateCcw}
-          label='H-Reset'
-          onPress={() =>
-            chargerIdentifier &&
-            Alert.alert('Hard reset', 'Restart this charger now?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Reset', style: 'destructive', onPress: () => run(requestResetCharger(chargerIdentifier, 'Hard'), 'Hard reset requested.') },
-            ])
-          }
-        />
-
-        {firstPort ? (
-          <ChargerActionButton
-            icon={BatteryCharging}
-            label='Unlock'
-            onPress={() =>
+      <HorizontalActionList
+        actions={[
+          { icon: Pencil, key: 'edit', label: 'Edit', onPress: onEditCharger },
+          {
+            icon: Zap,
+            key: 'trigger',
+            label: 'Trigger',
+            onPress: () =>
               chargerIdentifier &&
-              Alert.alert('Unlock port', `Unlock port ${firstPort.name || firstPort.uniqueId || `Port #${firstPort.id}`}?`, [
+              run(
+                requestTriggerCharger(chargerIdentifier, { connector: firstPort?.orderOnBox || 0, requestedMessage: 'StatusNotification' }),
+                'Status requested.',
+              ),
+          },
+          {
+            icon: RotateCcw,
+            key: 'soft-reset',
+            label: 'S-Reset',
+            onPress: () => chargerIdentifier && run(requestResetCharger(chargerIdentifier, 'Soft'), 'Soft reset requested.'),
+          },
+          {
+            icon: RotateCcw,
+            key: 'hard-reset',
+            label: 'H-Reset',
+            onPress: () =>
+              chargerIdentifier &&
+              Alert.alert('Hard reset', 'Restart this charger now?', [
                 { text: 'Cancel', style: 'cancel' },
+                { text: 'Reset', style: 'destructive', onPress: () => run(requestResetCharger(chargerIdentifier, 'Hard'), 'Hard reset requested.') },
+              ]),
+          },
+          ...(firstPort
+            ? [
                 {
-                  text: 'Unlock',
-                  onPress: () => run(requestUnlockCharger(chargerIdentifier, firstPort.orderOnBox || 1), 'Unlock requested.'),
+                  icon: BatteryCharging,
+                  key: 'unlock',
+                  label: 'Unlock',
+                  onPress: () =>
+                    chargerIdentifier &&
+                    Alert.alert('Unlock port', `Unlock port ${firstPort.name || firstPort.uniqueId || `Port #${firstPort.id}`}?`, [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Unlock',
+                        onPress: () => run(requestUnlockCharger(chargerIdentifier, firstPort.orderOnBox || 1), 'Unlock requested.'),
+                      },
+                    ]),
                 },
-              ])
-            }
-          />
-        ) : null}
-      </ScrollView>
+              ]
+            : []),
+        ]}
+      />
       <ThemedView
         backgroundColor='#FAFAFA'
         borderColor={Palette.borderSubtle}
@@ -1341,30 +1342,5 @@ function ChargerStat({ label, value, isSwitch }: { label: string; value: string 
         </ThemedText>
       )}
     </ThemedView>
-  );
-}
-
-function ChargerActionButton({
-  icon: IconComponent,
-  label,
-  onPress,
-  danger,
-}: {
-  icon: React.ElementType;
-  label: string;
-  onPress: () => void;
-  danger?: boolean;
-}) {
-  const color = danger ? Palette.danger : Palette.accent;
-  const bgColor = danger ? '#FEF2F2' : '#F4F6F6';
-  return (
-    <Pressable onPress={onPress} accessibilityRole='button' style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-      <ThemedView alignItems='center' backgroundColor={bgColor} borderRadius={16} gap={6} square={76} justifyContent='center' paddingHorizontal={'two'}>
-        <IconComponent color={color} size={22} strokeWidth={2} />
-        <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={14} numberOfLines={2} textAlign='center'>
-          {label}
-        </ThemedText>
-      </ThemedView>
-    </Pressable>
   );
 }

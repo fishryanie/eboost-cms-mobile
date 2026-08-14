@@ -5,7 +5,7 @@ import { HeaderTitle } from 'components/base/HeaderTitle';
 import SegmentedControl from 'components/organisms/segmented-control';
 import { AppButton } from 'components/ui';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CheckCircle2, Info } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
@@ -19,10 +19,12 @@ import { apiRequest } from 'utils/api/client';
 
 export default function AdjustBalanceScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ userId?: string | string[] }>();
+  const initialUserId = Array.isArray(params.userId) ? params.userId[0] || '' : params.userId || '';
 
   // User search state
-  const [queryInput, setQueryInput] = useState('');
-  const [query, setQuery] = useState('');
+  const [queryInput, setQueryInput] = useState(initialUserId);
+  const [query, setQuery] = useState(initialUserId);
 
   const usersQuery = useInfiniteUsers(query);
   const users = useMemo(() => usersQuery.data?.pages.flatMap(page => page.items) || [], [usersQuery.data]);

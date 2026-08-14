@@ -2,15 +2,16 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
 
+import { Palette } from 'themes';
 import { getDisplayImageUrl } from 'utils/media/image-url';
 
 import { getUserLoginProvider } from '../user-account';
 import type { ProfileRecord } from './user-profile-types';
 
 export const profileColors = {
-  accent: '#0B9B55',
-  accentBorder: '#BCE9D0',
-  accentSurface: '#EDF9F2',
+  accent: Palette.accent,
+  accentBorder: '#CFE2D7',
+  accentSurface: '#EAF3EE',
   danger: '#D92D20',
   dangerBorder: '#FECDCA',
   dangerSurface: '#FEF3F2',

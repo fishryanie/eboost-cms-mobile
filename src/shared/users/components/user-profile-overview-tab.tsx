@@ -1,58 +1,84 @@
-import { BadgeDollarSign, Bike, CircleDollarSign, Gauge, MapPinned, ReceiptText, TicketPercent, UsersRound, Zap, type LucideIcon } from 'lucide-react-native';
+import {
+  BadgePercent,
+  BadgePlus,
+  Bike,
+  CreditCard,
+  Gift,
+  MapPinned,
+  ReceiptText,
+  TicketPercent,
+  UsersRound,
+  Wallet,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
 
 import { MiniBadge, SectionHeading, SurfaceCard } from './user-profile-common';
-import { formatCurrency, formatEnergy, getPaymentSuccessLabel, numberFormatter, profileColors } from './user-profile-helpers';
+import { UserProfileActivityChart } from './user-profile-activity-chart';
+import { formatCurrency, getPaymentSuccessLabel, numberFormatter, profileColors } from './user-profile-helpers';
 
 export function UserProfileOverviewTab({ user }: { user: UserProfile }) {
-  const promoAssetCount = (user.promotionCodes?.length || 0) + (user.promotionMoneys?.length || 0) + (user.promotionMoneyHistories?.length || 0);
+  const promoAssetCount = (user.promotionCodes?.length || 0) + (user.promotionMoneys?.length || 0) + (user.promotionCodeOneTimeList?.length || 0);
+  const purchasedPackageWh = (user.subscriptionHistories || []).reduce((sum, item) => sum + normalizePositiveWattage(item.wattage_consumed), 0);
+  const activeQuotaCodes = (user.promotionCodes || []).filter(
+    code => normalizePositiveWattage(code.total_wattage_consumed_usage) > 0 && isUnexpiredQuotaCode(code.expired_at),
+  );
+  const activeQuotaCodeSet = new Set(activeQuotaCodes.flatMap(code => (code.code ? [code.code] : [])));
+  const activeQuotaRemainingWh = activeQuotaCodes.reduce((sum, item) => sum + normalizePositiveWattage(item.total_wattage_consumed_usage), 0);
+  const activeQuotaUsedWh = (user.promotionCodeHistories || [])
+    .filter(item => item.code && activeQuotaCodeSet.has(item.code))
+    .reduce((sum, item) => sum + normalizePositiveWattage(item.wattageConsumedPromotionUsage), 0);
   const metrics: Metric[] = [
-    { Icon: Zap, color: profileColors.info, label: 'Energy delivered', surface: profileColors.infoSurface, value: formatEnergy(user.totalConsumed) },
+    { Icon: Zap, label: 'Energy', value: formatDeliveredEnergy(user.totalConsumed) },
     {
-      Icon: Bike,
-      color: profileColors.warning,
-      label: 'Charging sessions',
-      surface: profileColors.warningSurface,
+      Icon: ReceiptText,
+      label: 'Orders',
       value: numberFormatter.format(user.totalCharged || 0),
     },
     {
-      Icon: CircleDollarSign,
-      color: profileColors.accent,
-      label: 'Total top-up',
-      surface: profileColors.accentSurface,
+      Icon: CreditCard,
+      label: 'Top-up',
       value: formatCurrency(user.totalTopUp),
     },
     {
-      Icon: ReceiptText,
-      color: profileColors.danger,
-      label: 'Charging paid',
-      surface: profileColors.dangerSurface,
-      value: formatCurrency(user.totalChargedPaid),
-    },
-    { Icon: BadgeDollarSign, color: '#0E9384', label: 'Payment success', surface: '#F0FDF9', value: getPaymentSuccessLabel(user) },
-    {
       Icon: TicketPercent,
-      color: profileColors.purple,
-      label: 'Promotion assets',
-      surface: profileColors.purpleSurface,
+      label: 'Promo inventory',
       value: numberFormatter.format(promoAssetCount),
     },
-    { Icon: Gauge, color: '#475467', label: 'Wallet movements', surface: '#F2F4F7', value: numberFormatter.format(user.balanceHistory?.length || 0) },
-    { Icon: MapPinned, color: '#175CD3', label: 'Recent stations', surface: '#EFF8FF', value: numberFormatter.format(user.recentStations?.length || 0) },
+    {
+      Icon: BadgePercent,
+      label: 'Paid bills',
+      value: formatCurrency(user.totalChargedPaid),
+    },
+    { Icon: Gift, label: 'Payment success', value: getPaymentSuccessLabel(user) },
+    {
+      Icon: Wallet,
+      label: 'Purchased kWh',
+      value: formatEnergyKwh(purchasedPackageWh),
+    },
+    {
+      Icon: BadgePlus,
+      label: 'Available kWh',
+      value: formatEnergyKwh(activeQuotaRemainingWh),
+    },
+    {
+      Icon: TicketPercent,
+      label: 'Used kWh',
+      value: formatEnergyKwh(activeQuotaUsedWh),
+    },
   ];
 
   return (
     <ThemedView backgroundColor='transparent' gap={'six'}>
       <ThemedView backgroundColor='transparent' gap={'three'}>
         <SectionHeading eyebrow='Overview' subtitle='Lifetime activity and account totals for this user.' title='General statistics' />
-        <ThemedView backgroundColor='transparent' flexDirection='row' flexWrap='wrap' gap={'three'}>
-          {metrics.map(metric => (
-            <MetricCard key={metric.label} metric={metric} />
-          ))}
-        </ThemedView>
+        <MetricGrid metrics={metrics} />
       </ThemedView>
+
+      <UserProfileActivityChart userId={user.id} />
 
       <ThemedView backgroundColor='transparent' gap={'three'}>
         <SectionHeading eyebrow='Footprint' subtitle='Account relationships and the stations used most recently.' title='User footprint' />
@@ -70,8 +96,8 @@ export function UserProfileOverviewTab({ user }: { user: UserProfile }) {
         {user.recentStations?.map(station => (
           <SurfaceCard key={station.id}>
             <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'three'}>
-              <ThemedView alignItems='center' backgroundColor='#EFF8FF' borderRadius={12} height={40} justifyContent='center' width={40}>
-                <MapPinned color='#175CD3' size={18} />
+              <ThemedView alignItems='center' backgroundColor='#EAF3EE' borderRadius={10} height={36} justifyContent='center' width={36}>
+                <MapPinned color={Palette.accent} size={17} />
               </ThemedView>
               <ThemedView backgroundColor='transparent' flex={1} gap={2} minWidth={0}>
                 <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18} numberOfLines={2} selectable>
@@ -90,36 +116,73 @@ export function UserProfileOverviewTab({ user }: { user: UserProfile }) {
   );
 }
 
-type Metric = { Icon: LucideIcon; color: string; label: string; surface: string; value: string };
+type Metric = { Icon: LucideIcon; label: string; value: string };
 
-function MetricCard({ metric: { Icon, color, label, surface, value } }: { metric: Metric }) {
+const energyKwhFormatter = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 });
+
+function normalizePositiveWattage(value?: number | null) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : 0;
+}
+
+function formatEnergyKwh(value?: number | null) {
+  const wattage = normalizePositiveWattage(value);
+  return `${energyKwhFormatter.format(Number((wattage / 1000).toFixed(2)))} kWh`;
+}
+
+function formatDeliveredEnergy(value?: number | null) {
+  return `${numberFormatter.format(Math.round(normalizePositiveWattage(value) / 1000))} kWh`;
+}
+
+function isUnexpiredQuotaCode(expiredAt?: string | null) {
+  if (!expiredAt) return true;
+  const expiresAt = new Date(expiredAt.replace(' ', 'T')).getTime();
+  return Number.isNaN(expiresAt) || expiresAt > Date.now();
+}
+
+function MetricGrid({ metrics }: { metrics: Metric[] }) {
+  const rows = Array.from({ length: Math.ceil(metrics.length / 3) }, (_, index) => metrics.slice(index * 3, index * 3 + 3));
+
   return (
-    <ThemedView
-      backgroundColor={Palette.surfaceRaised}
-      borderColor={Palette.borderSubtle}
-      borderCurve='continuous'
-      borderRadius={16}
-      borderWidth={1}
-      gap={'three'}
-      minHeight={96}
-      padding={'three'}
-      width='48%'>
-      <ThemedView alignItems='center' backgroundColor={surface} borderRadius={11} height={32} justifyContent='center' width={32}>
-        <Icon color={color} size={17} strokeWidth={2.2} />
+    <SurfaceCard>
+      <ThemedView backgroundColor='transparent'>
+        {rows.map((row, rowIndex) => (
+          <ThemedView backgroundColor='transparent' key={row.map(metric => metric.label).join('-')}>
+            {rowIndex > 0 ? <ThemedView backgroundColor={Palette.borderSubtle} height={1} /> : null}
+            <ThemedView backgroundColor='transparent' flexDirection='row' paddingVertical={'two'}>
+              {row.map((metric, columnIndex) => (
+                <ThemedView backgroundColor='transparent' flex={1} flexDirection='row' key={metric.label} minWidth={0}>
+                  {columnIndex > 0 ? <ThemedView backgroundColor={Palette.borderSubtle} marginHorizontal={'two'} width={1} /> : null}
+                  <MetricCell metric={metric} />
+                </ThemedView>
+              ))}
+            </ThemedView>
+          </ThemedView>
+        ))}
+      </ThemedView>
+    </SurfaceCard>
+  );
+}
+
+function MetricCell({ metric: { Icon, label, value } }: { metric: Metric }) {
+  return (
+    <ThemedView backgroundColor='transparent' flex={1} gap={'two'} minHeight={76} minWidth={0} paddingHorizontal={'one'}>
+      <ThemedView alignItems='center' backgroundColor='#EAF3EE' borderRadius={9} height={30} justifyContent='center' width={30}>
+        <Icon color={Palette.accent} size={15} strokeWidth={2.1} />
       </ThemedView>
       <ThemedView backgroundColor='transparent' gap={1}>
         <ThemedText
           adjustsFontSizeToFit
           color={Palette.textPrimary}
           fontFamily={FontFamily.bold}
-          fontSize={15}
-          lineHeight={20}
-          minimumFontScale={0.72}
+          fontSize={13}
+          lineHeight={18}
+          minimumFontScale={0.65}
           numberOfLines={1}
           selectable>
           {value}
         </ThemedText>
-        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={14}>
+        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={9} lineHeight={12} numberOfLines={2}>
           {label}
         </ThemedText>
       </ThemedView>

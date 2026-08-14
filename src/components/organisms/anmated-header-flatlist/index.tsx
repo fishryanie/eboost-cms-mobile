@@ -9,6 +9,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { easeGradient } from 'react-native-easing-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { ThemedText, ThemedView } from 'components/base';
 
@@ -24,7 +25,9 @@ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as unknown a
 
 export interface AnimatedHeaderFlatListProps<T> extends Omit<FlatListProps<T>, 'renderItem'> {
   largeTitle: string;
+  smallTitle?: string;
   subtitle?: string;
+  smallSubtitle?: string;
   renderItem?: ListRenderItem<T>;
   rightComponent?: React.ReactNode;
   topRightComponent?: React.ReactNode;
@@ -34,6 +37,7 @@ export interface AnimatedHeaderFlatListProps<T> extends Omit<FlatListProps<T>, '
   onBack?: () => void;
   largeTitleContainerStyle?: any;
   largeTitleStretchEnabled?: boolean;
+  onScrollOffsetChange?: (offset: number) => void;
 
   largeHeaderTitleStyle?: TextStyle;
   largeHeaderSubtitleStyle?: TextStyle;
@@ -44,7 +48,9 @@ export interface AnimatedHeaderFlatListProps<T> extends Omit<FlatListProps<T>, '
 
 function AnimatedHeaderFlatListComponent<T>({
   largeTitle,
+  smallTitle,
   subtitle,
+  smallSubtitle,
   renderItem,
   rightComponent,
   topRightComponent,
@@ -54,6 +60,7 @@ function AnimatedHeaderFlatListComponent<T>({
   onBack,
   largeTitleContainerStyle,
   largeTitleStretchEnabled = true,
+  onScrollOffsetChange,
   largeHeaderTitleStyle,
   largeHeaderSubtitleStyle,
   smallHeaderTitleStyle,
@@ -74,6 +81,7 @@ function AnimatedHeaderFlatListComponent<T>({
   const onScroll = useAnimatedScrollHandler({
     onScroll: event => {
       scrollY.set(event.contentOffset.y);
+      if (onScrollOffsetChange) scheduleOnRN(onScrollOffsetChange, event.contentOffset.y);
     },
   });
 
@@ -166,9 +174,15 @@ function AnimatedHeaderFlatListComponent<T>({
             alignItems='center'
             justifyContent='center'
             paddingHorizontal={64}>
-            <Animated.Text style={[styles.smallHeaderTitle, smallHeaderTitleStyle]}>{largeTitle}</Animated.Text>
+            <Animated.Text numberOfLines={1} style={[styles.smallHeaderTitle, smallHeaderTitleStyle]}>
+              {smallTitle || largeTitle}
+            </Animated.Text>
 
-            {!!subtitle && <Animated.Text style={[styles.smallHeaderSubtitle, smallHeaderSubtitleStyle, smallSubtitleStyle]}>{subtitle}</Animated.Text>}
+            {!!(smallSubtitle ?? subtitle) && (
+              <Animated.Text numberOfLines={1} style={[styles.smallHeaderSubtitle, smallHeaderSubtitleStyle, smallSubtitleStyle]}>
+                {smallSubtitle ?? subtitle}
+              </Animated.Text>
+            )}
           </ThemedView>
 
           <ThemedView pointerEvents='box-none' flex={1} alignItems='flex-end' justifyContent='center' paddingHorizontal={12}>

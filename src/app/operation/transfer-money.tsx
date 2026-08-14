@@ -5,7 +5,7 @@ import { HeaderTitle } from 'components/base/HeaderTitle';
 import { AppButton } from 'components/ui';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowDownUp, ArrowRight, CheckCircle2, Info, User } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
@@ -20,10 +20,12 @@ import { apiRequest } from 'utils/api/client';
 
 export default function TransferMoneyScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ userId?: string | string[] }>();
+  const initialUserId = Array.isArray(params.userId) ? params.userId[0] || '' : params.userId || '';
 
   // Sender search state
-  const [senderQueryInput, setSenderQueryInput] = useState('');
-  const [senderQuery, setSenderQuery] = useState('');
+  const [senderQueryInput, setSenderQueryInput] = useState(initialUserId);
+  const [senderQuery, setSenderQuery] = useState(initialUserId);
 
   const senderUsersQuery = useInfiniteUsers(senderQuery);
   const senderUsers = useMemo(() => senderUsersQuery.data?.pages.flatMap(page => page.items) || [], [senderUsersQuery.data]);

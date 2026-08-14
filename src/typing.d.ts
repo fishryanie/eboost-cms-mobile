@@ -423,6 +423,21 @@ type UserPromotionHistoryItem = UserProfileRecord & {
   isUsed?: boolean;
   usedAt?: string | null;
   vehicleType?: string | null;
+  wattageConsumedPromotionUsage?: number | null;
+};
+
+type UserPromotionCode = UserProfileRecord & {
+  code?: string | null;
+  expired_at?: string | null;
+  total_wattage_consumed_usage?: number | null;
+};
+
+type UserSubscriptionHistory = UserProfileRecord & {
+  amount?: number | null;
+  createdAt?: string | null;
+  id?: number;
+  name?: string | null;
+  wattage_consumed?: number | null;
 };
 
 type UserRecentStation = {
@@ -436,7 +451,7 @@ type UserRecentStation = {
 
 type UserProfile = UserListItem & {
   address?: string | null;
-  alePayHistories?: UserProfileRecord[];
+  alePayHistories?: UserMomoHistoryItem[];
   autoApplyPromotionCode?: boolean;
   autoCharge?: boolean;
   balanceHistory?: BalanceHistoryItem[];
@@ -450,7 +465,8 @@ type UserProfile = UserListItem & {
   moneyTopUpUsageHistories?: UserProfileRecord[];
   momoHistories?: UserMomoHistoryItem[];
   promotionCodeHistories?: UserPromotionHistoryItem[];
-  promotionCodes?: UserProfileRecord[];
+  promotionCodeOneTimeList?: UserPromotionHistoryItem[];
+  promotionCodes?: UserPromotionCode[];
   promotionMoneyHistories?: UserProfileRecord[];
   promotionMoneys?: UserProfileRecord[];
   recentStations?: UserRecentStation[];
@@ -458,7 +474,7 @@ type UserProfile = UserListItem & {
   referralUsers?: UserProfileRecord[];
   reports?: UserProfileRecord[];
   smsHistories?: UserProfileRecord[];
-  subscriptionHistories?: UserProfileRecord[];
+  subscriptionHistories?: UserSubscriptionHistory[];
   totalCharged?: number;
   totalChargedPaid?: number;
   totalConsumed?: number;

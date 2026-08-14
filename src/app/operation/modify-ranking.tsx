@@ -5,7 +5,7 @@ import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@g
 import { AppButton } from 'components/ui';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CheckCircle2 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
@@ -26,13 +26,15 @@ function getUserLevelLabel(level?: UserLevel | null) {
 
 export default function ModifyRankingScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ userId?: string | string[] }>();
+  const initialUserId = Array.isArray(params.userId) ? params.userId[0] || '' : params.userId || '';
   const levelSheetRef = useRef<BottomSheetModal>(null);
 
   const renderBackdrop = useCallback((props: any) => <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />, []);
 
   // User search state
-  const [queryInput, setQueryInput] = useState('');
-  const [query, setQuery] = useState('');
+  const [queryInput, setQueryInput] = useState(initialUserId);
+  const [query, setQuery] = useState(initialUserId);
 
   const usersQuery = useInfiniteUsers(query);
   const users = useMemo(() => usersQuery.data?.pages.flatMap(page => page.items) || [], [usersQuery.data]);

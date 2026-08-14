@@ -1,13 +1,14 @@
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { ChevronDown, ChevronUp, Copy, FileText } from 'lucide-react-native';
-import { type PropsWithChildren, useState } from 'react';
-import { Pressable } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { type PropsWithChildren, useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
 import { ThemedText, ThemedView } from 'components/base';
 import { EmptyState } from 'components/ui';
 import { FontFamily, Palette } from 'themes';
+import { rmhs } from 'themes/scaling';
 
 import {
   copyProfileValue,
@@ -24,16 +25,11 @@ import {
 import type { ProfileRecord, ProfileTab } from './user-profile-types';
 
 const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const profileTabWidth = rmhs(120);
 
 export function SurfaceCard({ children }: PropsWithChildren) {
   return (
-    <ThemedView
-      backgroundColor={Palette.surfaceRaised}
-      borderColor={Palette.borderSubtle}
-      borderCurve='continuous'
-      borderRadius={18}
-      borderWidth={1}
-      padding={'four'}>
+    <ThemedView backgroundColor='#FAFAFA' borderColor={Palette.borderSubtle} borderCurve='continuous' borderRadius={12} borderWidth={1} padding={'three'}>
       {children}
     </ThemedView>
   );
@@ -119,64 +115,92 @@ export function ProfileHeaderAvatar({ user }: { user: UserProfile }) {
   );
 }
 
-export function ProfileTabBar({ activeTab, onChange }: { activeTab: ProfileTab; onChange: (tab: ProfileTab) => void }) {
+export function ProfileTabBar({
+  activeTab,
+  onChange,
+  progress,
+}: {
+  activeTab: ProfileTab;
+  onChange: (tab: ProfileTab) => void;
+  progress: SharedValue<number>;
+}) {
   const tabs: { label: string; value: ProfileTab }[] = [
     { label: 'Overview', value: 'overview' },
+    { label: 'Activity', value: 'activity' },
     { label: 'Payment', value: 'payment' },
     { label: 'Transactions', value: 'transactions' },
     { label: 'Promotions', value: 'promotions' },
+    { label: 'SMS Logs', value: 'sms-logs' },
+    { label: 'Notifications', value: 'notification-messages' },
   ];
+  const scrollRef = useRef<ScrollView>(null);
+  const { width: viewportWidth } = useWindowDimensions();
+  const activeIndex = Math.max(
+    0,
+    tabs.findIndex(tab => tab.value === activeTab),
+  );
+  const indicatorStyle = useAnimatedStyle(
+    () => ({
+      transform: [{ translateX: progress.get() * profileTabWidth }],
+    }),
+    [],
+  );
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({
+        animated: true,
+        x: Math.max(0, activeIndex * profileTabWidth - (viewportWidth - profileTabWidth) / 2),
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [activeIndex, viewportWidth]);
 
   return (
-    <ThemedView backgroundColor='transparent' paddingBottom={'five'} paddingTop={'five'}>
-      <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={'pill'} flexDirection='row' gap={2} padding={4}>
-        {tabs.map(tab => {
-          const selected = activeTab === tab.value;
+    <ThemedView backgroundColor={Palette.surfaceBase} borderBottomColor={Palette.borderSubtle} borderBottomWidth={1} overflow='hidden' width='100%'>
+      <ScrollView horizontal ref={scrollRef} showsHorizontalScrollIndicator={false}>
+        <ThemedView backgroundColor='transparent' flexDirection='row' position='relative' width={tabs.length * profileTabWidth}>
+          {tabs.map(tab => {
+            const selected = activeTab === tab.value;
 
-          return (
-            <Pressable
-              accessibilityRole='tab'
-              accessibilityState={{ selected }}
-              key={tab.value}
-              onPress={() => {
-                if (!selected) {
-                  void Haptics.selectionAsync().catch(() => undefined);
-                  onChange(tab.value);
-                }
-              }}
-              style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.7 : 1 })}>
-              <ThemedView
-                alignItems='center'
-                backgroundColor='transparent'
-                borderRadius={'pill'}
-                height={38}
-                justifyContent='center'
-                overflow='hidden'
-                paddingHorizontal={3}>
-                {selected ? (
-                  <AnimatedThemedView
-                    backgroundColor={Palette.accent}
-                    bottom={0}
-                    entering={FadeIn.duration(160)}
-                    exiting={FadeOut.duration(120)}
-                    left={0}
-                    position='absolute'
-                    right={0}
-                    top={0}
-                  />
-                ) : null}
-                <ThemedText
-                  color={selected ? '#FFFFFF' : Palette.textSecondary}
-                  fontFamily={selected ? FontFamily.bold : FontFamily.semibold}
-                  fontSize={10}
-                  numberOfLines={1}>
-                  {tab.label}
-                </ThemedText>
-              </ThemedView>
-            </Pressable>
-          );
-        })}
-      </ThemedView>
+            return (
+              <Pressable
+                accessibilityRole='tab'
+                accessibilityState={{ selected }}
+                key={tab.value}
+                onPress={() => {
+                  if (!selected) {
+                    void Haptics.selectionAsync().catch(() => undefined);
+                    onChange(tab.value);
+                  }
+                }}
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, width: profileTabWidth })}>
+                <ThemedView alignItems='center' backgroundColor='transparent' height={56} justifyContent='center' paddingHorizontal={'two'}>
+                  <ThemedText
+                    color={selected ? Palette.accent : Palette.textSecondary}
+                    fontFamily={selected ? FontFamily.bold : FontFamily.semibold}
+                    fontSize={14}
+                    lineHeight={19}
+                    numberOfLines={1}>
+                    {tab.label}
+                  </ThemedText>
+                </ThemedView>
+              </Pressable>
+            );
+          })}
+        </ThemedView>
+        <AnimatedThemedView
+          backgroundColor={Palette.accent}
+          bottom={0}
+          height={2}
+          left={0}
+          pointerEvents='none'
+          position='absolute'
+          style={indicatorStyle}
+          width={profileTabWidth}
+        />
+      </ScrollView>
     </ThemedView>
   );
 }

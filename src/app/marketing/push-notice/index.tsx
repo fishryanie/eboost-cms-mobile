@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { BottomButton, HeaderTitle, ThemedText, ThemedView } from 'components/base';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { CheckCircle2 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
@@ -34,8 +34,10 @@ function ModeOption({ active, label, onPress }: { active: boolean; label: string
 
 export default function PushNoticeScreen() {
   const router = useRouter();
-  const [mode, setMode] = useState<PushNoticeMode>('topic');
-  const [target, setTarget] = useState('');
+  const params = useLocalSearchParams<{ userId?: string | string[] }>();
+  const initialUserId = Array.isArray(params.userId) ? params.userId[0] || '' : params.userId || '';
+  const [mode, setMode] = useState<PushNoticeMode>(initialUserId ? 'user' : 'topic');
+  const [target, setTarget] = useState(initialUserId);
   const [titleEn, setTitleEn] = useState('');
   const [titleVn, setTitleVn] = useState('');
   const [messageEn, setMessageEn] = useState('');
