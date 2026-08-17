@@ -1,17 +1,4 @@
-import {
-  BadgePercent,
-  BadgePlus,
-  Bike,
-  CreditCard,
-  Gift,
-  MapPinned,
-  ReceiptText,
-  TicketPercent,
-  UsersRound,
-  Wallet,
-  Zap,
-  type LucideIcon,
-} from 'lucide-react-native';
+import { Bike, MapPinned, UsersRound, type LucideIcon } from 'lucide-react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
@@ -32,40 +19,33 @@ export function UserProfileOverviewTab({ user }: { user: UserProfile }) {
     .filter(item => item.code && activeQuotaCodeSet.has(item.code))
     .reduce((sum, item) => sum + normalizePositiveWattage(item.wattageConsumedPromotionUsage), 0);
   const metrics: Metric[] = [
-    { Icon: Zap, label: 'Energy', value: formatDeliveredEnergy(user.totalConsumed) },
+    { label: 'Energy', value: formatDeliveredEnergy(user.totalConsumed) },
     {
-      Icon: ReceiptText,
       label: 'Orders',
       value: numberFormatter.format(user.totalCharged || 0),
     },
     {
-      Icon: CreditCard,
       label: 'Top-up',
       value: formatCurrency(user.totalTopUp),
     },
     {
-      Icon: TicketPercent,
       label: 'Promo inventory',
       value: numberFormatter.format(promoAssetCount),
     },
     {
-      Icon: BadgePercent,
       label: 'Paid bills',
       value: formatCurrency(user.totalChargedPaid),
     },
-    { Icon: Gift, label: 'Payment success', value: getPaymentSuccessLabel(user) },
+    { label: 'Payment success', value: getPaymentSuccessLabel(user) },
     {
-      Icon: Wallet,
       label: 'Purchased kWh',
       value: formatEnergyKwh(purchasedPackageWh),
     },
     {
-      Icon: BadgePlus,
       label: 'Available kWh',
       value: formatEnergyKwh(activeQuotaRemainingWh),
     },
     {
-      Icon: TicketPercent,
       label: 'Used kWh',
       value: formatEnergyKwh(activeQuotaUsedWh),
     },
@@ -116,7 +96,7 @@ export function UserProfileOverviewTab({ user }: { user: UserProfile }) {
   );
 }
 
-type Metric = { Icon: LucideIcon; label: string; value: string };
+type Metric = { label: string; value: string };
 
 const energyKwhFormatter = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 });
 
@@ -164,28 +144,31 @@ function MetricGrid({ metrics }: { metrics: Metric[] }) {
   );
 }
 
-function MetricCell({ metric: { Icon, label, value } }: { metric: Metric }) {
+function MetricCell({ metric: { label, value } }: { metric: Metric }) {
   return (
-    <ThemedView backgroundColor='transparent' flex={1} gap={'two'} minHeight={76} minWidth={0} paddingHorizontal={'one'}>
-      <ThemedView alignItems='center' backgroundColor='#EAF3EE' borderRadius={9} height={30} justifyContent='center' width={30}>
-        <Icon color={Palette.accent} size={15} strokeWidth={2.1} />
-      </ThemedView>
-      <ThemedView backgroundColor='transparent' gap={1}>
-        <ThemedText
-          adjustsFontSizeToFit
-          color={Palette.textPrimary}
-          fontFamily={FontFamily.bold}
-          fontSize={13}
-          lineHeight={18}
-          minimumFontScale={0.65}
-          numberOfLines={1}
-          selectable>
-          {value}
-        </ThemedText>
-        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={9} lineHeight={12} numberOfLines={2}>
-          {label}
-        </ThemedText>
-      </ThemedView>
+    <ThemedView
+      backgroundColor='transparent'
+      flex={1}
+      gap={'two'}
+      justifyContent='space-between'
+      minHeight={58}
+      minWidth={0}
+      paddingHorizontal={'one'}
+      paddingVertical={'one'}>
+      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={9} lineHeight={12} numberOfLines={2}>
+        {label}
+      </ThemedText>
+      <ThemedText
+        adjustsFontSizeToFit
+        color={Palette.textPrimary}
+        fontFamily={FontFamily.bold}
+        fontSize={16}
+        lineHeight={21}
+        minimumFontScale={0.65}
+        numberOfLines={1}
+        selectable>
+        {value}
+      </ThemedText>
     </ThemedView>
   );
 }

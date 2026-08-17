@@ -661,9 +661,20 @@ function ChargerSection({
   const mutations = useLocationResourceMutations(locationId, stationId);
   const type = isCar ? 'car' : 'bike';
   const path = type === 'car' ? 'api/car_boxes' : 'api/bike_boxes';
+  const pendingChargerUpdate =
+    mutations.patch.isPending && mutations.patch.variables?.id === charger.id && mutations.patch.variables.path === path
+      ? mutations.patch.variables.data
+      : undefined;
+  const chargerVisible = typeof pendingChargerUpdate?.visible === 'boolean' ? pendingChargerUpdate.visible : charger.visible !== false;
+  const chargerEnabled = typeof pendingChargerUpdate?.enabled === 'boolean' ? pendingChargerUpdate.enabled : charger.enabled !== false;
   const firstPort = ports[0];
   const run = (promise: Promise<unknown>, success: string) =>
     promise.then(() => Alert.alert('Success', success)).catch(error => Alert.alert('Action failed', error?.message || 'Please try again.'));
+  const updateChargerStatus = (data: { enabled?: boolean; visible?: boolean }) =>
+    mutations.patch.mutate(
+      { data, id: charger.id, path },
+      { onError: error => Alert.alert('Update failed', error instanceof Error ? error.message : 'Please try again.') },
+    );
 
   const offset = getChargerDisplayValue(rawCharger, ['offset', 'offsetKwh', 'offset_kwh']);
   const standby = getChargerDisplayValue(rawCharger, ['standby', 'standbyKwh', 'standby_kwh']);
@@ -766,9 +777,21 @@ function ChargerSection({
         </ThemedView>
         <ThemedView backgroundColor={Palette.borderSubtle} height={1} marginVertical={2} />
         <ThemedView flexDirection='row'>
-          <ChargerStat isSwitch label='Visible' value={charger.visible !== false} />
+          <ChargerStat
+            isSwitch
+            disabled={mutations.patch.isPending}
+            label='Visible'
+            onValueChange={visible => updateChargerStatus({ visible })}
+            value={chargerVisible}
+          />
           <ThemedView backgroundColor={Palette.borderSubtle} marginHorizontal={'two'} width={1} />
-          <ChargerStat isSwitch label='Enabled' value={charger.enabled !== false} />
+          <ChargerStat
+            isSwitch
+            disabled={mutations.patch.isPending}
+            label='Enabled'
+            onValueChange={enabled => updateChargerStatus({ enabled })}
+            value={chargerEnabled}
+          />
           <ThemedView backgroundColor={Palette.borderSubtle} marginHorizontal={'two'} width={1} />
           <ChargerStat isSwitch label='Read meter' value={readMeter === true || readMeter === 'true'} />
         </ThemedView>
@@ -1320,18 +1343,33 @@ function StationFact({ label, value }: { label: string; value: number | string }
   );
 }
 
-function ChargerStat({ label, value, isSwitch }: { label: string; value: string | boolean; isSwitch?: boolean }) {
+function ChargerStat({
+  disabled,
+  label,
+  onValueChange,
+  value,
+  isSwitch,
+}: {
+  disabled?: boolean;
+  label: string;
+  onValueChange?: (value: boolean) => void;
+  value: string | boolean;
+  isSwitch?: boolean;
+}) {
+  const switchDisabled = disabled || !onValueChange;
+
   return (
     <ThemedView backgroundColor='transparent' flex={1} gap={2} minWidth={0}>
       <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={9} textTransform='uppercase'>
         {label}
       </ThemedText>
       {isSwitch ? (
-        <ThemedView alignItems='flex-start' marginTop={2} pointerEvents='none'>
+        <ThemedView alignItems='flex-start' marginTop={2}>
           <Switch
-            disabled
+            disabled={switchDisabled}
             ios_backgroundColor='#D9DDE2'
-            style={{ transform: [{ scale: 0.75 }], marginLeft: -6, marginVertical: -4 }}
+            onValueChange={onValueChange}
+            style={{ marginLeft: -6, marginVertical: -4, opacity: switchDisabled ? 0.7 : 1, transform: [{ scale: 0.75 }] }}
             trackColor={{ false: '#D9DDE2', true: '#87D4A3' }}
             value={Boolean(value)}
           />

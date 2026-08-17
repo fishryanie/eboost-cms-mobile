@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { AlertTriangle, Check, Copy, User } from 'lucide-react-native';
+import { AlertTriangle, CalendarDays, Check, Copy, User } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable } from 'react-native';
 
@@ -8,12 +8,14 @@ import { ImagePreviewModal } from 'components/media/image-preview-modal';
 import { FontFamily, Palette } from 'themes';
 
 import { getUserLoginProvider } from '../user-account';
-import { copyProfileValue, formatPhone, getAvatarUrl, getDisplayName } from './user-profile-helpers';
+import { copyProfileValue, formatCurrency, formatDate, formatPhone, getAvatarUrl, getDisplayName } from './user-profile-helpers';
 
 export function UserProfileSummaryCard({ user }: { user: UserProfile }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const avatarUrl = getAvatarUrl(user);
   const displayName = getDisplayName(user);
+  const levelColor = user.userLevel?.backgroundColor || Palette.accent;
+  const levelName = user.userLevel?.name || 'Not assigned';
 
   return (
     <>
@@ -61,9 +63,28 @@ export function UserProfileSummaryCard({ user }: { user: UserProfile }) {
           </ThemedView>
 
           <ThemedView backgroundColor='transparent' flex={1} gap={3} minWidth={0} paddingTop={2}>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={17} lineHeight={22} numberOfLines={1} selectable>
-              {displayName}
-            </ThemedText>
+            <ThemedView alignItems='flex-start' backgroundColor='transparent' flexDirection='row' gap={'two'} minWidth={0}>
+              <ThemedView backgroundColor='transparent' flex={1} minWidth={0}>
+                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={17} lineHeight={22} numberOfLines={1} selectable>
+                  {displayName}
+                </ThemedText>
+              </ThemedView>
+
+              <ThemedView alignItems='flex-end' alignSelf='stretch' backgroundColor='transparent' flexShrink={0} justifyContent='center' maxWidth='38%'>
+                <ThemedText
+                  adjustsFontSizeToFit
+                  color={Palette.accentPressed}
+                  fontFamily={FontFamily.bold}
+                  fontSize={16}
+                  lineHeight={21}
+                  minimumFontScale={0.68}
+                  numberOfLines={1}
+                  selectable
+                  textAlign='right'>
+                  {formatCurrency(user.balance)}
+                </ThemedText>
+              </ThemedView>
+            </ThemedView>
             <ContactLine copyLabel='Phone number' copyValue={user.phoneNumber} value={formatPhone(user.phoneNumber)} verified={user.isPhoneVerified} />
             <ContactLine
               copyLabel='Email address'
@@ -75,11 +96,35 @@ export function UserProfileSummaryCard({ user }: { user: UserProfile }) {
           </ThemedView>
         </ThemedView>
 
-        {user.address ? (
-          <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={19} selectable>
-            {user.address}
-          </ThemedText>
-        ) : null}
+        <ThemedView backgroundColor='transparent' gap={3}>
+          <ThemedView alignItems='center' backgroundColor='transparent' columnGap={'two'} flexDirection='row' flexWrap='wrap' minWidth={0} rowGap={2}>
+            <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'one'} minWidth={0}>
+              <ThemedView backgroundColor={levelColor} borderRadius={'pill'} flexShrink={0} height={6} width={6} />
+              <ThemedText
+                color={Palette.textSecondary}
+                flexShrink={1}
+                fontFamily={FontFamily.semibold}
+                fontSize={10}
+                lineHeight={14}
+                numberOfLines={1}
+                selectable>
+                {levelName}
+              </ThemedText>
+            </ThemedView>
+            <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'one'}>
+              <CalendarDays color={Palette.textTertiary} size={12} strokeWidth={2.2} />
+              <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={14} numberOfLines={1} selectable>
+                Joined {formatDate(user.createdAt, true)}
+              </ThemedText>
+            </ThemedView>
+          </ThemedView>
+
+          {user.address ? (
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={19} selectable>
+              {user.address}
+            </ThemedText>
+          ) : null}
+        </ThemedView>
       </ThemedView>
       <ImagePreviewModal imageUrl={avatarUrl} onClose={() => setPreviewOpen(false)} title={displayName} visible={previewOpen} />
     </>
