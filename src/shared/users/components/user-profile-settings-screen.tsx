@@ -1,7 +1,7 @@
 import { BatteryCharging, CheckCircle2, MailCheck, PhoneCall, TicketPercent, type LucideIcon } from 'lucide-react-native';
-import { RefreshControl, Switch } from 'react-native';
+import { RefreshControl } from 'react-native';
 
-import { ThemedText, ThemedView } from 'components/base';
+import { Switch, ThemedText, ThemedView } from 'components/base';
 import AnimatedHeaderScrollView from 'components/organisms/animated-header-scrollview';
 import { AppButton, EmptyState } from 'components/ui';
 import { FontFamily, Palette } from 'themes';

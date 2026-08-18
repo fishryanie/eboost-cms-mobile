@@ -2,25 +2,31 @@ import { create } from 'zustand';
 
 export type RelocateLocationDraft = {
   latitude?: string;
-  locationId?: number;
   longitude?: string;
+  resourceId?: number;
+  resourceType?: 'location' | 'station';
 };
 
 type RelocateLocationDraftState = {
   clearDraft: () => void;
   draft: RelocateLocationDraft;
-  setCoordinates: (locationId: number, coordinates: Pick<RelocateLocationDraft, 'latitude' | 'longitude'>) => void;
+  setCoordinates: (
+    resourceType: NonNullable<RelocateLocationDraft['resourceType']>,
+    resourceId: number,
+    coordinates: Pick<RelocateLocationDraft, 'latitude' | 'longitude'>,
+  ) => void;
 };
 
 export const useRelocateLocationDraftStore = create<RelocateLocationDraftState>(set => ({
   clearDraft: () => set({ draft: {} }),
   draft: {},
-  setCoordinates: (locationId, coordinates) =>
+  setCoordinates: (resourceType, resourceId, coordinates) =>
     set(state => ({
       draft: {
-        ...(state.draft.locationId === locationId ? state.draft : {}),
+        ...(state.draft.resourceId === resourceId && state.draft.resourceType === resourceType ? state.draft : {}),
         ...coordinates,
-        locationId,
+        resourceId,
+        resourceType,
       },
     })),
 }));

@@ -12,6 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 import { ThemedText, ThemedView } from 'components/base';
+import { useQrScanResultStore } from 'features/qr-code/qr-scan-result-store';
+import { decodeQrCode } from 'features/qr-code/qr-scan-service';
 import { FontFamily, Palette } from 'themes';
 import { mhs, mvs, width } from 'themes/scaling';
 
@@ -31,6 +33,8 @@ export default function ScanQrCodeScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
+  const clearScanResult = useQrScanResultStore(state => state.clearResult);
+  const setScanResult = useQrScanResultStore(state => state.setResult);
   const lastScannedCode = useRef<string | null>(null);
   const scanLockedRef = useRef(false);
   const [permission, requestPermission] = useCameraPermissions();
@@ -65,19 +69,42 @@ export default function ScanQrCodeScreen() {
     }
   }, [permission, requestPermission]);
 
-  const handleBarcodeScanned = useCallback((result: BarcodeScanningResult) => {
-    if (!result.data || scanLockedRef.current || lastScannedCode.current === result.data) return;
+  const handleBarcodeScanned = useCallback(
+    (result: BarcodeScanningResult) => {
+      if (!result.data || scanLockedRef.current || lastScannedCode.current === result.data) return;
 
-    scanLockedRef.current = true;
-    lastScannedCode.current = result.data;
-    setScannedValue(result.data);
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    Toast.show({
-      type: 'success',
-      text1: 'QR code scanned',
-      text2: result.data,
-    });
-  }, []);
+      scanLockedRef.current = true;
+      lastScannedCode.current = result.data;
+      const qrData = result.data;
+      clearScanResult();
+
+      void decodeQrCode(qrData)
+        .then(response => {
+          setScannedValue(qrData);
+          setScanResult(response);
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+          Toast.show({
+            type: 'success',
+            text1: 'QR code scanned',
+            text2: response.identifier,
+          });
+          router.push('/scan-qr-code/result');
+        })
+        .catch(error => {
+          scanLockedRef.current = false;
+          lastScannedCode.current = null;
+          clearScanResult();
+          setScannedValue(null);
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
+          Toast.show({
+            type: 'error',
+            text1: 'QR code scan failed',
+            text2: error instanceof Error ? error.message : 'Please try again.',
+          });
+        });
+    },
+    [clearScanResult, router, setScanResult],
+  );
 
   const handlePickQrImage = useCallback(async () => {
     try {
@@ -114,9 +141,10 @@ export default function ScanQrCodeScreen() {
   const handleResetScan = useCallback(() => {
     scanLockedRef.current = false;
     lastScannedCode.current = null;
+    clearScanResult();
     setScannedValue(null);
     void Haptics.selectionAsync().catch(() => undefined);
-  }, []);
+  }, [clearScanResult]);
 
   const handleCopyScannedValue = useCallback(async () => {
     if (!scannedValue) return;
@@ -259,7 +287,7 @@ function ScannedValuePanel({
           QR code scanned
         </ThemedText>
       </ThemedView>
-      <ThemedText color='rgba(255,255,255,0.82)' fontFamily={FontFamily.medium} fontSize={13} lineHeight={18} numberOfLines={2}>
+      <ThemedText selectable color='rgba(255,255,255,0.82)' fontFamily={FontFamily.medium} fontSize={13} lineHeight={18} numberOfLines={2}>
         {value}
       </ThemedText>
       <ThemedView flexDirection='row' gap={8}>

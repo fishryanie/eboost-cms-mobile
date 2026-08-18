@@ -11,14 +11,14 @@ import { BottomButton, ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
 import { mhs, mvs } from 'themes/scaling';
 
-import { useRelocateLocation } from '../hooks';
+import { useLocationResourceMutations, useRelocateLocation } from '../hooks';
 import { useRelocateLocationDraftStore } from '../relocate-location-draft-store';
 
 const FOOTER_BUTTON_HEIGHT = 45;
 const FOOTER_BUTTON_RADIUS = 16;
 
-function formatCoordinate(value?: number | null) {
-  return typeof value === 'number' && Number.isFinite(value) ? String(value) : '';
+function formatCoordinate(value?: number | string | null) {
+  return value !== null && value !== undefined && Number.isFinite(Number(value)) ? String(value) : '';
 }
 
 function getCoordinateError(latitudeValue: string, longitudeValue: string) {
@@ -33,23 +33,46 @@ function getCoordinateError(latitudeValue: string, longitudeValue: string) {
   return undefined;
 }
 
+type RelocatableResource = Pick<LocationRecord, 'id' | 'latitude' | 'longitude' | 'name'> | Pick<StationRecord, 'id' | 'latitude' | 'longitude' | 'name'>;
+
 export function RelocateLocationModal({ location, onClose }: { location?: LocationRecord; onClose: () => void }) {
+  return <RelocateResourceModal locationId={location?.id} onClose={onClose} resource={location} resourceType='location' />;
+}
+
+export function RelocateStationModal({ locationId, onClose, station }: { locationId?: number | string; onClose: () => void; station?: StationRecord }) {
+  return <RelocateResourceModal locationId={locationId} onClose={onClose} resource={station} resourceType='station' />;
+}
+
+function RelocateResourceModal({
+  locationId,
+  onClose,
+  resource,
+  resourceType,
+}: {
+  locationId?: number | string;
+  onClose: () => void;
+  resource?: RelocatableResource;
+  resourceType: 'location' | 'station';
+}) {
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
-  const relocateMutation = useRelocateLocation();
+  const relocateLocationMutation = useRelocateLocation();
+  const stationMutations = useLocationResourceMutations(locationId || '');
   const draft = useRelocateLocationDraftStore(state => state.draft);
   const clearDraft = useRelocateLocationDraftStore(state => state.clearDraft);
   const setDraftCoordinates = useRelocateLocationDraftStore(state => state.setCoordinates);
   const [picking, setPicking] = useState(false);
   const [navigatingToMap, setNavigatingToMap] = useState(false);
-  const [submittedLocationId, setSubmittedLocationId] = useState<number>();
-  const mapRouteParamsRef = useRef<{ latitude?: string; locationId: string; longitude?: string } | undefined>(undefined);
-  const locationId = location?.id;
-  const currentDraft = draft.locationId === locationId ? draft : {};
-  const latitude = currentDraft.latitude ?? formatCoordinate(location?.latitude);
-  const longitude = currentDraft.longitude ?? formatCoordinate(location?.longitude);
-  const formError = submittedLocationId === locationId ? getCoordinateError(latitude, longitude) : undefined;
-  const busy = picking || relocateMutation.isPending;
+  const [submittedResourceId, setSubmittedResourceId] = useState<number>();
+  const mapRouteParamsRef = useRef<{ latitude?: string; longitude?: string; resourceId: string; resourceType: 'location' | 'station' } | undefined>(undefined);
+  const resourceId = resource?.id;
+  const currentDraft = draft.resourceId === resourceId && draft.resourceType === resourceType ? draft : {};
+  const latitude = currentDraft.latitude ?? formatCoordinate(resource?.latitude);
+  const longitude = currentDraft.longitude ?? formatCoordinate(resource?.longitude);
+  const formError = submittedResourceId === resourceId ? getCoordinateError(latitude, longitude) : undefined;
+  const resourceMutation = resourceType === 'station' ? stationMutations.patch : relocateLocationMutation;
+  const busy = picking || resourceMutation.isPending;
+  const resourceLabel = resourceType === 'station' ? 'station' : 'location';
 
   useFocusEffect(
     useCallback(() => {
@@ -58,28 +81,29 @@ export function RelocateLocationModal({ location, onClose }: { location?: Locati
   );
 
   function updateDraft(values: { latitude?: string; longitude?: string }) {
-    if (!locationId) return;
-    setSubmittedLocationId(undefined);
-    setDraftCoordinates(locationId, values);
+    if (!resourceId) return;
+    setSubmittedResourceId(undefined);
+    setDraftCoordinates(resourceType, resourceId, values);
   }
 
   function handleClose() {
     if (busy) return;
     clearDraft();
-    setSubmittedLocationId(undefined);
-    relocateMutation.reset();
+    setSubmittedResourceId(undefined);
+    resourceMutation.reset();
     onClose();
   }
 
   function handleChooseOnMap() {
-    if (!locationId || busy) return;
+    if (!resourceId || busy) return;
 
     const parsedLatitude = Number(latitude);
     const parsedLongitude = Number(longitude);
     mapRouteParamsRef.current = {
       latitude: Number.isFinite(parsedLatitude) ? String(parsedLatitude) : undefined,
-      locationId: String(locationId),
       longitude: Number.isFinite(parsedLongitude) ? String(parsedLongitude) : undefined,
+      resourceId: String(resourceId),
+      resourceType,
     };
     setNavigatingToMap(true);
   }
@@ -92,58 +116,63 @@ export function RelocateLocationModal({ location, onClose }: { location?: Locati
     router.push({ pathname: '/location/map-picker', params });
   }
 
-  async function handleUseCurrentLocation() {
-    if (!locationId || busy) return;
+  function handleUseCurrentLocation() {
+    if (!resourceId || busy) return;
 
     setPicking(true);
-    try {
-      const permission = await Location.requestForegroundPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Location access needed', 'Allow location access to capture the current GPS coordinates.');
-        return;
-      }
+    void Location.requestForegroundPermissionsAsync()
+      .then(permission => {
+        if (!permission.granted) {
+          Alert.alert('Location access needed', 'Allow location access to capture the current GPS coordinates.');
+          return undefined;
+        }
 
-      const servicesEnabled = await Location.hasServicesEnabledAsync();
-      if (!servicesEnabled) {
-        Alert.alert('Location services are off', 'Turn on Location Services, then try again.');
-        return;
-      }
+        return Location.hasServicesEnabledAsync();
+      })
+      .then(servicesEnabled => {
+        if (servicesEnabled === undefined) return undefined;
+        if (!servicesEnabled) {
+          Alert.alert('Location services are off', 'Turn on Location Services, then try again.');
+          return undefined;
+        }
 
-      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      updateDraft({
-        latitude: position.coords.latitude.toFixed(6),
-        longitude: position.coords.longitude.toFixed(6),
-      });
-      Toast.show({ text1: 'GPS location captured', text2: 'Review the coordinates, then save your changes.', type: 'success' });
-    } catch (error) {
-      Alert.alert('Could not get current location', error instanceof Error ? error.message : 'Please try again in an open area.');
-    } finally {
-      setPicking(false);
-    }
+        return Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      })
+      .then(position => {
+        if (!position) return;
+        updateDraft({
+          latitude: position.coords.latitude.toFixed(6),
+          longitude: position.coords.longitude.toFixed(6),
+        });
+        Toast.show({ text1: 'GPS location captured', text2: 'Review the coordinates, then save your changes.', type: 'success' });
+      })
+      .catch(error => {
+        Alert.alert('Could not get current location', error instanceof Error ? error.message : 'Please try again in an open area.');
+      })
+      .finally(() => setPicking(false));
   }
 
   function handleSubmit() {
-    if (!locationId || busy) return;
+    if (!resourceId || busy) return;
 
-    setSubmittedLocationId(locationId);
+    setSubmittedResourceId(resourceId);
     const error = getCoordinateError(latitude, longitude);
     if (error) return;
 
-    relocateMutation.mutate(
-      {
-        id: locationId,
-        latitude: Number(latitude),
-        longitude: Number(longitude),
-      },
-      {
-        onSuccess: () => {
-          clearDraft();
-          setSubmittedLocationId(undefined);
-          Toast.show({ text1: 'Location updated', text2: 'The new coordinates have been saved.', type: 'success' });
-          onClose();
-        },
-      },
-    );
+    const coordinates = { latitude: Number(latitude), longitude: Number(longitude) };
+    const onSuccess = () => {
+      clearDraft();
+      setSubmittedResourceId(undefined);
+      Toast.show({ text1: `${resourceType === 'station' ? 'Station' : 'Location'} updated`, text2: 'The new coordinates have been saved.', type: 'success' });
+      onClose();
+    };
+
+    if (resourceType === 'station') {
+      stationMutations.patch.mutate({ data: coordinates, id: resourceId, path: 'api/stations' }, { onSuccess });
+      return;
+    }
+
+    relocateLocationMutation.mutate({ id: resourceId, ...coordinates }, { onSuccess });
   }
 
   return (
@@ -158,7 +187,7 @@ export function RelocateLocationModal({ location, onClose }: { location?: Locati
       backdropTransitionInTiming={360}
       backdropTransitionOutTiming={260}
       hideModalContentWhileAnimating
-      isVisible={Boolean(location) && !navigatingToMap}
+      isVisible={Boolean(resource) && !navigatingToMap}
       onBackButtonPress={handleClose}
       onBackdropPress={handleClose}
       onModalHide={handleModalHide}
@@ -174,10 +203,10 @@ export function RelocateLocationModal({ location, onClose }: { location?: Locati
           <ThemedView alignItems='center' flexDirection='row' gap={'three'}>
             <ThemedView flex={1} gap={2}>
               <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={20} lineHeight={25}>
-                Relocate location
+                Relocate {resourceLabel}
               </ThemedText>
               <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={12} lineHeight={17} numberOfLines={1}>
-                {location?.name || 'Location'}
+                {resource?.name || (resourceType === 'station' ? 'Station' : 'Location')}
               </ThemedText>
             </ThemedView>
             <Pressable accessibilityLabel='Close relocate modal' accessibilityRole='button' disabled={busy} hitSlop={8} onPress={handleClose}>
@@ -212,9 +241,9 @@ export function RelocateLocationModal({ location, onClose }: { location?: Locati
             </ThemedView>
           </ThemedView>
 
-          {formError || relocateMutation.isError ? (
+          {formError || resourceMutation.isError ? (
             <ThemedText color={Palette.danger} fontFamily={FontFamily.medium} fontSize={12} lineHeight={17} selectable>
-              {formError || relocateMutation.error?.message || 'Could not update this location. Please try again.'}
+              {formError || resourceMutation.error?.message || `Could not update this ${resourceLabel}. Please try again.`}
             </ThemedText>
           ) : null}
         </ScrollView>
@@ -240,7 +269,7 @@ export function RelocateLocationModal({ location, onClose }: { location?: Locati
               </FooterActionButton>
             </ThemedView>
           }
-          loading={relocateMutation.isPending}
+          loading={resourceMutation.isPending}
           onPress={handleSubmit}
           radius={FOOTER_BUTTON_RADIUS}
           title='Save'

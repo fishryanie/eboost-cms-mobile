@@ -1,4 +1,4 @@
-import { Bike, Building2, Car, FileText, Mail, MapPin, Pencil, Phone, Plus } from 'lucide-react-native';
+import { Bike, Building2, Car, FileText, Mail, MapPin, Phone, Plus } from 'lucide-react-native';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, type BottomSheetFooterProps } from '@gorhom/bottom-sheet';
 import * as Linking from 'expo-linking';
 import { useEffect, useRef, useState } from 'react';
@@ -20,14 +20,16 @@ export function LocationStationsSheet({
   location,
   onClose,
   onClosed,
-  onManage,
+  onEditStation,
+  onRelocateStation,
   onSelectStation,
   open,
 }: {
   location?: LocationRecord;
   onClose: () => void;
   onClosed: () => void;
-  onManage: (location: LocationRecord) => void;
+  onEditStation: (location: LocationRecord, station: StationRecord) => void;
+  onRelocateStation: (location: LocationRecord, station: StationRecord) => void;
   onSelectStation: (location: LocationRecord, station: StationRecord) => void;
   open: boolean;
 }) {
@@ -132,28 +134,6 @@ export function LocationStationsSheet({
                       Location overview
                     </ThemedText>
                   </ThemedView>
-                  <Pressable
-                    accessibilityLabel='Edit location'
-                    accessibilityRole='button'
-                    hitSlop={8}
-                    onPress={() => onManage(locationDetailQuery.data || location)}>
-                    <ThemedView
-                      alignItems='center'
-                      backgroundColor={statusTheme.tone}
-                      borderColor={statusTheme.border}
-                      borderRadius={'pill'}
-                      borderWidth={1}
-                      flexDirection='row'
-                      gap={5}
-                      height={36}
-                      justifyContent='center'
-                      paddingHorizontal={12}>
-                      <Pencil color={statusTheme.accent} size={14} />
-                      <ThemedText color={statusTheme.accent} fontFamily={FontFamily.semibold} fontSize={11}>
-                        Edit
-                      </ThemedText>
-                    </ThemedView>
-                  </Pressable>
                 </ThemedView>
                 <ThemedView alignItems='flex-start' backgroundColor='transparent' flexDirection='row' gap={10}>
                   <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={22} lineHeight={28} selectable>
@@ -217,6 +197,8 @@ export function LocationStationsSheet({
                   accentColor={statusTheme.accent}
                   accentTone={statusTheme.tone}
                   locationId={locationId}
+                  onEditStation={station => onEditStation(location, station)}
+                  onRelocateStation={station => onRelocateStation(location, station)}
                   onSelectStation={station => onSelectStation(location, station)}
                   stations={stations}
                 />

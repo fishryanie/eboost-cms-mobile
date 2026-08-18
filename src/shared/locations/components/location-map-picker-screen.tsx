@@ -39,7 +39,7 @@ function formatAddress(address?: Location.LocationGeocodedAddress) {
 
 export function LocationMapPickerScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ latitude?: string; locationId?: string; longitude?: string }>();
+  const params = useLocalSearchParams<{ latitude?: string; longitude?: string; resourceId?: string; resourceType?: 'location' | 'station' }>();
   const { bottom } = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const geocodeRequestRef = useRef(0);
@@ -53,26 +53,31 @@ export function LocationMapPickerScreen() {
   const [locating, setLocating] = useState(false);
   const [resolvingAddress, setResolvingAddress] = useState(false);
 
-  async function resolveAddress(nextCoordinates: MapCoordinates) {
+  function resolveAddress(nextCoordinates: MapCoordinates) {
     const requestId = ++geocodeRequestRef.current;
     setResolvingAddress(true);
 
-    try {
-      if (process.env.EXPO_OS === 'android') {
-        const permission = await Location.getForegroundPermissionsAsync();
-        if (!permission.granted) {
-          if (requestId === geocodeRequestRef.current) setAddress('Coordinates selected — confirm or use GPS for an address preview');
-          return;
-        }
-      }
+    const permissionRequest =
+      process.env.EXPO_OS === 'android' ? Location.getForegroundPermissionsAsync().then(permission => permission.granted) : Promise.resolve(true);
 
-      const [result] = await Location.reverseGeocodeAsync(nextCoordinates);
-      if (requestId === geocodeRequestRef.current) setAddress(formatAddress(result));
-    } catch {
-      if (requestId === geocodeRequestRef.current) setAddress('Address unavailable for this point');
-    } finally {
-      if (requestId === geocodeRequestRef.current) setResolvingAddress(false);
-    }
+    return permissionRequest
+      .then(granted => {
+        if (!granted) {
+          if (requestId === geocodeRequestRef.current) setAddress('Coordinates selected — confirm or use GPS for an address preview');
+          return undefined;
+        }
+
+        return Location.reverseGeocodeAsync(nextCoordinates);
+      })
+      .then(results => {
+        if (results && requestId === geocodeRequestRef.current) setAddress(formatAddress(results[0]));
+      })
+      .catch(() => {
+        if (requestId === geocodeRequestRef.current) setAddress('Address unavailable for this point');
+      })
+      .finally(() => {
+        if (requestId === geocodeRequestRef.current) setResolvingAddress(false);
+      });
   }
 
   function handleRegionChangeComplete(region: Region) {
@@ -81,43 +86,50 @@ export function LocationMapPickerScreen() {
     void resolveAddress(nextCoordinates);
   }
 
-  async function handleUseCurrentLocation() {
+  function handleUseCurrentLocation() {
     if (locating) return;
 
     setLocating(true);
-    try {
-      const permission = await Location.requestForegroundPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Location access needed', 'Allow location access to center the map on your current position.');
-        return;
-      }
+    void Location.requestForegroundPermissionsAsync()
+      .then(permission => {
+        if (!permission.granted) {
+          Alert.alert('Location access needed', 'Allow location access to center the map on your current position.');
+          return undefined;
+        }
 
-      const servicesEnabled = await Location.hasServicesEnabledAsync();
-      if (!servicesEnabled) {
-        Alert.alert('Location services are off', 'Turn on Location Services, then try again.');
-        return;
-      }
+        return Location.hasServicesEnabledAsync();
+      })
+      .then(servicesEnabled => {
+        if (servicesEnabled === undefined) return undefined;
+        if (!servicesEnabled) {
+          Alert.alert('Location services are off', 'Turn on Location Services, then try again.');
+          return undefined;
+        }
 
-      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      const nextCoordinates = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-      setCoordinates(nextCoordinates);
-      mapRef.current?.animateToRegion({ ...nextCoordinates, latitudeDelta: INITIAL_DELTA, longitudeDelta: INITIAL_DELTA }, 450);
-      void resolveAddress(nextCoordinates);
-    } catch (error) {
-      Alert.alert('Could not get current location', error instanceof Error ? error.message : 'Please try again in an open area.');
-    } finally {
-      setLocating(false);
-    }
+        return Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      })
+      .then(position => {
+        if (!position) return;
+        const nextCoordinates = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+        setCoordinates(nextCoordinates);
+        mapRef.current?.animateToRegion({ ...nextCoordinates, latitudeDelta: INITIAL_DELTA, longitudeDelta: INITIAL_DELTA }, 450);
+        void resolveAddress(nextCoordinates);
+      })
+      .catch(error => {
+        Alert.alert('Could not get current location', error instanceof Error ? error.message : 'Please try again in an open area.');
+      })
+      .finally(() => setLocating(false));
   }
 
   function handleConfirm() {
-    const locationId = Number(params.locationId);
-    if (!Number.isFinite(locationId)) {
-      Alert.alert('Location unavailable', 'Close the map and open Relocate again.');
+    const resourceId = Number(params.resourceId);
+    const resourceType = params.resourceType === 'station' ? 'station' : 'location';
+    if (!Number.isFinite(resourceId)) {
+      Alert.alert('Resource unavailable', 'Close the map and open Relocate again.');
       return;
     }
 
-    setDraftCoordinates(locationId, {
+    setDraftCoordinates(resourceType, resourceId, {
       latitude: coordinates.latitude.toFixed(6),
       longitude: coordinates.longitude.toFixed(6),
     });

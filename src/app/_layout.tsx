@@ -82,6 +82,7 @@ function TabLayout() {
                   <Stack.Screen name='station/[stationId]/index' />
                   <Stack.Screen name='marketing/package-list/index' />
                   <Stack.Screen name='scan-qr-code/index' />
+                  <Stack.Screen name='scan-qr-code/result' />
                   <Stack.Screen name='technical/network-issues/index' />
                 </Stack>
                 <AutoUpdateModal />

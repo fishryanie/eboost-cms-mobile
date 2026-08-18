@@ -1,70 +1,41 @@
 import { mhs } from 'themes/scaling';
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
-import Modal from 'react-native-modal';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
 import { LocationCard } from 'shared/locations/components/location-card';
 import { LocationListSkeleton } from 'shared/locations/components/location-list-skeleton';
-import { RelocateLocationModal } from 'shared/locations/components/relocate-location-modal';
+import { RelocateLocationModal, RelocateStationModal } from 'shared/locations/components/relocate-location-modal';
+import { LocationResourceFormSheet } from 'shared/locations/components/location-resource-form-sheet';
 import { LocationStationsSheet } from 'shared/locations/components/location-stations-sheet';
 import { filterLocationsByStatus, getLocationStatusOptions } from 'shared/locations/location-filter';
-import { useCreateLocation, useLocations, useUploadLocationImage } from 'shared/locations/hooks';
+import { useLocations, useUploadLocationImage } from 'shared/locations/hooks';
 import { AppButton, EmptyState } from 'components/ui';
 import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
+import { StationEditSheet } from 'shared/stations/components/station-details-content';
+
+type StationActionTarget = { location: LocationRecord; station: StationRecord };
+type SheetExitAction = { locationId: string; stationId: string; type: 'station' } | { target: StationActionTarget; type: 'edit-station' | 'relocate-station' };
 
 export default function LocationsPage() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ action?: string }>();
   const [search, setSearch] = useState('');
-  const [createOpenState, setCreateOpenState] = useState(false);
-  const [newLocationName, setNewLocationName] = useState('');
+  const [editLocation, setEditLocation] = useState<LocationRecord | undefined>();
   const [relocateLocation, setRelocateLocation] = useState<LocationRecord | undefined>();
+  const [editStationTarget, setEditStationTarget] = useState<StationActionTarget>();
+  const [relocateStationTarget, setRelocateStationTarget] = useState<StationActionTarget>();
   const [sheetLocation, setSheetLocation] = useState<LocationRecord | undefined>();
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
-  const sheetExitActionRef = useRef<{ locationId: string; type: 'edit' } | { locationId: string; stationId: string; type: 'station' } | undefined>(undefined);
+  const sheetExitActionRef = useRef<SheetExitAction | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState('');
   const locationsQuery = useLocations(search.trim());
-  const createLocation = useCreateLocation();
   const uploadLocationImage = useUploadLocationImage();
   const locations = useMemo(() => locationsQuery.data || [], [locationsQuery.data]);
   const statusOptions = useMemo(() => getLocationStatusOptions(locations), [locations]);
   const filteredLocations = useMemo(() => filterLocationsByStatus(locations, statusFilter), [locations, statusFilter]);
-  const createOpen = createOpenState || params.action === 'create';
-
-  const closeCreate = useCallback(() => {
-    if (createLocation.isPending) return;
-    setCreateOpenState(false);
-    if (params.action === 'create') {
-      router.setParams({ action: undefined });
-    }
-    setNewLocationName('');
-  }, [createLocation.isPending, params.action, router]);
-
-  const submitCreate = useCallback(() => {
-    const name = newLocationName.trim();
-    if (!name) return;
-
-    createLocation.mutate(
-      { name },
-      {
-        onSuccess: location => {
-          setCreateOpenState(false);
-          if (params.action === 'create') {
-            router.setParams({ action: undefined });
-          }
-          setNewLocationName('');
-          setSheetLocation(location);
-          setLocationSheetOpen(true);
-        },
-      },
-    );
-  }, [createLocation, newLocationName, params.action, router]);
-
   const uploadImageForLocation = useCallback(
     async (location: LocationRecord) => {
       if (uploadLocationImage.isPending) return;
@@ -107,7 +78,7 @@ export default function LocationsPage() {
     ({ item }: { item: LocationRecord }) => (
       <LocationCard
         location={item}
-        onEdit={() => router.push({ pathname: '/location/[id]/edit', params: { id: String(item.id) } })}
+        onEdit={() => setEditLocation(item)}
         onPress={() => {
           setSheetLocation(item);
           setLocationSheetOpen(true);
@@ -116,7 +87,7 @@ export default function LocationsPage() {
         onUploadImage={() => uploadImageForLocation(item)}
       />
     ),
-    [router, uploadImageForLocation],
+    [uploadImageForLocation],
   );
 
   return (
@@ -126,8 +97,6 @@ export default function LocationsPage() {
         subtitle={`${filteredLocations.length.toLocaleString()} of ${locations.length.toLocaleString()} locations`}
         canGoBack
         onBack={() => router.back()}
-        largeRightComponent={<CreateLocationButton onPress={() => setCreateOpenState(true)} />}
-        rightComponent={<CreateLocationButton onPress={() => setCreateOpenState(true)} />}
         searchBar={
           <TextInput
             autoCapitalize='none'
@@ -153,7 +122,7 @@ export default function LocationsPage() {
               <AppButton label='Retry' onPress={() => locationsQuery.refetch()} />
             </ThemedView>
           ) : (
-            <EmptyState message={search.trim() ? 'Try another location name.' : 'Create a location to get started.'} title='No locations found' />
+            <EmptyState message={search.trim() ? 'Try another location name.' : 'No locations are currently available.'} title='No locations found' />
           )
         }
         ListHeaderComponent={
@@ -178,14 +147,20 @@ export default function LocationsPage() {
           setSheetLocation(undefined);
           const exitAction = sheetExitActionRef.current;
           sheetExitActionRef.current = undefined;
-          if (exitAction?.type === 'edit') {
-            router.push({ pathname: '/location/[id]/edit', params: { id: exitAction.locationId } });
-          } else if (exitAction?.type === 'station') {
+          if (exitAction?.type === 'station') {
             router.push({ pathname: '/station/[stationId]', params: { locationId: exitAction.locationId, stationId: exitAction.stationId } });
+          } else if (exitAction?.type === 'edit-station') {
+            setEditStationTarget(exitAction.target);
+          } else if (exitAction?.type === 'relocate-station') {
+            setRelocateStationTarget(exitAction.target);
           }
         }}
-        onManage={location => {
-          sheetExitActionRef.current = { locationId: String(location.id), type: 'edit' };
+        onEditStation={(location, station) => {
+          sheetExitActionRef.current = { target: { location, station }, type: 'edit-station' };
+          setLocationSheetOpen(false);
+        }}
+        onRelocateStation={(location, station) => {
+          sheetExitActionRef.current = { target: { location, station }, type: 'relocate-station' };
           setLocationSheetOpen(false);
         }}
         onSelectStation={(location, station) => {
@@ -194,72 +169,20 @@ export default function LocationsPage() {
         }}
         open={locationSheetOpen}
       />
+      <LocationResourceFormSheet location={editLocation} onClose={() => setEditLocation(undefined)} open={Boolean(editLocation)} />
       <RelocateLocationModal location={relocateLocation} onClose={() => setRelocateLocation(undefined)} />
-
-      <Modal
-        animationIn='slideInUp'
-        animationInTiming={360}
-        animationOut='slideOutDown'
-        animationOutTiming={260}
-        avoidKeyboard
-        backdropColor='#0F172A'
-        backdropOpacity={0.28}
-        backdropTransitionInTiming={360}
-        backdropTransitionOutTiming={260}
-        hideModalContentWhileAnimating
-        isVisible={createOpen}
-        onBackButtonPress={closeCreate}
-        onBackdropPress={closeCreate}
-        style={styles.bottomModal}>
-        <ThemedView
-          backgroundColor={Palette.surfaceBase}
-          borderTopLeftRadius={'large'}
-          borderTopRightRadius={'large'}
-          gap={'three'}
-          padding={'four'}
-          paddingBottom={'six'}>
-          <ThemedView alignItems='center' flexDirection='row' justifyContent='space-between'>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={18} lineHeight={24}>
-              Create location
-            </ThemedText>
-            <Pressable onPress={closeCreate} style={styles.closeButton}>
-              <ThemedText color={Palette.accent} fontFamily={FontFamily.semibold} fontSize={13}>
-                Close
-              </ThemedText>
-            </Pressable>
-          </ThemedView>
-          <TextInput
-            autoFocus
-            onChangeText={setNewLocationName}
-            placeholder='Location name'
-            placeholderTextColor='#98A2B3'
-            returnKeyType='done'
-            style={styles.modalInput}
-            value={newLocationName}
-            onSubmitEditing={submitCreate}
-          />
-          {createLocation.isError ? (
-            <ThemedText color={Palette.danger} fontFamily={FontFamily.semibold} fontSize={13} lineHeight={18}>
-              Could not create this location. Please try again.
-            </ThemedText>
-          ) : null}
-          <AppButton block disabled={!newLocationName.trim()} label='Create new location' loading={createLocation.isPending} onPress={submitCreate} />
-        </ThemedView>
-      </Modal>
+      <RelocateStationModal
+        locationId={relocateStationTarget?.location.id}
+        onClose={() => setRelocateStationTarget(undefined)}
+        station={relocateStationTarget?.station}
+      />
+      <StationEditSheet
+        locationId={editStationTarget?.location.id || ''}
+        onClose={() => setEditStationTarget(undefined)}
+        open={Boolean(editStationTarget)}
+        station={editStationTarget?.station}
+      />
     </ThemedView>
-  );
-}
-
-function CreateLocationButton({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityLabel='Create location'
-      accessibilityRole='button'
-      hitSlop={8}
-      onPress={onPress}
-      style={({ pressed }) => [styles.createButton, pressed && styles.filterChipPressed]}>
-      <Plus color={Palette.surfaceBase} size={22} strokeWidth={2.5} />
-    </Pressable>
   );
 }
 
@@ -272,22 +195,6 @@ function StatusFilterChip({ active, label, onPress }: { active: boolean; label: 
 }
 
 const styles = StyleSheet.create({
-  bottomModal: {
-    justifyContent: 'flex-end',
-    margin: 0,
-  },
-  createButton: {
-    alignItems: 'center',
-    backgroundColor: Palette.accent,
-    borderRadius: mhs(20),
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
-  },
-  closeButton: {
-    paddingHorizontal: mhs(8),
-    paddingVertical: mhs(4),
-  },
   content: {
     paddingBottom: 120,
   },
@@ -319,18 +226,6 @@ const styles = StyleSheet.create({
   filters: {
     gap: mhs(8),
   },
-  modalInput: {
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: Palette.border,
-    borderRadius: mhs(21),
-    borderWidth: 1,
-    color: Palette.textPrimary,
-    fontFamily: FontFamily.medium,
-    fontSize: 15,
-    minHeight: 48,
-    paddingHorizontal: mhs(14),
-  },
-
   search: {
     backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,

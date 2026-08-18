@@ -4,9 +4,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { Check, ImagePlus, Plus, Trash2 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Switch } from 'react-native';
+import { ActivityIndicator, Alert, Pressable } from 'react-native';
 
-import { BottomButton, ThemedText, ThemedView } from 'components/base';
+import { BottomButton, Switch, ThemedText, ThemedView } from 'components/base';
 import AnimatedHeaderScrollViewComponent from 'components/organisms/animated-header-scrollview';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
 import { EmptyState } from 'components/ui';
@@ -661,7 +661,7 @@ function EditorField({
             </ThemedText>
           ) : null}
         </ThemedView>
-        <Switch onValueChange={onChange} trackColor={{ false: Palette.border, true: `${accentColor}80` }} value={Boolean(value)} />
+        <Switch accessibilityLabel={field.label} onValueChange={onChange} value={Boolean(value)} />
       </ThemedView>
     );
   }

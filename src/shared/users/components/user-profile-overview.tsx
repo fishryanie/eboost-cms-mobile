@@ -24,9 +24,9 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, Switch } from 'react-native';
+import { Pressable } from 'react-native';
 
-import { ThemedText, ThemedView } from 'components/base';
+import { Switch, ThemedText, ThemedView } from 'components/base';
 import { ImagePreviewModal } from 'components/media/image-preview-modal';
 import { FontFamily, Palette } from 'themes';
 import { getDisplayImageUrl } from 'utils/media/image-url';
@@ -336,14 +336,7 @@ function ControlRow({ Icon, isLast, label, value }: { Icon: LucideIcon; isLast: 
         {label}
       </ThemedText>
       <ThemedView pointerEvents='none' backgroundColor='transparent'>
-        <Switch
-          accessibilityLabel={`${label}: ${value ? 'On' : 'Off'}`}
-          ios_backgroundColor='#D0D5DD'
-          style={{ transform: [{ scale: 0.78 }] }}
-          thumbColor='#FFFFFF'
-          trackColor={{ false: '#D0D5DD', true: Palette.accent }}
-          value={value}
-        />
+        <Switch accessibilityLabel={`${label}: ${value ? 'On' : 'Off'}`} size={42} value={value} />
       </ThemedView>
     </ThemedView>
   );

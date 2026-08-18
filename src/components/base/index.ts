@@ -5,3 +5,4 @@ export * from './bottom-sheet-button';
 export * from './HeaderTitle';
 export * from './ToastCustom';
 export * from './scrollable-search';
+export * from './switch';

@@ -3,8 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { ShieldCheck, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput } from 'react-native';
-import { ThemedText, ThemedView } from 'components/base';
+import { Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Switch, ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
 import { loginAdmin } from 'utils/auth/auth-service';
@@ -152,10 +152,9 @@ export default function DrawerSettingsScreen() {
               </ThemedText>
             </ThemedView>
             <Switch
+              accessibilityLabel={`${biometricLabel} sign in`}
               disabled={isSaving}
               onValueChange={handleSwitchChange}
-              trackColor={{ false: Palette.border, true: '#9EE6BD' }}
-              thumbColor={Palette.surfaceRaised}
               value={biometricEnabled || showPasswordForm}
             />
           </ThemedView>

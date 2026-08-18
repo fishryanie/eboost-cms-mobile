@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Bike, Building2, Car, RadioTower, Upload } from 'lucide-react-native';
+import { Bike, Building2, Car, MapPin, Pencil, RadioTower, Upload } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Pressable as NativePressable, StyleSheet } from 'react-native';
 import { Pressable } from 'react-native-gesture-handler';
@@ -13,8 +13,9 @@ import { getDisplayImageUrl } from 'utils/media/image-url';
 
 import { getLocationStatusTheme } from '../location-status';
 
-const ACTION_WIDTH = 144;
-const ACTION_TRIGGER = ACTION_WIDTH * 0.4;
+const ACTION_WIDTH = 84;
+const ACTIONS_WIDTH = ACTION_WIDTH * 2;
+const ACTION_TRIGGER = ACTION_WIDTH * 0.6;
 const THUMB_SIZE = 64;
 
 function getLocationImage(location: LocationRecord) {
@@ -101,26 +102,36 @@ export function LocationCard({
         overshootRight={false}
         ref={swipeableRef}
         renderRightActions={() => (
-          <ThemedView flexDirection='row' width={ACTION_WIDTH}>
+          <ThemedView alignSelf='stretch' flexDirection='row' height='100%' width={ACTIONS_WIDTH}>
             <Pressable
+              accessibilityLabel={`Relocate ${location.name}`}
+              accessibilityRole='button'
               onPress={() => {
                 closeActions();
                 onRelocate();
               }}
               style={({ pressed }) => [styles.actionButton, styles.relocateAction, pressed && styles.actionPressed]}>
-              <ThemedText color='#071C12' fontFamily={FontFamily.medium} fontSize={14} lineHeight={18}>
-                Relocate
-              </ThemedText>
+              <ThemedView alignItems='center' backgroundColor='transparent' gap={7} justifyContent='center'>
+                <MapPin color='#FFFFFF' size={20} strokeWidth={2.1} />
+                <ThemedText color='#FFFFFF' fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+                  Relocate
+                </ThemedText>
+              </ThemedView>
             </Pressable>
             <Pressable
+              accessibilityLabel={`Edit ${location.name}`}
+              accessibilityRole='button'
               onPress={() => {
                 closeActions();
                 onEdit();
               }}
               style={({ pressed }) => [styles.actionButton, styles.editAction, pressed && styles.actionPressed]}>
-              <ThemedText color='#241600' fontFamily={FontFamily.medium} fontSize={14} lineHeight={18}>
-                Edit
-              </ThemedText>
+              <ThemedView alignItems='center' backgroundColor='transparent' gap={7} justifyContent='center'>
+                <Pencil color='#FFFFFF' size={20} strokeWidth={2.1} />
+                <ThemedText color='#FFFFFF' fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+                  Edit
+                </ThemedText>
+              </ThemedView>
             </Pressable>
           </ThemedView>
         )}
@@ -253,17 +264,18 @@ const styles = StyleSheet.create({
   actionButton: {
     alignItems: 'center',
     alignSelf: 'stretch',
+    height: '100%',
     justifyContent: 'center',
-    width: ACTION_WIDTH / 2,
+    width: ACTION_WIDTH,
   },
   actionPressed: {
     opacity: 0.75,
   },
-  editAction: {
-    backgroundColor: '#FFAA0A',
-  },
   foreground: {
     backgroundColor: Palette.surfaceBase,
+  },
+  editAction: {
+    backgroundColor: '#1677E8',
   },
   pressed: {
     backgroundColor: '#F7F8FA',

@@ -1,9 +1,9 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Switch } from 'react-native';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
-import { ThemedText, ThemedView } from 'components/base';
+import { Switch, ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
 import { getBiometricButtonLabel, getBiometricSymbolName } from 'utils/auth/biometric-auth';
@@ -127,14 +127,13 @@ export function BiometricOptInPrompt() {
               </ThemedText>
             </ThemedView>
             <Switch
+              accessibilityLabel='Enable fast biometric sign in'
               disabled={isSaving}
               onValueChange={value => {
                 if (value) {
                   void enableBiometric();
                 }
               }}
-              trackColor={{ false: Palette.border, true: '#9EE6BD' }}
-              thumbColor={Palette.surfaceRaised}
               value={isSaving}
             />
           </ThemedView>

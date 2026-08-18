@@ -15,13 +15,15 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated as NativeAnimated, FlatList, Pressable, Switch, useWindowDimensions } from 'react-native';
+import { Alert, Animated as NativeAnimated, FlatList, Pressable, useWindowDimensions } from 'react-native';
+import { Pressable as GesturePressable } from 'react-native-gesture-handler';
+import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import PagerView from 'react-native-pager-view';
 
 import { ResourceFormSheet } from 'app/location/[id]/components/resource-form-sheet';
 import { requestResetCharger, requestTriggerCharger, requestUnlockCharger } from 'app/location/[id]/features/charger-service';
 import { getWorkflowChargerIdentifier, getWorkflowChargerType } from 'app/location/[id]/features/charger-workflows';
-import { ThemedText, ThemedView } from 'components/base';
+import { Switch, ThemedText, ThemedView } from 'components/base';
 import { AppButton, EmptyState } from 'components/ui';
 import { HorizontalActionList } from 'components/ui/horizontal-action-list';
 import { useLocationDetail, useLocationPartnership, useLocationPriceProfiles, useLocationResourceMutations, useStationChargers } from 'shared/locations/hooks';
@@ -31,6 +33,8 @@ import { rmhs } from 'themes/scaling';
 import { getDisplayImageUrl } from 'utils/media/image-url';
 
 const NativeAnimatedThemedView = NativeAnimated.createAnimatedComponent(ThemedView);
+const STATION_ACTION_WIDTH = 84;
+const STATION_ACTIONS_WIDTH = STATION_ACTION_WIDTH * 2;
 const vietnameseNumberFormatter = new Intl.NumberFormat('vi-VN');
 const stationDateFormatter = new Intl.DateTimeFormat('en-GB', {
   day: '2-digit',
@@ -42,12 +46,16 @@ export function StationList({
   accentColor = Palette.accent,
   accentTone = '#EAF8EF',
   locationId,
+  onEditStation,
+  onRelocateStation,
   onSelectStation,
   stations,
 }: {
   accentColor?: string;
   accentTone?: string;
   locationId: string;
+  onEditStation: (station: StationRecord) => void;
+  onRelocateStation: (station: StationRecord) => void;
   onSelectStation: (station: StationRecord) => void;
   stations: StationRecord[];
 }) {
@@ -83,7 +91,9 @@ export function StationList({
               accentTone={accentTone}
               isLast={index === stations.length - 1}
               key={station.id}
+              onEdit={() => onEditStation(station)}
               onPress={() => onSelectStation(station)}
+              onRelocate={() => onRelocateStation(station)}
               onToggleVisibility={() => mutations.patch.mutate({ data: { visible: station.visible === false }, id: station.id, path: 'api/stations' })}
               station={station}
             />
@@ -99,7 +109,9 @@ function StationListItem({
   accentTone,
   index,
   isLast,
+  onEdit,
   onPress,
+  onRelocate,
   onToggleVisibility,
   station,
 }: {
@@ -107,7 +119,9 @@ function StationListItem({
   accentTone: string;
   index: number;
   isLast: boolean;
+  onEdit: () => void;
   onPress: () => void;
+  onRelocate: () => void;
   onToggleVisibility: () => void;
   station: StationRecord;
 }) {
@@ -116,84 +130,146 @@ function StationListItem({
   const stationTypes = [...(bikeBoxes > 0 ? [{ current: 'AC', vehicle: 'BIKE' }] : []), ...(carBoxes > 0 ? [{ current: 'DC', vehicle: 'CAR' }] : [])];
   const imageUrl = getDisplayImageUrl(station.images?.[0]?.url);
   const coordinates = station.latitude != null && station.longitude != null ? `${station.latitude}, ${station.longitude}` : undefined;
+  const swipeableRef = useRef<SwipeableMethods>(null);
+  const closeActions = () => swipeableRef.current?.close();
 
   return (
-    <Pressable accessibilityRole='button' onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}>
-      <ThemedView
-        backgroundColor='transparent'
-        borderBottomColor={isLast ? 'transparent' : Palette.borderSubtle}
-        borderBottomWidth={isLast ? 0 : 1}
-        flexDirection='row'
-        gap={12}
-        paddingVertical={12}>
-        <ThemedView alignItems='stretch' backgroundColor='transparent' gap={5} width={60}>
-          {imageUrl ? (
-            <Image contentFit='cover' source={{ uri: imageUrl }} style={{ borderRadius: 12, height: 60, width: 60 }} />
-          ) : (
-            <ThemedView alignItems='center' backgroundColor={accentTone} borderRadius={12} height={60} justifyContent='center' width={60}>
-              <ThemedText color={accentColor} fontFamily={FontFamily.semibold} fontSize={14}>
-                {String(index + 1).padStart(2, '0')}
-              </ThemedText>
-            </ThemedView>
-          )}
-          {stationTypes.map(type => (
-            <ThemedView
-              alignItems='center'
-              backgroundColor={type.vehicle === 'BIKE' ? accentTone : '#EDF8FF'}
-              borderRadius={6}
-              flexDirection='row'
-              justifyContent='center'
-              key={type.vehicle}
-              minHeight={18}
-              paddingHorizontal={3}>
-              <ThemedText
-                color={type.vehicle === 'BIKE' ? accentColor : '#1477B9'}
-                fontFamily={FontFamily.semibold}
-                fontSize={8}
-                lineHeight={16}
-                numberOfLines={1}>
-                {type.current} · {type.vehicle}
-              </ThemedText>
-            </ThemedView>
-          ))}
-        </ThemedView>
-        <ThemedView backgroundColor='transparent' flex={1} gap={5} minWidth={0}>
-          <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'one'}>
-            <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={19} numberOfLines={2} selectable>
-              {station.name || `Station ${index + 1}`}
-            </ThemedText>
-            <Switch
-              accessibilityLabel={`Toggle ${station.name || `station ${index + 1}`}`}
-              onValueChange={onToggleVisibility}
-              style={{ transform: [{ scale: 0.78 }] }}
-              thumbColor='#FFFFFF'
-              trackColor={{ false: '#D7DDDA', true: accentColor }}
-              value={station.visible !== false}
-            />
+    <ThemedView backgroundColor={Palette.surfaceBase} overflow='hidden'>
+      <ReanimatedSwipeable
+        friction={2}
+        overshootRight={false}
+        ref={swipeableRef}
+        renderRightActions={() => (
+          <ThemedView alignSelf='stretch' flexDirection='row' height='100%' width={STATION_ACTIONS_WIDTH}>
+            <GesturePressable
+              accessibilityLabel={`Relocate ${station.name || `station ${index + 1}`}`}
+              accessibilityRole='button'
+              onPress={() => {
+                closeActions();
+                onRelocate();
+              }}
+              style={({ pressed }) => ({
+                alignItems: 'center',
+                backgroundColor: '#05AE51',
+                height: '100%',
+                justifyContent: 'center',
+                opacity: pressed ? 0.75 : 1,
+                width: STATION_ACTION_WIDTH,
+              })}>
+              <ThemedView alignItems='center' backgroundColor='transparent' gap={7} justifyContent='center'>
+                <MapPin color='#FFFFFF' size={20} strokeWidth={2.1} />
+                <ThemedText color='#FFFFFF' fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+                  Relocate
+                </ThemedText>
+              </ThemedView>
+            </GesturePressable>
+            <GesturePressable
+              accessibilityLabel={`Edit ${station.name || `station ${index + 1}`}`}
+              accessibilityRole='button'
+              onPress={() => {
+                closeActions();
+                onEdit();
+              }}
+              style={({ pressed }) => ({
+                alignItems: 'center',
+                backgroundColor: '#1677E8',
+                height: '100%',
+                justifyContent: 'center',
+                opacity: pressed ? 0.75 : 1,
+                width: STATION_ACTION_WIDTH,
+              })}>
+              <ThemedView alignItems='center' backgroundColor='transparent' gap={7} justifyContent='center'>
+                <Pencil color='#FFFFFF' size={20} strokeWidth={2.1} />
+                <ThemedText color='#FFFFFF' fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+                  Edit
+                </ThemedText>
+              </ThemedView>
+            </GesturePressable>
           </ThemedView>
-          <ThemedText color={Palette.textSecondary} fontSize={11} lineHeight={15} numberOfLines={2}>
-            {station.description || station.stationAreaType?.name || 'Charging station'}
-          </ThemedText>
-          {coordinates ? (
-            <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'one'}>
-              <MapPin color={Palette.textTertiary} size={12} />
-              <ThemedText color={Palette.textTertiary} flex={1} fontSize={10} lineHeight={14} numberOfLines={1} selectable>
-                {coordinates}
-              </ThemedText>
+        )}
+        rightThreshold={STATION_ACTION_WIDTH * 0.6}>
+        <Pressable
+          accessibilityRole='button'
+          onPress={() => {
+            closeActions();
+            onPress();
+          }}
+          style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}>
+          <ThemedView
+            backgroundColor={Palette.surfaceBase}
+            borderBottomColor={isLast ? 'transparent' : Palette.borderSubtle}
+            borderBottomWidth={isLast ? 0 : 1}
+            flexDirection='row'
+            gap={12}
+            paddingVertical={12}>
+            <ThemedView alignItems='stretch' backgroundColor='transparent' gap={5} width={60}>
+              {imageUrl ? (
+                <Image contentFit='cover' source={{ uri: imageUrl }} style={{ borderRadius: 12, height: 60, width: 60 }} />
+              ) : (
+                <ThemedView alignItems='center' backgroundColor={accentTone} borderRadius={12} height={60} justifyContent='center' width={60}>
+                  <ThemedText color={accentColor} fontFamily={FontFamily.semibold} fontSize={14}>
+                    {String(index + 1).padStart(2, '0')}
+                  </ThemedText>
+                </ThemedView>
+              )}
+              {stationTypes.map(type => (
+                <ThemedView
+                  alignItems='center'
+                  backgroundColor={type.vehicle === 'BIKE' ? accentTone : '#EDF8FF'}
+                  borderRadius={6}
+                  flexDirection='row'
+                  justifyContent='center'
+                  key={type.vehicle}
+                  minHeight={18}
+                  paddingHorizontal={3}>
+                  <ThemedText
+                    color={type.vehicle === 'BIKE' ? accentColor : '#1477B9'}
+                    fontFamily={FontFamily.semibold}
+                    fontSize={8}
+                    lineHeight={16}
+                    numberOfLines={1}>
+                    {type.current} · {type.vehicle}
+                  </ThemedText>
+                </ThemedView>
+              ))}
             </ThemedView>
-          ) : null}
-          <ThemedView backgroundColor='transparent' flexDirection='row' flexWrap='wrap' gap={'one'}>
-            <StationListStat
-              color={station.public ? accentColor : '#5E6663'}
-              label={station.public ? 'Public' : 'Private'}
-              tone={station.public ? accentTone : '#F3F5F4'}
-            />
-            <StationListStat color='#1477B9' label={station.stationAreaType?.name || 'Station'} tone='#EDF8FF' />
-            <StationListStat color='#B45309' label={station.fullTime ? 'Full Time' : station.stationOpenProfile?.name || 'Scheduled'} tone='#FFF8E8' />
+            <ThemedView backgroundColor='transparent' flex={1} gap={5} minWidth={0}>
+              <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'one'}>
+                <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={19} numberOfLines={2} selectable>
+                  {station.name || `Station ${index + 1}`}
+                </ThemedText>
+                <Switch
+                  accessibilityLabel={`Toggle ${station.name || `station ${index + 1}`}`}
+                  onValueChange={onToggleVisibility}
+                  size={42}
+                  value={station.visible !== false}
+                />
+              </ThemedView>
+              <ThemedText color={Palette.textSecondary} fontSize={11} lineHeight={15} numberOfLines={2}>
+                {station.description || station.stationAreaType?.name || 'Charging station'}
+              </ThemedText>
+              {coordinates ? (
+                <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'one'}>
+                  <MapPin color={Palette.textTertiary} size={12} />
+                  <ThemedText color={Palette.textTertiary} flex={1} fontSize={10} lineHeight={14} numberOfLines={1} selectable>
+                    {coordinates}
+                  </ThemedText>
+                </ThemedView>
+              ) : null}
+              <ThemedView backgroundColor='transparent' flexDirection='row' flexWrap='wrap' gap={'one'}>
+                <StationListStat
+                  color={station.public ? accentColor : '#5E6663'}
+                  label={station.public ? 'Public' : 'Private'}
+                  tone={station.public ? accentTone : '#F3F5F4'}
+                />
+                <StationListStat color='#1477B9' label={station.stationAreaType?.name || 'Station'} tone='#EDF8FF' />
+                <StationListStat color='#B45309' label={station.fullTime ? 'Full Time' : station.stationOpenProfile?.name || 'Scheduled'} tone='#FFF8E8' />
+              </ThemedView>
+            </ThemedView>
           </ThemedView>
-        </ThemedView>
-      </ThemedView>
-    </Pressable>
+        </Pressable>
+      </ReanimatedSwipeable>
+    </ThemedView>
   );
 }
 
@@ -204,6 +280,41 @@ function StationListStat({ color, label, tone }: { color: string; label: string;
         {label}
       </ThemedText>
     </ThemedView>
+  );
+}
+
+export function StationEditSheet({
+  locationId,
+  onClose,
+  open,
+  station,
+}: {
+  locationId: number | string;
+  onClose: () => void;
+  open: boolean;
+  station?: StationRecord;
+}) {
+  const mutations = useLocationResourceMutations(locationId, station?.id);
+
+  return (
+    <ResourceFormSheet
+      fields={[
+        { key: 'name', label: 'Name' },
+        { key: 'nameVn', label: 'Vietnamese name' },
+        { key: 'description', label: 'Description', multiline: true },
+        { key: 'descriptionVn', label: 'Vietnamese description', multiline: true },
+        { key: 'latitude', keyboard: 'numeric', label: 'Latitude' },
+        { key: 'longitude', keyboard: 'numeric', label: 'Longitude' },
+        { key: 'public', label: 'Public station', type: 'switch' },
+        { key: 'fullTime', label: 'Open full time', type: 'switch' },
+      ]}
+      initialValues={station as unknown as Record<string, unknown>}
+      loading={mutations.patch.isPending}
+      onClose={onClose}
+      onSubmit={values => station && mutations.patch.mutate({ data: values, id: station.id, path: 'api/stations' }, { onSuccess: onClose })}
+      open={open && Boolean(station)}
+      title='Edit station'
+    />
   );
 }
 
@@ -331,24 +442,7 @@ export function StationDetailsContent({
         <AppButton block label='Load more chargers' loading={chargersQuery.isFetchingNextPage} onPress={() => chargersQuery.fetchNextPage()} />
       ) : null}
 
-      <ResourceFormSheet
-        fields={[
-          { key: 'name', label: 'Name' },
-          { key: 'nameVn', label: 'Vietnamese name' },
-          { key: 'description', label: 'Description', multiline: true },
-          { key: 'descriptionVn', label: 'Vietnamese description', multiline: true },
-          { key: 'latitude', keyboard: 'numeric', label: 'Latitude' },
-          { key: 'longitude', keyboard: 'numeric', label: 'Longitude' },
-          { key: 'public', label: 'Public station', type: 'switch' },
-          { key: 'fullTime', label: 'Open full time', type: 'switch' },
-        ]}
-        initialValues={station as unknown as Record<string, unknown>}
-        loading={mutations.patch.isPending}
-        onClose={() => setEditStationOpen(false)}
-        onSubmit={values => mutations.patch.mutate({ data: values, id: station.id, path: 'api/stations' }, { onSuccess: () => setEditStationOpen(false) })}
-        open={editStationOpen}
-        title='Edit station'
-      />
+      <StationEditSheet locationId={locationId} onClose={() => setEditStationOpen(false)} open={editStationOpen} station={station} />
       <ResourceFormSheet
         fields={[
           { key: 'name', label: 'Name' },
@@ -600,19 +694,18 @@ export function ChargerTabs({
                   ) : (
                     <Bike color={isSelected ? accentColor : Palette.textTertiary} size={14} />
                   )}
-                  <ThemedText
-                    color={isSelected ? Palette.textPrimary : Palette.textSecondary}
-                    flex={1}
-                    fontFamily={FontFamily.semibold}
-                    fontSize={11}
-                    lineHeight={15}
-                    numberOfLines={1}
-                    selectable>
-                    {label}
+                  <ThemedText color={isSelected ? accentColor : Palette.textTertiary} fontSize={9} lineHeight={13} numberOfLines={1} selectable>
+                    {identifier || (isCar ? 'Vendor ID unavailable' : 'Unique ID unavailable')}
                   </ThemedText>
                 </ThemedView>
-                <ThemedText color={isSelected ? accentColor : Palette.textTertiary} fontSize={9} lineHeight={13} numberOfLines={1} selectable>
-                  {identifier || (isCar ? 'Vendor ID unavailable' : 'Unique ID unavailable')}
+                <ThemedText
+                  color={isSelected ? Palette.textPrimary : Palette.textSecondary}
+                  fontFamily={FontFamily.semibold}
+                  fontSize={11}
+                  lineHeight={15}
+                  numberOfLines={1}
+                  selectable>
+                  {label}
                 </ThemedText>
               </ThemedView>
             </Pressable>
@@ -1273,15 +1366,7 @@ function StationSummary({
           {description}
         </ThemedText>
         <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'three'}>
-          <Switch
-            accessibilityLabel='Station visibility'
-            disabled={visibilityLoading}
-            ios_backgroundColor='#D9DDE2'
-            onValueChange={onVisibilityChange}
-            style={{ transform: [{ scale: 0.75 }] }}
-            trackColor={{ false: '#D9DDE2', true: '#87D4A3' }}
-            value={visible}
-          />
+          <Switch accessibilityLabel='Station visibility' disabled={visibilityLoading} onValueChange={onVisibilityChange} size={40} value={visible} />
           <Pressable accessibilityLabel='Edit station' onPress={onEdit}>
             <ThemedView alignItems='center' backgroundColor={Palette.surfaceMuted} borderRadius={11} height={36} justifyContent='center' width={36}>
               <Pencil color={Palette.textSecondary} size={16} />
@@ -1365,14 +1450,7 @@ function ChargerStat({
       </ThemedText>
       {isSwitch ? (
         <ThemedView alignItems='flex-start' marginTop={2}>
-          <Switch
-            disabled={switchDisabled}
-            ios_backgroundColor='#D9DDE2'
-            onValueChange={onValueChange}
-            style={{ marginLeft: -6, marginVertical: -4, opacity: switchDisabled ? 0.7 : 1, transform: [{ scale: 0.75 }] }}
-            trackColor={{ false: '#D9DDE2', true: '#87D4A3' }}
-            value={Boolean(value)}
-          />
+          <Switch disabled={switchDisabled} onValueChange={onValueChange} size={40} value={Boolean(value)} />
         </ThemedView>
       ) : (
         <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={12} numberOfLines={1} selectable>
