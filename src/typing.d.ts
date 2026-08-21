@@ -269,7 +269,7 @@ type StationRecord = {
   id: number;
   iriId?: string;
   latitude?: number | string;
-  location?: LocationRecord | null;
+  location?: LocationRecord | string | null;
   longitude?: number | string;
   images?: { originalName?: string | null; url?: string | null }[];
   name?: string;

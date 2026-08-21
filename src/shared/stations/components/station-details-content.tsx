@@ -325,6 +325,7 @@ export function StationDetailsContent({
   onChargerTabLayout,
   onSelectedChargerKeyChange,
   onContentHeightChange,
+  selectedPortOrder,
   selectedChargerKey,
   station,
 }: {
@@ -334,6 +335,7 @@ export function StationDetailsContent({
   onChargerTabLayout?: (y: number) => void;
   onSelectedChargerKeyChange?: (key: string) => void;
   onContentHeightChange?: (height: number) => void;
+  selectedPortOrder?: number;
   selectedChargerKey?: string;
   station: StationRecord;
 }) {
@@ -409,6 +411,7 @@ export function StationDetailsContent({
               onEditCharger={() => setEditCharger(activeCharger)}
               onEditPort={port => setEditPort({ charger: activeCharger, port })}
               pageWidth={pageWidth}
+              selectedPortOrder={selectedPortOrder}
               stationId={station.id}
             />
           ) : (
@@ -430,6 +433,7 @@ export function StationDetailsContent({
                 pageOffset={chargerPageOffset}
                 pagePosition={chargerPagePosition}
                 pageWidth={pageWidth}
+                selectedPortOrder={selectedPortOrder}
                 selectedIndex={activeChargerIndex}
                 stationId={station.id}
               />
@@ -498,6 +502,7 @@ function ChargerPager({
   pageOffset,
   pagePosition,
   pageWidth,
+  selectedPortOrder,
   selectedIndex,
   stationId,
 }: {
@@ -510,6 +515,7 @@ function ChargerPager({
   pageOffset: NativeAnimated.Value;
   pagePosition: NativeAnimated.Value;
   pageWidth: number;
+  selectedPortOrder?: number;
   selectedIndex: number;
   stationId: number;
 }) {
@@ -570,6 +576,7 @@ function ChargerPager({
           onEditCharger={() => onEditCharger(activeCharger)}
           onEditPort={port => onEditPort(activeCharger, port)}
           pageWidth={pageWidth}
+          selectedPortOrder={selectedPortOrder}
           stationId={stationId}
         />
       </ThemedView>
@@ -610,6 +617,7 @@ function ChargerPager({
                     onEditCharger={() => onEditCharger(charger)}
                     onEditPort={port => onEditPort(charger, port)}
                     pageWidth={pageWidth}
+                    selectedPortOrder={selectedPortOrder}
                     stationId={stationId}
                   />
                 </ThemedView>
@@ -737,6 +745,7 @@ function ChargerSection({
   onEditCharger,
   onEditPort,
   pageWidth,
+  selectedPortOrder,
   stationId,
 }: {
   charger: WorkflowChargerRecord;
@@ -746,6 +755,7 @@ function ChargerSection({
   onEditCharger: () => void;
   onEditPort: (port: ChargerPortRecord) => void;
   pageWidth: number;
+  selectedPortOrder?: number;
   stationId: number;
 }) {
   const isCar = getWorkflowChargerType(charger) === 'car';
@@ -760,7 +770,9 @@ function ChargerSection({
       : undefined;
   const chargerVisible = typeof pendingChargerUpdate?.visible === 'boolean' ? pendingChargerUpdate.visible : charger.visible !== false;
   const chargerEnabled = typeof pendingChargerUpdate?.enabled === 'boolean' ? pendingChargerUpdate.enabled : charger.enabled !== false;
-  const firstPort = ports[0];
+  const selectedPort =
+    selectedPortOrder === undefined ? undefined : ports.find(port => port.orderOnBox === selectedPortOrder || port.uniqueId?.endsWith(`_${selectedPortOrder}`));
+  const primaryPort = selectedPort || ports[0];
   const run = (promise: Promise<unknown>, success: string) =>
     promise.then(() => Alert.alert('Success', success)).catch(error => Alert.alert('Action failed', error?.message || 'Please try again.'));
   const updateChargerStatus = (data: { enabled?: boolean; visible?: boolean }) =>
@@ -812,7 +824,7 @@ function ChargerSection({
             onPress: () =>
               chargerIdentifier &&
               run(
-                requestTriggerCharger(chargerIdentifier, { connector: firstPort?.orderOnBox || 0, requestedMessage: 'StatusNotification' }),
+                requestTriggerCharger(chargerIdentifier, { connector: primaryPort?.orderOnBox || 0, requestedMessage: 'StatusNotification' }),
                 'Status requested.',
               ),
           },
@@ -833,7 +845,7 @@ function ChargerSection({
                 { text: 'Reset', style: 'destructive', onPress: () => run(requestResetCharger(chargerIdentifier, 'Hard'), 'Hard reset requested.') },
               ]),
           },
-          ...(firstPort
+          ...(primaryPort
             ? [
                 {
                   icon: BatteryCharging,
@@ -841,11 +853,11 @@ function ChargerSection({
                   label: 'Unlock',
                   onPress: () =>
                     chargerIdentifier &&
-                    Alert.alert('Unlock port', `Unlock port ${firstPort.name || firstPort.uniqueId || `Port #${firstPort.id}`}?`, [
+                    Alert.alert('Unlock port', `Unlock port ${primaryPort.name || primaryPort.uniqueId || `Port #${primaryPort.id}`}?`, [
                       { text: 'Cancel', style: 'cancel' },
                       {
                         text: 'Unlock',
-                        onPress: () => run(requestUnlockCharger(chargerIdentifier, firstPort.orderOnBox || 1), 'Unlock requested.'),
+                        onPress: () => run(requestUnlockCharger(chargerIdentifier, primaryPort.orderOnBox || 1), 'Unlock requested.'),
                       },
                     ]),
                 },
@@ -909,12 +921,14 @@ function ChargerSection({
         {ports.length > 0 ? (
           <ThemedView backgroundColor='transparent' columnGap={rmhs(8)} flexDirection='row' flexWrap='wrap' rowGap={rmhs(8)}>
             {ports.map((port, portIndex) => {
-              const portNumber = typeof port.orderOnBox === 'number' ? port.orderOnBox + 1 : portIndex + 1;
+              const portNumber = typeof port.orderOnBox === 'number' ? port.orderOnBox : portIndex + 1;
               const portLabel = `${isCar ? 'Connector' : 'Outlet'} ${String(portNumber).padStart(2, '0')}`;
               const displayName = port.name || portLabel;
               const repeatsLabel = displayName.trim().toLowerCase() === portLabel.toLowerCase();
               const subText = [repeatsLabel ? undefined : portLabel, port.power ? `${port.power} kW` : undefined].filter(Boolean).join(' · ');
               const pricing = getPortPricing(port, inheritedPriceProfile, isCar ? 'car' : 'bike');
+              const isSelectedPort =
+                selectedPortOrder !== undefined && (port.orderOnBox === selectedPortOrder || port.uniqueId?.endsWith(`_${selectedPortOrder}`));
 
               return (
                 <Pressable
@@ -924,10 +938,12 @@ function ChargerSection({
                   onPress={() => onEditPort(port)}
                   style={({ pressed }) => ({ opacity: pressed ? 0.68 : 1, width: portCardWidth })}>
                   <ThemedView
-                    backgroundColor={port.visible === false ? '#F3F4F6' : '#FFFFFF'}
-                    borderColor={port.visible === false ? '#E5E7EB' : isCar ? 'rgba(184, 106, 19, 0.22)' : 'rgba(23, 131, 74, 0.22)'}
+                    backgroundColor={port.visible === false ? '#F3F4F6' : isSelectedPort ? accentTone : '#FFFFFF'}
+                    borderColor={
+                      isSelectedPort ? accentColor : port.visible === false ? '#E5E7EB' : isCar ? 'rgba(184, 106, 19, 0.22)' : 'rgba(23, 131, 74, 0.22)'
+                    }
                     borderRadius={12}
-                    borderWidth={1}
+                    borderWidth={isSelectedPort ? 2 : 1}
                     gap={'two'}
                     padding={10}
                     style={
@@ -953,7 +969,15 @@ function ChargerSection({
                           </ThemedText>
                         ) : null}
                       </ThemedView>
-                      <ChevronRight color={Palette.textTertiary} size={15} />
+                      {isSelectedPort ? (
+                        <ThemedView backgroundColor={accentColor} borderRadius={'pill'} paddingHorizontal={6} paddingVertical={3}>
+                          <ThemedText color='#FFFFFF' fontFamily={FontFamily.semibold} fontSize={8} textTransform='uppercase'>
+                            Scanned
+                          </ThemedText>
+                        </ThemedView>
+                      ) : (
+                        <ChevronRight color={Palette.textTertiary} size={15} />
+                      )}
                     </ThemedView>
                     <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={8} flexWrap='wrap'>
                       <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={4}>

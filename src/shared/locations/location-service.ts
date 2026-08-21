@@ -24,6 +24,18 @@ export type RelocateLocationInput = {
   longitude: number;
 };
 
+export type LocationListFilters = {
+  charger?: string;
+  name?: string;
+  operationStatus?: string;
+};
+
+export type LocationListPage = {
+  items: LocationRecord[];
+  nextPage?: number;
+  total: number;
+};
+
 type RequestFn = <TResponse, TData = unknown>(path: string, options?: Parameters<typeof apiRequest<TResponse, TData>>[1]) => Promise<TResponse>;
 
 type CollectionResponse<T> =
@@ -32,9 +44,17 @@ type CollectionResponse<T> =
       data?: T[];
       'hydra:member'?: T[];
       'hydra:totalItems'?: number;
+      meta?: { total_count?: number; totalCount?: number };
       member?: T[];
+      pagination?: { total?: number; total_items?: number; totalItems?: number };
+      paging?: { total?: number };
       total?: number;
+      totalItems?: number;
     };
+
+type LocationListApiRecord = Omit<LocationRecord, 'operationStatus'> & {
+  operationStatus?: OperationStatus | string | null;
+};
 
 type ItemResponse<T> = T | { data?: T };
 
@@ -85,6 +105,29 @@ function unwrapCollection<T>(response: CollectionResponse<T>): T[] {
   return response.data || response['hydra:member'] || response.member || [];
 }
 
+function getCollectionTotal<T>(response: CollectionResponse<T>): number | undefined {
+  if (Array.isArray(response)) return response.length;
+
+  const candidates = [
+    response.paging?.total,
+    response.totalItems,
+    response.pagination?.total_items,
+    response.pagination?.totalItems,
+    response.pagination?.total,
+    response.meta?.total_count,
+    response.meta?.totalCount,
+    response['hydra:totalItems'],
+    response.total,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = typeof candidate === 'number' ? candidate : Number(candidate);
+    if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+  }
+
+  return undefined;
+}
+
 function unwrapItem<T>(response: ItemResponse<T>): T {
   if (response && typeof response === 'object' && 'data' in response && response.data) return response.data;
   return response as T;
@@ -127,19 +170,35 @@ function mapLocationPartnership(partnership: PartnerLocationRecord, detailAvaila
   };
 }
 
-export async function fetchLocations(params?: { search?: string }) {
-  const response = await apiRequest<CollectionResponse<LocationRecord>>('api/locations', {
+export async function fetchLocations(filters: LocationListFilters = {}, page = 1, pageSize = 50): Promise<LocationListPage> {
+  const response = await apiRequest<CollectionResponse<LocationListApiRecord>>('api/controller/location/admin/get-data', {
     params: {
-      name: params?.search || undefined,
-      pagination: false,
+      charger: filters.charger || undefined,
+      itemsPerPage: pageSize,
+      name: filters.name || undefined,
+      operationStatus: filters.operationStatus || undefined,
+      page,
     },
   });
 
-  return unwrapCollection(response);
+  const rawItems = unwrapCollection(response);
+  const items = rawItems.map(item => ({
+    ...item,
+    operationStatus: typeof item.operationStatus === 'string' ? { label: item.operationStatus } : item.operationStatus,
+  }));
+  const responseTotal = getCollectionTotal(response);
+  const total = responseTotal ?? items.length;
+  const hasNextPage = (responseTotal !== undefined && page * pageSize < responseTotal) || items.length >= pageSize;
+
+  return { items, nextPage: hasNextPage ? page + 1 : undefined, total };
 }
 
 export function fetchLocation(id: number | string) {
   return apiRequest<LocationRecord>(`api/locations/${id}`);
+}
+
+export function fetchStation(id: number | string) {
+  return apiRequest<StationRecord>(`api/stations/${id}`);
 }
 
 export function getLocationPartnershipLookupCode(location: Pick<LocationRecord, 'id' | 'locationCode' | 'location_code'>) {

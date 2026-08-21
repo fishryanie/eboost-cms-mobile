@@ -29,10 +29,8 @@ export function SetupLocationSheet({ onClose, visible }: SetupLocationSheetProps
   const [query, setQuery] = useState('Eboost');
   const [selectedLocationId, setSelectedLocationId] = useState<number>();
 
-  const locationsQuery = useLocations(query);
-  // useLocations might return data as an array directly or an object with items, depending on API. Let's safely extract.
-  const locationsData = locationsQuery.data as any;
-  const locations: LocationRecord[] = Array.isArray(locationsData) ? locationsData : locationsData?.items ? locationsData.items : [];
+  const locationsQuery = useLocations({ name: query.trim() || undefined });
+  const locations = locationsQuery.data?.pages.flatMap(page => page.items) || [];
 
   useEffect(() => {
     if (visible) {
@@ -89,6 +87,10 @@ export function SetupLocationSheet({ onClose, visible }: SetupLocationSheetProps
         ItemSeparatorComponent={() => <ThemedView style={styles.separator} />}
         keyExtractor={item => String(item.id)}
         keyboardShouldPersistTaps='handled'
+        onEndReached={() => {
+          if (locationsQuery.hasNextPage && !locationsQuery.isFetchingNextPage) void locationsQuery.fetchNextPage();
+        }}
+        onEndReachedThreshold={0.35}
         stickyHeaderIndices={[0]}
         ListEmptyComponent={
           locationsQuery.isLoading ? (

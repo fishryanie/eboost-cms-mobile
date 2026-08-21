@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, MapPin, Plus, RefreshCcw, Zap } from 'lucide-react-native';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated as NativeAnimated, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, RefreshControl } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
@@ -12,7 +12,7 @@ import { AssignChargerSheet } from 'shared/stations/components/assign-charger-sh
 import { ChargerTabs, StationDetailsContent } from 'shared/stations/components/station-details-content';
 import { getChargerSelectionKey } from 'shared/stations/charger-utils';
 import { AppButton, EmptyState } from 'components/ui';
-import { useLocationDetail, useLocationStations, useStationChargers } from 'shared/locations/hooks';
+import { useLocationDetail, useLocationStations, useStationChargers, useStationDetail } from 'shared/locations/hooks';
 import { FontFamily, Palette } from 'themes';
 import { rmhs } from 'themes/scaling';
 import { getDisplayImageUrl } from 'utils/media/image-url';
@@ -23,32 +23,50 @@ const CONTENT_OVERLAP = 24;
 const CONTENT_TOP_PADDING = 8;
 const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
 
+function getStationLocationId(location?: StationRecord['location']) {
+  if (!location) return '';
+  if (typeof location === 'object') return String(location.id || '');
+  const resourceMatch = location.match(/\/(\d+)\/?$/);
+  return resourceMatch?.[1] || location;
+}
+
 export default function StationDetailsScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ locationId?: string; stationId: string }>();
-  const locationId = String(params.locationId || '');
+  const params = useLocalSearchParams<{ chargerKey?: string; connectorOrder?: string; locationId?: string; stationId: string }>();
+  const routeLocationId = String(params.locationId || '');
   const stationId = String(params.stationId || '');
+  const stationsQuery = useLocationStations(routeLocationId);
+  const stationDetailQuery = useStationDetail(stationId, !routeLocationId);
+  const station = routeLocationId ? stationsQuery.data?.find(item => String(item.id) === stationId) : stationDetailQuery.data;
+  const locationId = routeLocationId || getStationLocationId(station?.location);
   const locationQuery = useLocationDetail(locationId);
-  const stationsQuery = useLocationStations(locationId);
   const chargersQuery = useStationChargers(stationId);
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = chargersQuery;
   const scrollOffsetRef = useRef(0);
   const stickyVisibleRef = useRef(false);
   const chargerTabThresholdRef = useRef<number | undefined>(undefined);
   const [chargerPagePosition] = useState(() => new NativeAnimated.Value(0));
   const [chargerPageOffset] = useState(() => new NativeAnimated.Value(0));
-  const [selectedChargerKey, setSelectedChargerKey] = useState<string>();
+  const [selectedChargerKey, setSelectedChargerKey] = useState<string | undefined>(() => params.chargerKey || undefined);
   const [stickyTabsVisible, setStickyTabsVisible] = useState(false);
   const [assignChargerOpen, setAssignChargerOpen] = useState(false);
   const location = locationQuery.data;
-  const station = stationsQuery.data?.find(item => String(item.id) === stationId);
+  const selectedPortOrder = params.connectorOrder === undefined ? undefined : Number(params.connectorOrder);
   const chargers = chargersQuery.data?.pages.flatMap(page => page.items) || [];
-  const activeCharger = chargers.find(charger => getChargerSelectionKey(charger) === selectedChargerKey) || chargers[0];
+  const selectedCharger = chargers.find(charger => getChargerSelectionKey(charger) === selectedChargerKey);
+  const activeCharger = selectedCharger || chargers[0];
   const imageUrl = getDisplayImageUrl(station?.images?.[0]?.url || location?.images?.[0]?.url || location?.image_url || location?.imageUrl || location?.image);
-  const refreshing = locationQuery.isRefetching || stationsQuery.isRefetching || chargersQuery.isRefetching;
+  const refreshing = locationQuery.isRefetching || stationsQuery.isRefetching || stationDetailQuery.isRefetching || chargersQuery.isRefetching;
+
+  useEffect(() => {
+    if (!selectedChargerKey || selectedCharger || !hasNextPage || isFetchingNextPage) return;
+    void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, selectedCharger, selectedChargerKey]);
 
   const refresh = () => {
-    locationQuery.refetch();
-    stationsQuery.refetch();
+    if (locationId) locationQuery.refetch();
+    if (routeLocationId) stationsQuery.refetch();
+    else stationDetailQuery.refetch();
     chargersQuery.refetch();
   };
 
@@ -72,7 +90,7 @@ export default function StationDetailsScreen() {
     updateStickyVisibility(scrollOffsetRef.current, threshold);
   };
 
-  if (stationsQuery.isLoading || locationQuery.isLoading) {
+  if (routeLocationId ? stationsQuery.isLoading : stationDetailQuery.isLoading) {
     return (
       <ThemedView backgroundColor={Palette.surfaceBase} flex={1} gap={'four'} padding={'four'} safePaddingTop>
         <Stack.Screen options={{ headerShown: false }} />
@@ -82,7 +100,7 @@ export default function StationDetailsScreen() {
     );
   }
 
-  if (stationsQuery.isError || !station) {
+  if ((routeLocationId ? stationsQuery.isError : stationDetailQuery.isError) || !station) {
     return (
       <ThemedView alignItems='center' backgroundColor={Palette.surfaceBase} flex={1} gap={'four'} justifyContent='center' padding={'four'}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -201,6 +219,7 @@ export default function StationDetailsScreen() {
             locationId={locationId}
             onChargerTabLayout={handleChargerTabLayout}
             onSelectedChargerKeyChange={setSelectedChargerKey}
+            selectedPortOrder={Number.isFinite(selectedPortOrder) ? selectedPortOrder : undefined}
             selectedChargerKey={selectedChargerKey}
             station={station}
           />

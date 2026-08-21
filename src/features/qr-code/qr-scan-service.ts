@@ -62,6 +62,11 @@ function findConnector(connectors: QrScanConnector[], connectorOrder: number) {
   );
 }
 
+function getResourceId(resource?: string) {
+  const match = resource?.match(/\/(\d+)\/?$/);
+  return match?.[1];
+}
+
 export async function fetchQrOutletDetails(decoded: QrDecodeResult): Promise<QrOutletDetails> {
   const { connectorOrder, vendorId } = parseQrIdentifier(decoded.identifier);
   const path = decoded.vehicle_type === 'car' ? '/api/car_boxes' : '/api/bike_boxes';
@@ -81,12 +86,18 @@ export async function fetchQrOutletDetails(decoded: QrDecodeResult): Promise<QrO
 
   const station = box.station && typeof box.station === 'object' ? box.station : undefined;
   const stationReference = typeof box.station === 'string' ? box.station : station?.iriId;
+  const stationId = station?.id || getResourceId(stationReference);
+
+  if (!stationId) {
+    throw new Error(`Station information was not found on box ${vendorId}.`);
+  }
 
   return {
     box,
     connector,
     connectorOrder,
     station,
+    stationId,
     stationReference,
     vehicleType: decoded.vehicle_type,
     vendorId,

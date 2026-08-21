@@ -4,15 +4,17 @@ import { Alert } from 'react-native';
 import { ResourceFormSheet, type ResourceField } from 'app/location/[id]/components/resource-form-sheet';
 
 import { buildLocationEditorPayloads, getLocationEditorOptions, getLocationEditorValue, locationEditorSections } from '../location-edit-fields';
-import { useLocationEditorLookups, useLocationPartnership, useUpdateLocation, useUpdateLocationPartnership } from '../hooks';
+import { useLocationDetail, useLocationEditorLookups, useLocationPartnership, useUpdateLocation, useUpdateLocationPartnership } from '../hooks';
 import type { UpdateLocationValues } from '../hooks';
 import type { LocationEditorField, LocationEditorLookups, LocationEditorValue } from '../location-edit-fields';
 
 export function LocationResourceFormSheet({ location, onClose, open }: { location?: LocationRecord; onClose: () => void; open: boolean }) {
-  const embeddedPartnership = location?.partnership || location?.partnershipLocation;
-  const partnershipQuery = useLocationPartnership(location);
+  const locationDetailQuery = useLocationDetail(location?.id || '', open);
+  const resolvedLocation = locationDetailQuery.data || location;
+  const embeddedPartnership = resolvedLocation?.partnership || resolvedLocation?.partnershipLocation;
+  const partnershipQuery = useLocationPartnership(resolvedLocation);
   const partnership = embeddedPartnership || partnershipQuery.data;
-  const lookupsQuery = useLocationEditorLookups(open && Boolean(location));
+  const lookupsQuery = useLocationEditorLookups(open && Boolean(resolvedLocation));
   const updateLocation = useUpdateLocation(location?.id || '');
   const updatePartnership = useUpdateLocationPartnership(location?.id || '', partnership?.locationId);
   const lookups: LocationEditorLookups = useMemo(
@@ -36,17 +38,17 @@ export function LocationResourceFormSheet({ location, onClose, open }: { locatio
     [partnership],
   );
   const fields = useMemo(
-    () => (location ? editorFields.map(field => toResourceField(field, location, partnership, lookups, lookupsQuery)) : []),
-    [editorFields, location, lookups, lookupsQuery, partnership],
+    () => (resolvedLocation ? editorFields.map(field => toResourceField(field, resolvedLocation, partnership, lookups, lookupsQuery)) : []),
+    [editorFields, lookups, lookupsQuery, partnership, resolvedLocation],
   );
   const initialValues = useMemo(() => {
-    if (!location) return undefined;
-    return Object.fromEntries(editorFields.map(field => [field.key, getLocationEditorValue(field.key, location, partnership)]));
-  }, [editorFields, location, partnership]);
-  const preparing = Boolean(location && !embeddedPartnership && partnershipQuery.isLoading);
+    if (!resolvedLocation) return undefined;
+    return Object.fromEntries(editorFields.map(field => [field.key, getLocationEditorValue(field.key, resolvedLocation, partnership)]));
+  }, [editorFields, partnership, resolvedLocation]);
+  const preparing = Boolean(location && (locationDetailQuery.isLoading || (!embeddedPartnership && partnershipQuery.isLoading)));
 
   async function submit(values: Record<string, unknown>) {
-    if (!location || !initialValues) return;
+    if (!resolvedLocation || !initialValues) return;
 
     const operationData: UpdateLocationValues = {};
     const partnershipData: Record<string, unknown> = {};

@@ -1,95 +1,157 @@
 import { useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { ActivityIndicator, Pressable, RefreshControl, TextInput } from 'react-native';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
+import { Search, XCircle } from 'lucide-react-native';
 
-import { ThemedText, ThemedView } from 'components/base';
-import { SearchBar } from 'components/molecules/search-bar';
+import { ThemedView } from 'components/base';
+import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 import { FontFamily, Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
 import { getCollectionResult } from 'utils/api/collection';
 
-import { screenHorizontalPadding } from 'components/technical/common';
-import { ListState, ListFooter, getItemKey } from 'components/technical/list-ui';
-import { styles } from 'components/technical/styles';
-import { VehicleSwitch } from 'components/technical/vehicle-switch';
+import { ListState, getItemKey } from 'components/technical/list-ui';
+import { VehicleSegment } from 'components/technical/vehicle-segment';
 import { ChargerCard } from './components/charger-card';
+
+const PAGE_SIZE = 30;
 
 export default function ChargersScreen() {
   const router = useRouter();
   const [vehicle, setVehicle] = useState<TechnicalVehicle>('bike');
-  const stateKey = `chargers:${vehicle}`;
-  const [listState, setListState] = useState({ page: 1, search: '', searchInput: '', stateKey });
-  const { page, search, searchInput } = listState;
-  const params: TechnicalQueryParams = { page, search, vehicle };
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [listState, setListState] = useState({ search: '', searchInput: '' });
+  const { search, searchInput } = listState;
 
-  const query = useQuery({
-    queryFn: async () => {
+  const query = useInfiniteQuery({
+    getNextPageParam: (lastPage: TechnicalList<ChargerRecord>, pages: TechnicalList<ChargerRecord>[], lastPageParam: number) => {
+      const loadedItems = pages.reduce((total, currentPage) => total + currentPage.items.length, 0);
+      const reportedTotal = pages.reduce((total, currentPage) => Math.max(total, currentPage.total), 0);
+      const hasCollectionTotal = reportedTotal > lastPage.items.length;
+      const hasNextPage = hasCollectionTotal ? loadedItems < reportedTotal : lastPage.items.length === PAGE_SIZE;
+
+      return hasNextPage ? lastPageParam + 1 : undefined;
+    },
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
       const response = await apiRequest<ApiListResponse<ChargerRecord>>(vehicle === 'car' ? 'api/car_boxes' : 'api/bike_boxes', {
-        params: { itemsPerPage: 30, limit: 30, page, ...(search ? { uniqueId: search } : {}) },
+        headers: { Accept: 'application/ld+json' },
+        params: { itemsPerPage: PAGE_SIZE, limit: PAGE_SIZE, page: pageParam, ...(search ? { uniqueId: search } : {}) },
       });
       return getCollectionResult(response);
     },
-    queryKey: ['technical', 'chargers', params],
+    queryKey: ['technical', 'chargers', vehicle, { search }],
   });
-
-  if (listState.stateKey !== stateKey) {
-    setListState({ page: 1, search: '', searchInput: '', stateKey });
-  }
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setListState(current => ({ ...current, page: 1, search: current.searchInput.trim() }));
+      setListState(current => ({ ...current, search: current.searchInput.trim() }));
     }, 350);
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
+  const items = query.data?.pages.flatMap(currentPage => currentPage.items) || [];
+  const total = query.data?.pages[0]?.total;
+  const subtitle = searchInput.trim() || (total === undefined ? `All ${vehicle} chargers` : `${total.toLocaleString()} ${vehicle} chargers`);
+
+  function handleVehicleChange(nextVehicle: TechnicalVehicle) {
+    setVehicle(nextVehicle);
+    setListState({ search: '', searchInput: '' });
+  }
+
+  function handleRefresh() {
+    setIsRefreshing(true);
+    void query.refetch().finally(() => {
+      setIsRefreshing(false);
+    });
+  }
+
   return (
-    <ThemedView flex={1} backgroundColor={Palette.surfaceBase} safePaddingTop>
-      <FlatList
-        {...{
-          contentContainerStyle: styles.content,
-          data: query.data?.items || [],
-          keyExtractor: (item, index) => getItemKey(item, index),
-          ListHeaderComponent: (
-            <ThemedView gap={'three'} paddingHorizontal={screenHorizontalPadding} paddingTop={'one'}>
-              <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
-                <Pressable
-                  accessibilityLabel='Back'
-                  accessibilityRole='button'
-                  onPress={() => router.back()}
-                  style={({ pressed }) => [styles.issueNavButton, pressed && styles.pressed]}>
-                  <ChevronLeft color={Palette.textPrimary} size={20} strokeWidth={2.2} />
-                </Pressable>
-                <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={24} lineHeight={30}>
-                  Chargers
-                </ThemedText>
-              </ThemedView>
-              <VehicleSwitch vehicle={vehicle} onChange={setVehicle} />
-              <SearchBar
-                placeholder='Search unique ID'
-                onSearch={value => setListState(current => ({ ...current, searchInput: value }))}
-                centerWhenUnfocused={false}
-                enableWidthAnimation={false}
-              />
+    <ThemedView backgroundColor={Palette.surfaceBase} flex={1}>
+      <AnimatedHeaderFlatList
+        canGoBack
+        contentContainerStyle={{ gap: 10, paddingBottom: 40, paddingHorizontal: 12 }}
+        contentInsetAdjustmentBehavior='never'
+        data={items}
+        keyExtractor={(item, index) => getItemKey(item, index)}
+        largeTitle='Chargers'
+        ListEmptyComponent={<ListState error={query.error} isLoading={query.isLoading} onRetry={() => query.refetch()} title='Chargers' />}
+        ListFooterComponent={
+          query.isFetchingNextPage ? (
+            <ThemedView alignItems='center' paddingVertical={'four'}>
+              <ActivityIndicator color={Palette.accent} />
             </ThemedView>
-          ),
-          ListEmptyComponent: <ListState error={query.error} isLoading={query.isLoading} onRetry={() => query.refetch()} title='Chargers' />,
-          ListFooterComponent: query.data?.total ? (
-            <ListFooter
-              canLoadMore={page * 30 < query.data.total}
-              isFetching={query.isFetching}
-              page={page}
-              total={query.data.total}
-              onLoadMore={() => setListState(current => ({ ...current, page: current.page + 1 }))}
-            />
-          ) : null,
-          refreshControl: <RefreshControl onRefresh={() => query.refetch()} refreshing={query.isRefetching || false} tintColor={Palette.accent} />,
-          renderItem: ({ item }) => <ChargerCard item={item as ChargerRecord} />,
-          showsVerticalScrollIndicator: false,
+          ) : null
+        }
+        onBack={() => router.back()}
+        onEndReached={() => {
+          if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
         }}
+        onEndReachedThreshold={0.4}
+        refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={isRefreshing} tintColor={Palette.accent} />}
+        renderItem={({ item }) => <ChargerCard item={item as ChargerRecord} vehicle={vehicle} />}
+        searchBar={
+          <ChargerSearch
+            onChange={value => setListState(current => ({ ...current, searchInput: value }))}
+            onChangeVehicle={handleVehicleChange}
+            value={searchInput}
+            vehicle={vehicle}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        smallHeaderTitleStyle={{ fontFamily: FontFamily.semibold }}
+        subtitle={subtitle}
       />
+    </ThemedView>
+  );
+}
+
+function ChargerSearch({
+  onChange,
+  onChangeVehicle,
+  value,
+  vehicle,
+}: {
+  onChange: (value: string) => void;
+  onChangeVehicle: (vehicle: TechnicalVehicle) => void;
+  value: string;
+  vehicle: TechnicalVehicle;
+}) {
+  return (
+    <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'two'}>
+      <ThemedView
+        alignItems='center'
+        backgroundColor={Palette.surfaceMuted}
+        borderColor={Palette.borderSubtle}
+        borderCurve='continuous'
+        borderRadius={'pill'}
+        borderWidth={1}
+        flex={1}
+        flexDirection='row'
+        gap={'two'}
+        height={40}
+        paddingHorizontal={'three'}>
+        <Search color={Palette.textTertiary} size={18} strokeWidth={2} />
+        <TextInput
+          accessibilityLabel='Search by charger ID'
+          autoCapitalize='characters'
+          autoCorrect={false}
+          cursorColor={Palette.accent}
+          onChangeText={onChange}
+          placeholder='Search charger ID'
+          placeholderTextColor={Palette.textTertiary}
+          returnKeyType='search'
+          selectionColor={Palette.accent}
+          style={{ color: Palette.textPrimary, flex: 1, fontFamily: FontFamily.medium, fontSize: 14, height: '100%', paddingVertical: 0 }}
+          value={value}
+        />
+        {value ? (
+          <Pressable accessibilityLabel='Clear charger search' accessibilityRole='button' hitSlop={10} onPress={() => onChange('')}>
+            {({ pressed }) => <XCircle color={Palette.textTertiary} opacity={pressed ? 0.55 : 1} size={18} />}
+          </Pressable>
+        ) : null}
+      </ThemedView>
+      <VehicleSegment onChange={onChangeVehicle} value={vehicle} />
     </ThemedView>
   );
 }

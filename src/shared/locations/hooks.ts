@@ -12,6 +12,7 @@ import {
   fetchLocationStations,
   fetchAssignableChargers,
   fetchStationChargers,
+  fetchStation,
   relocateLocation,
   syncPartnershipLocation,
   updateLocationPartnership,
@@ -20,7 +21,7 @@ import {
   getLocationPartnershipLookupCode,
 } from './location-service';
 import { restoreLocation, runRecursiveLocationVisibility } from './location-actions';
-import type { CreateLocationInput, RelocateLocationInput, UploadLocationImageInput } from './location-service';
+import type { CreateLocationInput, LocationListFilters, RelocateLocationInput, UploadLocationImageInput } from './location-service';
 
 export const locationKeys = {
   all: ['locations'] as const,
@@ -28,16 +29,27 @@ export const locationKeys = {
   editorLookup: (service: string, path: string) => ['locations', 'editor-lookup', service, path] as const,
   partnership: (id: number | string, lookupCode?: string) =>
     lookupCode ? (['locations', String(id), 'partnership', lookupCode] as const) : (['locations', String(id), 'partnership'] as const),
-  list: (search: string) => ['locations', 'list', search] as const,
+  list: (filters: LocationListFilters) => ['locations', 'list', filters] as const,
   stations: (id: number | string) => ['locations', String(id), 'stations'] as const,
   chargers: (id: number | string) => ['stations', String(id), 'chargers'] as const,
+  stationDetail: (id: number | string) => ['stations', String(id), 'detail'] as const,
   assignableChargers: (type?: ChargerVehicle) => (type ? (['stations', 'assignable-chargers', type] as const) : (['stations', 'assignable-chargers'] as const)),
 };
 
-export function useLocations(search: string) {
+export function useLocations(filters: LocationListFilters) {
+  return useInfiniteQuery<Awaited<ReturnType<typeof fetchLocations>>>({
+    getNextPageParam: lastPage => lastPage.nextPage,
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => fetchLocations(filters, Number(pageParam)),
+    queryKey: locationKeys.list(filters),
+  });
+}
+
+export function useLocationStatusOptions() {
   return useQuery({
-    queryFn: () => fetchLocations({ search }),
-    queryKey: locationKeys.list(search),
+    queryFn: () => fetchLocationEditorLookup('api/operation_statuses'),
+    queryKey: locationKeys.editorLookup('core', 'operation_statuses'),
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -48,6 +60,14 @@ export function useStationChargers(id: number | string) {
     initialPageParam: 1,
     queryFn: ({ pageParam }) => fetchStationChargers(id, Number(pageParam)),
     queryKey: locationKeys.chargers(id),
+  });
+}
+
+export function useStationDetail(id: number | string, enabled = true) {
+  return useQuery({
+    enabled: enabled && !!id,
+    queryFn: () => fetchStation(id),
+    queryKey: locationKeys.stationDetail(id),
   });
 }
 
@@ -67,7 +87,12 @@ export function useLocationResourceMutations(locationId: number | string, statio
       queryClient.invalidateQueries({ queryKey: locationKeys.detail(locationId) }),
       queryClient.invalidateQueries({ queryKey: locationKeys.stations(locationId) }),
       queryClient.invalidateQueries({ queryKey: locationKeys.assignableChargers() }),
-      ...(stationId ? [queryClient.invalidateQueries({ queryKey: locationKeys.chargers(stationId) })] : []),
+      ...(stationId
+        ? [
+            queryClient.invalidateQueries({ queryKey: locationKeys.chargers(stationId) }),
+            queryClient.invalidateQueries({ queryKey: locationKeys.stationDetail(stationId) }),
+          ]
+        : []),
     ]);
   };
 
@@ -84,9 +109,9 @@ export function useLocationResourceMutations(locationId: number | string, statio
   return { create, patch };
 }
 
-export function useLocationDetail(id: number | string) {
+export function useLocationDetail(id: number | string, enabled = true) {
   return useQuery({
-    enabled: !!id,
+    enabled: enabled && !!id,
     queryFn: () => fetchLocation(id),
     queryKey: locationKeys.detail(id),
   });

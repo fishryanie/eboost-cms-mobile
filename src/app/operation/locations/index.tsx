@@ -2,7 +2,8 @@ import { mhs } from 'themes/scaling';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Search, Zap } from 'lucide-react-native';
 import { ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
@@ -11,8 +12,7 @@ import { LocationListSkeleton } from 'shared/locations/components/location-list-
 import { RelocateLocationModal, RelocateStationModal } from 'shared/locations/components/relocate-location-modal';
 import { LocationResourceFormSheet } from 'shared/locations/components/location-resource-form-sheet';
 import { LocationStationsSheet } from 'shared/locations/components/location-stations-sheet';
-import { filterLocationsByStatus, getLocationStatusOptions } from 'shared/locations/location-filter';
-import { useLocations, useUploadLocationImage } from 'shared/locations/hooks';
+import { useLocations, useLocationStatusOptions, useUploadLocationImage } from 'shared/locations/hooks';
 import { AppButton, EmptyState } from 'components/ui';
 import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 import { StationEditSheet } from 'shared/stations/components/station-details-content';
@@ -31,11 +31,29 @@ export default function LocationsPage() {
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
   const sheetExitActionRef = useRef<SheetExitAction | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState('');
-  const locationsQuery = useLocations(search.trim());
+  const normalizedSearch = search.trim();
+  const searchingCharger = isChargerSearch(normalizedSearch);
+  const locationFilters = useMemo(
+    () => ({
+      charger: searchingCharger ? normalizedSearch : undefined,
+      name: normalizedSearch && !searchingCharger ? normalizedSearch : undefined,
+      operationStatus: statusFilter || undefined,
+    }),
+    [normalizedSearch, searchingCharger, statusFilter],
+  );
+  const locationsQuery = useLocations(locationFilters);
+  const statusOptionsQuery = useLocationStatusOptions();
   const uploadLocationImage = useUploadLocationImage();
-  const locations = useMemo(() => locationsQuery.data || [], [locationsQuery.data]);
-  const statusOptions = useMemo(() => getLocationStatusOptions(locations), [locations]);
-  const filteredLocations = useMemo(() => filterLocationsByStatus(locations, statusFilter), [locations, statusFilter]);
+  const locations = useMemo(() => locationsQuery.data?.pages.flatMap(page => page.items) || [], [locationsQuery.data]);
+  const total = locationsQuery.data?.pages[0]?.total ?? locations.length;
+  const statusOptions = useMemo(
+    () =>
+      [...new Set((statusOptionsQuery.data || []).map(option => option.label || option.labelVn).filter((label): label is string => Boolean(label)))].sort(
+        (a, b) => a.localeCompare(b),
+      ),
+    [statusOptionsQuery.data],
+  );
+  const hasActiveFilters = Boolean(normalizedSearch || statusFilter);
   const uploadImageForLocation = useCallback(
     async (location: LocationRecord) => {
       if (uploadLocationImage.isPending) return;
@@ -94,23 +112,12 @@ export default function LocationsPage() {
     <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
       <AnimatedHeaderFlatList
         largeTitle='Locations'
-        subtitle={`${filteredLocations.length.toLocaleString()} of ${locations.length.toLocaleString()} locations`}
+        subtitle={`${locations.length.toLocaleString()} of ${total.toLocaleString()} locations`}
         canGoBack
         onBack={() => router.back()}
-        searchBar={
-          <TextInput
-            autoCapitalize='none'
-            autoCorrect={false}
-            onChangeText={setSearch}
-            placeholder='Search locations'
-            placeholderTextColor='#98A2B3'
-            returnKeyType='search'
-            style={styles.search}
-            value={search}
-          />
-        }
+        searchBar={<LocationSearchField charger={searchingCharger} onChangeText={setSearch} placeholder='Search location or charger...' value={search} />}
         contentContainerStyle={styles.content}
-        data={filteredLocations}
+        data={locations}
         keyboardShouldPersistTaps='handled'
         keyExtractor={location => String(location.id)}
         ListEmptyComponent={
@@ -122,8 +129,18 @@ export default function LocationsPage() {
               <AppButton label='Retry' onPress={() => locationsQuery.refetch()} />
             </ThemedView>
           ) : (
-            <EmptyState message={search.trim() ? 'Try another location name.' : 'No locations are currently available.'} title='No locations found' />
+            <EmptyState
+              message={hasActiveFilters ? 'Try another location, charger, or status filter.' : 'No locations are currently available.'}
+              title='No locations found'
+            />
           )
+        }
+        ListFooterComponent={
+          locationsQuery.isFetchingNextPage ? (
+            <ThemedView alignItems='center' backgroundColor='transparent' paddingVertical={'four'}>
+              <ActivityIndicator color={Palette.accent} size='small' />
+            </ThemedView>
+          ) : null
         }
         ListHeaderComponent={
           <ThemedView paddingHorizontal={'four'}>
@@ -135,7 +152,17 @@ export default function LocationsPage() {
             </ScrollView>
           </ThemedView>
         }
-        refreshControl={<RefreshControl onRefresh={() => locationsQuery.refetch()} refreshing={locationsQuery.isRefetching} tintColor={Palette.accent} />}
+        onEndReached={() => {
+          if (locationsQuery.hasNextPage && !locationsQuery.isFetchingNextPage) void locationsQuery.fetchNextPage();
+        }}
+        onEndReachedThreshold={0.35}
+        refreshControl={
+          <RefreshControl
+            onRefresh={() => locationsQuery.refetch()}
+            refreshing={locationsQuery.isRefetching && !locationsQuery.isFetchingNextPage}
+            tintColor={Palette.accent}
+          />
+        }
         renderItem={renderLocation}
         showsVerticalScrollIndicator={false}
       />
@@ -186,10 +213,71 @@ export default function LocationsPage() {
   );
 }
 
+function isChargerSearch(value: string) {
+  return /^(?:Ecar_|Ebox_|\d)/i.test(value);
+}
+
+function LocationSearchField({
+  charger = false,
+  onChangeText,
+  placeholder,
+  value,
+}: {
+  charger?: boolean;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  const Icon = charger ? Zap : Search;
+
+  return (
+    <ThemedView
+      alignItems='center'
+      backgroundColor={Palette.surfaceRaised}
+      borderColor={Palette.borderSubtle}
+      borderCurve='continuous'
+      borderRadius={mhs(21)}
+      borderWidth={1}
+      flexDirection='row'
+      gap={'two'}
+      minHeight={44}
+      paddingHorizontal={'three'}>
+      <Icon color={charger ? Palette.accent : Palette.textTertiary} size={17} strokeWidth={2.1} />
+      <TextInput
+        accessibilityLabel={placeholder}
+        accessibilityHint='Ecar_, Ebox_, and numeric searches are treated as charger searches.'
+        autoCapitalize='none'
+        autoCorrect={false}
+        clearButtonMode='while-editing'
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor='#98A2B3'
+        returnKeyType='search'
+        style={styles.searchInput}
+        value={value}
+      />
+    </ThemedView>
+  );
+}
+
 function StatusFilterChip({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.filterChip, active && styles.filterChipActive, pressed && styles.filterChipPressed]}>
-      <ThemedText style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</ThemedText>
+    <Pressable accessibilityLabel={`Filter locations by ${label}`} accessibilityRole='button' onPress={onPress}>
+      {({ pressed }) => (
+        <ThemedView
+          backgroundColor={active ? Palette.surfaceMuted : Palette.surfaceRaised}
+          borderColor={active ? Palette.border : Palette.borderSubtle}
+          borderRadius={'pill'}
+          borderWidth={1}
+          justifyContent='center'
+          minHeight={32}
+          opacity={pressed ? 0.72 : 1}
+          paddingHorizontal={12}>
+          <ThemedText color={active ? Palette.textPrimary : Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+            {label}
+          </ThemedText>
+        </ThemedView>
+      )}
     </Pressable>
   );
 }
@@ -198,43 +286,15 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 120,
   },
-  filterChip: {
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: Palette.borderSubtle,
-    borderRadius: 999,
-    borderWidth: 1,
-    justifyContent: 'center',
-    minHeight: 32,
-    paddingHorizontal: mhs(12),
-  },
-  filterChipActive: {
-    backgroundColor: Palette.surfaceMuted,
-    borderColor: Palette.border,
-  },
-  filterChipPressed: {
-    opacity: 0.72,
-  },
-  filterChipText: {
-    color: Palette.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  filterChipTextActive: {
-    color: Palette.textPrimary,
-  },
   filters: {
     gap: mhs(8),
   },
-  search: {
-    backgroundColor: Palette.surfaceRaised,
-    borderColor: Palette.borderSubtle,
-    borderRadius: mhs(21),
-    borderWidth: 1,
+  searchInput: {
     color: Palette.textPrimary,
+    flex: 1,
     fontFamily: FontFamily.medium,
     fontSize: 14,
-    minHeight: 44,
-    paddingHorizontal: mhs(14),
+    minHeight: 42,
+    paddingVertical: 0,
   },
 });

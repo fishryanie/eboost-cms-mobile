@@ -38,6 +38,13 @@ export type QrScanStation = {
     url?: string;
   }[];
   iriId?: string;
+  location?:
+    | {
+        id?: number;
+        iriId?: string;
+      }
+    | string
+    | null;
   name?: string;
   nameVn?: string;
   visible?: boolean;
@@ -106,6 +113,7 @@ export type QrOutletDetails = QrIdentifierParts & {
   box: QrScanBox;
   connector: QrScanConnector;
   station?: QrScanStation;
+  stationId: number | string;
   stationReference?: string;
   vehicleType: QrVehicleType;
 };

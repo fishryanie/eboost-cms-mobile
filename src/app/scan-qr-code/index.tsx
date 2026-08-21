@@ -12,8 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 import { ThemedText, ThemedView } from 'components/base';
-import { useQrScanResultStore } from 'features/qr-code/qr-scan-result-store';
-import { decodeQrCode } from 'features/qr-code/qr-scan-service';
+import { decodeQrCode, fetchQrOutletDetails } from 'features/qr-code/qr-scan-service';
 import { FontFamily, Palette } from 'themes';
 import { mhs, mvs, width } from 'themes/scaling';
 
@@ -33,8 +32,6 @@ export default function ScanQrCodeScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
-  const clearScanResult = useQrScanResultStore(state => state.clearResult);
-  const setScanResult = useQrScanResultStore(state => state.setResult);
   const lastScannedCode = useRef<string | null>(null);
   const scanLockedRef = useRef(false);
   const [permission, requestPermission] = useCameraPermissions();
@@ -76,24 +73,29 @@ export default function ScanQrCodeScreen() {
       scanLockedRef.current = true;
       lastScannedCode.current = result.data;
       const qrData = result.data;
-      clearScanResult();
 
       void decodeQrCode(qrData)
-        .then(response => {
+        .then(fetchQrOutletDetails)
+        .then(details => {
           setScannedValue(qrData);
-          setScanResult(response);
           void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
           Toast.show({
             type: 'success',
             text1: 'QR code scanned',
-            text2: response.identifier,
+            text2: `Opening ${details.station?.name || `station #${details.stationId}`}`,
           });
-          router.push('/scan-qr-code/result');
+          router.push({
+            pathname: '/station/[stationId]',
+            params: {
+              chargerKey: `${details.vehicleType}-${details.box.id}`,
+              connectorOrder: String(details.connectorOrder),
+              stationId: String(details.stationId),
+            },
+          });
         })
         .catch(error => {
           scanLockedRef.current = false;
           lastScannedCode.current = null;
-          clearScanResult();
           setScannedValue(null);
           void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
           Toast.show({
@@ -103,7 +105,7 @@ export default function ScanQrCodeScreen() {
           });
         });
     },
-    [clearScanResult, router, setScanResult],
+    [router],
   );
 
   const handlePickQrImage = useCallback(async () => {
@@ -141,10 +143,9 @@ export default function ScanQrCodeScreen() {
   const handleResetScan = useCallback(() => {
     scanLockedRef.current = false;
     lastScannedCode.current = null;
-    clearScanResult();
     setScannedValue(null);
     void Haptics.selectionAsync().catch(() => undefined);
-  }, [clearScanResult]);
+  }, []);
 
   const handleCopyScannedValue = useCallback(async () => {
     if (!scannedValue) return;
