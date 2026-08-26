@@ -58,6 +58,16 @@ type LocationListApiRecord = Omit<LocationRecord, 'operationStatus'> & {
 
 type ItemResponse<T> = T | { data?: T };
 
+type PartnerBoxRecord = {
+  day_report?: number | null;
+  id: number;
+  location_id?: number | null;
+  offset?: number | string | null;
+  standby_energy?: number | string | null;
+  unique_id?: string | null;
+  vendor_id?: string | null;
+};
+
 export type LocationEditorLookupRecord = {
   id?: number | string;
   iriId?: string;
@@ -77,6 +87,7 @@ type PartnerLocationRecord = {
     street_address?: string | null;
     ward?: number | null;
   } | null;
+  boxes?: PartnerBoxRecord[] | null;
   contract_code?: string | null;
   contract_end_date?: string | null;
   contract_start_date?: string | null;
@@ -144,6 +155,15 @@ function mapLocationPartnership(partnership: PartnerLocationRecord, detailAvaila
           ward: partnership.address.ward,
         }
       : null,
+    boxes: (partnership.boxes || []).map(box => ({
+      dayReport: box.day_report,
+      id: box.id,
+      locationId: box.location_id,
+      offset: box.offset,
+      standbyEnergy: box.standby_energy,
+      uniqueId: box.unique_id,
+      vendorId: box.vendor_id,
+    })),
     contractCode: partnership.contract_code,
     contractEndDate: partnership.contract_end_date,
     contractStartDate: partnership.contract_start_date,
@@ -249,6 +269,21 @@ export function updateLocationPartnership(id: number | string, data: Record<stri
   return apiRequest(`api/v1/partner/locations/${id}`, {
     data,
     method: 'PATCH',
+    service: 'building',
+  });
+}
+
+export function createLocationPartnerBox(data: Record<string, unknown>) {
+  return apiRequest('api/v1/partner/locations/boxes', {
+    data,
+    method: 'POST',
+    service: 'building',
+  });
+}
+
+export function deleteLocationPartnerBox(locationId: number | string, partnerBoxId: number | string) {
+  return apiRequest(`api/v1/partner/locations/${locationId}/boxes/${partnerBoxId}`, {
+    method: 'DELETE',
     service: 'building',
   });
 }

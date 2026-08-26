@@ -26,7 +26,15 @@ import { getWorkflowChargerIdentifier, getWorkflowChargerType } from 'app/locati
 import { Switch, ThemedText, ThemedView } from 'components/base';
 import { AppButton, EmptyState } from 'components/ui';
 import { HorizontalActionList } from 'components/ui/horizontal-action-list';
-import { useLocationDetail, useLocationPartnership, useLocationPriceProfiles, useLocationResourceMutations, useStationChargers } from 'shared/locations/hooks';
+import {
+  useLocationDetail,
+  useLocationPartnership,
+  useLocationPriceProfiles,
+  useLocationResourceMutations,
+  useStationChargers,
+  useToggleLocationPartnerBox,
+} from 'shared/locations/hooks';
+import { findLocationPartnerBox } from 'shared/locations/location-partnership';
 import { getChargerSelectionKey } from 'shared/stations/charger-utils';
 import { FontFamily, Palette } from 'themes';
 import { rmhs } from 'themes/scaling';
@@ -41,6 +49,15 @@ const stationDateFormatter = new Intl.DateTimeFormat('en-GB', {
   month: 'short',
   year: 'numeric',
 });
+
+type ReadMeterControls = {
+  isLoading: boolean;
+  isUpdating: boolean;
+  onValueChange: (charger: WorkflowChargerRecord, partnerBox: LocationPartnerBox | undefined, enabled: boolean) => void;
+  partnership?: LocationPartnership | null;
+  updatingChargerKey?: string;
+  updatingValue?: boolean;
+};
 
 export function StationList({
   accentColor = Palette.accent,
@@ -360,6 +377,7 @@ export function StationDetailsContent({
     0,
   );
   const partnership = partnershipQuery.data;
+  const readMeterMutation = useToggleLocationPartnerBox(locationId, partnership?.locationId);
   const inheritedPriceProfile =
     priceProfilesQuery.data?.find(profile => String(profile.id) === String(partnership?.priceProfileId)) || partnership?.tariff || undefined;
   const pendingStationVisibility =
@@ -372,6 +390,30 @@ export function StationDetailsContent({
     const key = getChargerSelectionKey(charger);
     setInternalSelectedChargerKey(key);
     onSelectedChargerKeyChange?.(key);
+  };
+  const updateReadMeter = (charger: WorkflowChargerRecord, partnerBox: LocationPartnerBox | undefined, enabled: boolean) => {
+    if (!partnership?.locationId) {
+      Alert.alert('Partnership unavailable', 'Sync this location with partnership before changing meter reading.');
+      return;
+    }
+
+    if (enabled === Boolean(partnerBox)) return;
+
+    readMeterMutation.mutate(
+      { charger, enabled, partnerBoxId: partnerBox?.id },
+      {
+        onError: error => Alert.alert(enabled ? 'Could not enable meter reading' : 'Could not disable meter reading', error.message || 'Please try again.'),
+        onSuccess: () => Alert.alert('Success', enabled ? 'Meter reading enabled.' : 'Meter reading disabled.'),
+      },
+    );
+  };
+  const readMeterControls: ReadMeterControls = {
+    isLoading: partnershipQuery.isLoading,
+    isUpdating: readMeterMutation.isPending,
+    onValueChange: updateReadMeter,
+    partnership,
+    updatingChargerKey: readMeterMutation.variables ? getChargerSelectionKey(readMeterMutation.variables.charger) : undefined,
+    updatingValue: readMeterMutation.variables?.enabled,
   };
 
   return (
@@ -411,6 +453,7 @@ export function StationDetailsContent({
               onEditCharger={() => setEditCharger(activeCharger)}
               onEditPort={port => setEditPort({ charger: activeCharger, port })}
               pageWidth={pageWidth}
+              readMeter={readMeterControls}
               selectedPortOrder={selectedPortOrder}
               stationId={station.id}
             />
@@ -433,6 +476,7 @@ export function StationDetailsContent({
                 pageOffset={chargerPageOffset}
                 pagePosition={chargerPagePosition}
                 pageWidth={pageWidth}
+                readMeter={readMeterControls}
                 selectedPortOrder={selectedPortOrder}
                 selectedIndex={activeChargerIndex}
                 stationId={station.id}
@@ -502,6 +546,7 @@ function ChargerPager({
   pageOffset,
   pagePosition,
   pageWidth,
+  readMeter,
   selectedPortOrder,
   selectedIndex,
   stationId,
@@ -515,6 +560,7 @@ function ChargerPager({
   pageOffset: NativeAnimated.Value;
   pagePosition: NativeAnimated.Value;
   pageWidth: number;
+  readMeter: ReadMeterControls;
   selectedPortOrder?: number;
   selectedIndex: number;
   stationId: number;
@@ -576,6 +622,7 @@ function ChargerPager({
           onEditCharger={() => onEditCharger(activeCharger)}
           onEditPort={port => onEditPort(activeCharger, port)}
           pageWidth={pageWidth}
+          readMeter={readMeter}
           selectedPortOrder={selectedPortOrder}
           stationId={stationId}
         />
@@ -617,6 +664,7 @@ function ChargerPager({
                     onEditCharger={() => onEditCharger(charger)}
                     onEditPort={port => onEditPort(charger, port)}
                     pageWidth={pageWidth}
+                    readMeter={readMeter}
                     selectedPortOrder={selectedPortOrder}
                     stationId={stationId}
                   />
@@ -745,6 +793,7 @@ function ChargerSection({
   onEditCharger,
   onEditPort,
   pageWidth,
+  readMeter,
   selectedPortOrder,
   stationId,
 }: {
@@ -755,12 +804,12 @@ function ChargerSection({
   onEditCharger: () => void;
   onEditPort: (port: ChargerPortRecord) => void;
   pageWidth: number;
+  readMeter: ReadMeterControls;
   selectedPortOrder?: number;
   stationId: number;
 }) {
   const isCar = getWorkflowChargerType(charger) === 'car';
   const ports = isCar ? charger.carConnectors || [] : charger.outlets || [];
-  const rawCharger = charger as WorkflowChargerRecord & Record<string, unknown>;
   const mutations = useLocationResourceMutations(locationId, stationId);
   const type = isCar ? 'car' : 'bike';
   const path = type === 'car' ? 'api/car_boxes' : 'api/bike_boxes';
@@ -781,10 +830,13 @@ function ChargerSection({
       { onError: error => Alert.alert('Update failed', error instanceof Error ? error.message : 'Please try again.') },
     );
 
-  const offset = getChargerDisplayValue(rawCharger, ['offset', 'offsetKwh', 'offset_kwh']);
-  const standby = getChargerDisplayValue(rawCharger, ['standby', 'standbyKwh', 'standby_kwh']);
-  const dateReport = getChargerDisplayValue(rawCharger, ['dateReport', 'date_report', 'reportDate', 'report_date']);
-  const readMeter = getChargerDisplayValue(rawCharger, ['readMeter', 'read_meter']);
+  const partnerBox = findLocationPartnerBox(readMeter.partnership?.boxes, charger);
+  const chargerKey = getChargerSelectionKey(charger);
+  const isReadMeterUpdating = readMeter.isUpdating && readMeter.updatingChargerKey === chargerKey;
+  const readMeterValue = isReadMeterUpdating ? Boolean(readMeter.updatingValue) : Boolean(partnerBox);
+  const offset = formatPartnerMetric(partnerBox?.offset);
+  const standby = formatPartnerMetric(partnerBox?.standbyEnergy);
+  const dateReport = formatPartnerMetric(partnerBox?.dayReport);
   const accentColor = isCar ? '#B86A13' : '#17834A';
   const accentTone = isCar ? '#FFF5E8' : '#EEF7F1';
   const chargerIdentifier = getWorkflowChargerIdentifier(charger);
@@ -874,11 +926,11 @@ function ChargerSection({
         marginBottom={'three'}
         padding={'two'}>
         <ThemedView flexDirection='row'>
-          <ChargerStat label='Offset' value={offset || '--'} />
+          <ChargerStat label='Offset' value={offset} />
           <ThemedView backgroundColor={Palette.borderSubtle} marginHorizontal={'two'} width={1} />
-          <ChargerStat label='Standby' value={standby || '--'} />
+          <ChargerStat label='Standby' value={standby} />
           <ThemedView backgroundColor={Palette.borderSubtle} marginHorizontal={'two'} width={1} />
-          <ChargerStat label='Date report' value={dateReport || '--'} />
+          <ChargerStat label='Date report' value={dateReport} />
         </ThemedView>
         <ThemedView backgroundColor={Palette.borderSubtle} height={1} marginVertical={2} />
         <ThemedView flexDirection='row'>
@@ -898,7 +950,13 @@ function ChargerSection({
             value={chargerEnabled}
           />
           <ThemedView backgroundColor={Palette.borderSubtle} marginHorizontal={'two'} width={1} />
-          <ChargerStat isSwitch label='Read meter' value={readMeter === true || readMeter === 'true'} />
+          <ChargerStat
+            isSwitch
+            disabled={readMeter.isLoading || readMeter.isUpdating}
+            label='Read meter'
+            onValueChange={enabled => readMeter.onValueChange(charger, partnerBox, enabled)}
+            value={readMeterValue}
+          />
         </ThemedView>
       </ThemedView>
 
@@ -927,6 +985,9 @@ function ChargerSection({
               const repeatsLabel = displayName.trim().toLowerCase() === portLabel.toLowerCase();
               const subText = [repeatsLabel ? undefined : portLabel, port.power ? `${port.power} kW` : undefined].filter(Boolean).join(' · ');
               const pricing = getPortPricing(port, inheritedPriceProfile, isCar ? 'car' : 'bike');
+              const isPortOffline = port.status === false && port.visible === false;
+              const portStatusColor = port.status !== false ? accentColor : isPortOffline ? Palette.textTertiary : '#B45309';
+              const portStatusLabel = port.status !== false ? 'Available' : isPortOffline ? 'Offline' : 'Charging';
               const isSelectedPort =
                 selectedPortOrder !== undefined && (port.orderOnBox === selectedPortOrder || port.uniqueId?.endsWith(`_${selectedPortOrder}`));
 
@@ -987,9 +1048,9 @@ function ChargerSection({
                         </ThemedText>
                       </ThemedView>
                       <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={4}>
-                        <ThemedView backgroundColor={port.status !== false ? accentColor : '#D97706'} borderRadius={'pill'} height={6} width={6} />
-                        <ThemedText color={port.status !== false ? accentColor : '#B45309'} fontFamily={FontFamily.semibold} fontSize={9}>
-                          {port.status !== false ? 'Available' : 'Charging'}
+                        <ThemedView backgroundColor={portStatusColor} borderRadius={'pill'} height={6} width={6} />
+                        <ThemedText color={portStatusColor} fontFamily={FontFamily.semibold} fontSize={9}>
+                          {portStatusLabel}
                         </ThemedText>
                       </ThemedView>
                     </ThemedView>
@@ -1331,14 +1392,8 @@ function getPriceValue(records: Record<string, unknown>[], keys: string[], unit 
   return undefined;
 }
 
-function getChargerDisplayValue(record: Record<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    const value = record[key];
-    if (typeof value === 'string' && value.trim()) return value.trim();
-    if (typeof value === 'number') return String(value);
-    if (typeof value === 'boolean') return value;
-  }
-  return undefined;
+function formatPartnerMetric(value: number | string | null | undefined) {
+  return value === null || value === undefined || value === '' ? '--' : String(value);
 }
 
 function formatBooleanLike(value: unknown) {
@@ -1474,7 +1529,7 @@ function ChargerStat({
       </ThemedText>
       {isSwitch ? (
         <ThemedView alignItems='flex-start' marginTop={2}>
-          <Switch disabled={switchDisabled} onValueChange={onValueChange} size={40} value={Boolean(value)} />
+          <Switch accessibilityLabel={label} disabled={switchDisabled} onValueChange={onValueChange} size={40} value={Boolean(value)} />
         </ThemedView>
       ) : (
         <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={12} numberOfLines={1} selectable>

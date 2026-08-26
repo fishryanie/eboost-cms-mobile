@@ -186,6 +186,16 @@ type LocationType = {
   nameVn?: string | null;
 };
 
+type LocationPartnerBox = {
+  dayReport?: number | null;
+  id: number;
+  locationId?: number | null;
+  offset?: number | string | null;
+  standbyEnergy?: number | string | null;
+  uniqueId?: string | null;
+  vendorId?: string | null;
+};
+
 type LocationPartnership = {
   address?: {
     district?: number | null;
@@ -194,6 +204,7 @@ type LocationPartnership = {
     streetAddress?: string | null;
     ward?: number | null;
   } | null;
+  boxes?: LocationPartnerBox[];
   contract?: string | { code?: string; name?: string; number?: string } | null;
   contractCode?: string | null;
   contractEndDate?: string | null;

@@ -3,8 +3,10 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { apiRequest } from 'utils/api/client';
 
 import {
+  createLocationPartnerBox,
   createLocation,
   createResource,
+  deleteLocationPartnerBox,
   fetchLocation,
   fetchLocationEditorLookup,
   fetchLocationPartnership,
@@ -20,6 +22,7 @@ import {
   uploadLocationImage,
   getLocationPartnershipLookupCode,
 } from './location-service';
+import { buildLocationPartnerBoxPayload } from './location-partnership';
 import { restoreLocation, runRecursiveLocationVisibility } from './location-actions';
 import type { CreateLocationInput, LocationListFilters, RelocateLocationInput, UploadLocationImageInput } from './location-service';
 
@@ -194,6 +197,26 @@ export function useUpdateLocationPartnership(locationId: number | string, partne
     mutationFn: data => {
       if (!partnershipId) throw new Error('Partnership location is unavailable.');
       return updateLocationPartnership(partnershipId, data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: locationKeys.partnership(locationId) });
+    },
+  });
+}
+
+export function useToggleLocationPartnerBox(locationId: number | string, partnershipLocationId?: number | string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, Error, { charger: WorkflowChargerRecord; enabled: boolean; partnerBoxId?: number }>({
+    mutationFn: ({ charger, enabled, partnerBoxId }) => {
+      if (!partnershipLocationId) throw new Error('Partnership location is unavailable.');
+
+      if (enabled) {
+        return createLocationPartnerBox(buildLocationPartnerBoxPayload(charger, Number(partnershipLocationId)));
+      }
+
+      if (!partnerBoxId) throw new Error('Partnership charger is unavailable.');
+      return deleteLocationPartnerBox(partnershipLocationId, partnerBoxId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: locationKeys.partnership(locationId) });

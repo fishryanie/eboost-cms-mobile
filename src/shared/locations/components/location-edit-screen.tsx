@@ -76,30 +76,41 @@ export function LocationEditScreen() {
     }
 
     const payloads = buildLocationEditorPayloads(activeField.key, parsedValue.value);
-    let operationSaved = false;
     setEditorError('');
     setSaving(true);
 
     try {
-      if (payloads.operation) {
-        await updateLocation.mutateAsync(payloads.operation);
-        operationSaved = true;
-        if (activeField.key === 'province') setSelectedProvince(parsedValue.value);
+      const shouldUpdatePartnership = Boolean(payloads.partnership && partnership);
+      const [operationResult, partnershipResult] = await Promise.allSettled([
+        payloads.operation ? updateLocation.mutateAsync(payloads.operation) : Promise.resolve(undefined),
+        shouldUpdatePartnership ? updatePartnership.mutateAsync(payloads.partnership!) : Promise.resolve(undefined),
+      ]);
+      const operationError = payloads.operation && operationResult.status === 'rejected' ? getErrorMessage(operationResult.reason) : undefined;
+      const partnershipError = shouldUpdatePartnership && partnershipResult.status === 'rejected' ? getErrorMessage(partnershipResult.reason) : undefined;
+
+      if (operationError || partnershipError) {
+        if (operationError && partnershipError) {
+          setEditorError(`Operation update failed: ${operationError}\nPartnership update failed: ${partnershipError}`);
+        } else if (operationError) {
+          setEditorError(`${shouldUpdatePartnership ? 'Partnership saved. ' : ''}Operation update failed: ${operationError}`);
+        } else {
+          setEditorError(`${payloads.operation ? 'Operation saved. ' : ''}Partnership update failed: ${partnershipError}`);
+        }
+        setSaving(false);
+        return;
       }
-      if (payloads.partnership && partnership) {
-        await updatePartnership.mutateAsync(payloads.partnership);
-      }
+
+      if (payloads.operation && activeField.key === 'province') setSelectedProvince(parsedValue.value);
       setActiveField(undefined);
       setDraftValue('');
       if (process.env.EXPO_OS === 'ios') {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
+      setSaving(false);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'This change could not be saved.';
-      setEditorError(operationSaved ? `Operation saved. Partnership update failed: ${message}` : message);
+      setEditorError(getErrorMessage(error));
+      setSaving(false);
     }
-
-    setSaving(false);
   }
 
   if (locationQuery.isLoading) {
@@ -252,6 +263,10 @@ export function LocationEditScreen() {
       />
     </ThemedView>
   );
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'This change could not be saved.';
 }
 
 function PartnershipNotice({ isError, isLoading, partnership }: { isError: boolean; isLoading: boolean; partnership?: LocationPartnership | null }) {
