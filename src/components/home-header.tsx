@@ -17,6 +17,7 @@ import { useScrollStore } from 'utils/scroll-store';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { tabs } from 'components/animated-tab-bar/constants';
 import { Bell, QrCode, Search, type LucideIcon } from 'lucide-react-native';
+import { useAdminNotifications } from 'features/admin-notifications/admin-notification-service';
 
 const colors = {
   primary: '#24294A',
@@ -43,6 +44,8 @@ export function HomeHeader() {
   const segments = useSegments();
   const currentTab = segments[segments.length - 1] || 'technical';
   const isScrolled = useScrollStore(state => state.scrolledTabs[currentTab]);
+  const notificationsQuery = useAdminNotifications(30);
+  const unreadNotificationCount = notificationsQuery.data?.reduce((count, notification) => count + (notification.isRead ? 0 : 1), 0) || 0;
 
   const backgroundStyle = useAnimatedStyle(() => ({
     opacity: withTiming(isScrolled ? 1 : 0, { duration: 100 }),
@@ -96,7 +99,12 @@ export function HomeHeader() {
 
         <ThemedView alignItems='center' flex={1} flexDirection='row' gap={'four'} justifyContent='flex-end'>
           <HeaderIcon accessibilityLabel='Search' icon={Search} onPress={() => setSearchOpen(true)} />
-          <HeaderIcon accessibilityLabel='Notifications' icon={Bell} />
+          <HeaderIcon
+            accessibilityLabel={unreadNotificationCount ? `Notifications, ${unreadNotificationCount} unread` : 'Notifications'}
+            badgeCount={unreadNotificationCount}
+            icon={Bell}
+            onPress={() => router.push('/notifications' as Href)}
+          />
           <HeaderIcon accessibilityLabel='Scan QR code' icon={QrCode} onPress={() => router.push('/scan-qr-code' as Href)} />
         </ThemedView>
       </ThemedView>
@@ -115,10 +123,40 @@ export function HomeHeader() {
   );
 }
 
-function HeaderIcon({ accessibilityLabel, icon: Icon, onPress }: { accessibilityLabel: string; icon: LucideIcon; onPress?: () => void }) {
+function HeaderIcon({
+  accessibilityLabel,
+  badgeCount = 0,
+  icon: Icon,
+  onPress,
+}: {
+  accessibilityLabel: string;
+  badgeCount?: number;
+  icon: LucideIcon;
+  onPress?: () => void;
+}) {
   return (
     <Pressable accessibilityLabel={accessibilityLabel} accessibilityRole='button' onPress={onPress} style={styles.iconButton}>
       <Icon color={colors.primary} size={22} />
+      {badgeCount > 0 ? (
+        <ThemedView
+          alignItems='center'
+          backgroundColor={Palette.danger}
+          borderColor={Palette.surfaceBase}
+          borderRadius={'pill'}
+          borderWidth={2}
+          height={19}
+          justifyContent='center'
+          minWidth={19}
+          paddingHorizontal={3}
+          pointerEvents='none'
+          position='absolute'
+          right={-5}
+          top={-5}>
+          <ThemedText color='#FFFFFF' fontFamily={FontFamily.bold} fontSize={9} lineHeight={11}>
+            {badgeCount > 99 ? '99+' : badgeCount}
+          </ThemedText>
+        </ThemedView>
+      ) : null}
     </Pressable>
   );
 }
