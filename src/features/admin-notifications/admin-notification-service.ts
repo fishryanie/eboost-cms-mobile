@@ -15,6 +15,8 @@ export type AdminNotification = {
   type: string | null;
 };
 
+export type AdminNotificationCategory = 'BOX_ISSUE' | 'BOX_RECOVERY' | 'OTHER';
+
 export type CreateAdminNotificationInput = {
   adminIds: number[];
   content: string;
@@ -24,7 +26,30 @@ export type CreateAdminNotificationInput = {
   type: string;
 };
 
-const collectionKeys = ['notifications', 'data', 'items', 'results', 'hydra:member', 'member'] as const;
+export function getNotificationCategory(type: string | null | undefined): AdminNotificationCategory | null {
+  if (!type) return null;
+  const normalized = type
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
+  if (normalized === 'BOX_ISSUE' || normalized.includes('BOX_ISSUE')) return 'BOX_ISSUE';
+  if (normalized === 'BOX_RECOVERY' || normalized.includes('BOX_RECOVERY')) return 'BOX_RECOVERY';
+  return 'OTHER';
+}
+
+export function getNotificationTypeLabel(type: string | null | undefined): string | null {
+  if (!type) return null;
+  const category = getNotificationCategory(type);
+  if (category === 'BOX_ISSUE') return 'Box Issue';
+  if (category === 'BOX_RECOVERY') return 'Box Recovery';
+  return type
+    .trim()
+    .replace(/[_-]+/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+const collectionKeys = ['inbox', 'notifications', 'data', 'items', 'results', 'hydra:member', 'member'] as const;
 
 export const adminNotificationKeys = {
   all: ['admin-notifications'] as const,
@@ -101,7 +126,7 @@ export function parseAdminNotifications(payload: unknown) {
     .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime());
 }
 
-export async function fetchAdminNotifications(days = 30) {
+export async function fetchAdminNotifications(days = 1) {
   const response = await apiRequest<unknown>('api/controller/admin-notification/get-data', {
     params: { days },
   });
@@ -126,7 +151,7 @@ export function createAdminNotification(input: CreateAdminNotificationInput) {
   });
 }
 
-export function useAdminNotifications(days = 30) {
+export function useAdminNotifications(days = 1) {
   return useQuery({
     queryFn: () => fetchAdminNotifications(days),
     queryKey: adminNotificationKeys.list(days),
