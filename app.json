@@ -23,7 +23,8 @@
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
       ],
-      "package": "com.evida.eboost.cms"
+      "package": "com.evida.eboost.cms",
+      "googleServicesFile": "./google-services.json"
     },
     "plugins": [
       "expo-router",

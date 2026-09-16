@@ -1,0 +1,194 @@
+{
+  "project_info": {
+    "project_number": "852289434391",
+    "project_id": "norse-retina-271408",
+    "storage_bucket": "norse-retina-271408.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:852289434391:android:f1b171e8f4ffd293c63d52",
+        "android_client_info": {
+          "package_name": "com.eboost.car"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "852289434391-d3ap1egcqce607g4tfo3jo9dpi3siite.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.eboost.car",
+            "certificate_hash": "4ef7e46e38328707970a584e44877ab4b6999507"
+          }
+        },
+        {
+          "client_id": "852289434391-l65mbrqaf9v2a4jvd4m3kn62bk0pq99c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.eboost.car",
+            "certificate_hash": "529e38a749aa151a49a104ffc86451a835b58619"
+          }
+        },
+        {
+          "client_id": "852289434391-loiibrad1q49g4ek3id2b9viu7vg91d7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.eboost.car",
+            "certificate_hash": "a961d31865f30d40441de0d83fb3af71c3f36bda"
+          }
+        },
+        {
+          "client_id": "852289434391-vap4a5dp79im0513ehdcrlqftl6m7c4f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.eboost.car",
+            "certificate_hash": "58df1d4774ae091cfb3e89bf86cb0cb95db8aa8b"
+          }
+        },
+        {
+          "client_id": "852289434391-ne6a5ht401b4lfq8h8vvtehdo9gtu0gn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoMadfczluqwdtuU7cSnk-PvBWftLa4dc"
+        },
+        {
+          "current_key": "AIzaSyBx6Qy9PlV0RDPIn7gJyykd09Orp8PpOYc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "852289434391-ne6a5ht401b4lfq8h8vvtehdo9gtu0gn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "852289434391-k88vij6g67sa4q38uvffiu2rof4i4jqt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.eboost.car",
+                "app_store_id": "6738172371"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:852289434391:android:4b0104b9c64a3bb6c63d52",
+        "android_client_info": {
+          "package_name": "com.evida.eboost"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "852289434391-2513drdkcqh96qe7alah6k2iqdjo2pas.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.evida.eboost",
+            "certificate_hash": "529e38a749aa151a49a104ffc86451a835b58619"
+          }
+        },
+        {
+          "client_id": "852289434391-6akeep0n45nek3qoltvamj4rk9nj729c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.evida.eboost",
+            "certificate_hash": "a961d31865f30d40441de0d83fb3af71c3f36bda"
+          }
+        },
+        {
+          "client_id": "852289434391-9q0ifqqb6bhfb7g9h2j8u7hgbevudnh0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.evida.eboost",
+            "certificate_hash": "ac860f49a0b953ad3fc3f4459b01bce60aa7ec10"
+          }
+        },
+        {
+          "client_id": "852289434391-i023v7dgdqcin29bknitq4mmnvdm33n0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.evida.eboost",
+            "certificate_hash": "985ddb555f04ae15969ebbaec561ed57872521bf"
+          }
+        },
+        {
+          "client_id": "852289434391-ne6a5ht401b4lfq8h8vvtehdo9gtu0gn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoMadfczluqwdtuU7cSnk-PvBWftLa4dc"
+        },
+        {
+          "current_key": "AIzaSyBx6Qy9PlV0RDPIn7gJyykd09Orp8PpOYc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "852289434391-ne6a5ht401b4lfq8h8vvtehdo9gtu0gn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "852289434391-k88vij6g67sa4q38uvffiu2rof4i4jqt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.eboost.car",
+                "app_store_id": "6738172371"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:852289434391:android:b53a73562ee1b53fc63d52",
+        "android_client_info": {
+          "package_name": "com.evida.eboost.cms"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "852289434391-ne6a5ht401b4lfq8h8vvtehdo9gtu0gn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoMadfczluqwdtuU7cSnk-PvBWftLa4dc"
+        },
+        {
+          "current_key": "AIzaSyBx6Qy9PlV0RDPIn7gJyykd09Orp8PpOYc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "852289434391-ne6a5ht401b4lfq8h8vvtehdo9gtu0gn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "852289434391-k88vij6g67sa4q38uvffiu2rof4i4jqt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.eboost.car",
+                "app_store_id": "6738172371"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

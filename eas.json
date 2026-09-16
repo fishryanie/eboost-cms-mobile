@@ -27,7 +27,7 @@
         // Tăng dung lượng RAM cho tiến trình build (tránh lỗi cạn kiệt bộ nhớ OutOfMemoryError)
         "GRADLE_OPTS": "-Dorg.gradle.jvmargs=\"-Xmx4096m -XX:MaxMetaspaceSize=1024m\""
       },
-      "channel": "android-apk"
+      "channel": "production"
     },
     // Profile build ứng dụng Android ra đuôi file .aab
     "android-aab": {
@@ -38,7 +38,7 @@
         // Tăng dung lượng RAM cho tiến trình build
         "GRADLE_OPTS": "-Dorg.gradle.jvmargs=\"-Xmx4096m -XX:MaxMetaspaceSize=1024m\""
       },
-      "channel": "android-aab"
+      "channel": "production"
     },
     // Profile dùng để xuất bản ứng dụng chính thức lên App Store và Google Play
     "production": {

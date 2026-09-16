@@ -5,6 +5,8 @@ import { describe, it } from 'node:test';
 const clientSource = readFileSync(new URL('../client.ts', import.meta.url), 'utf8');
 const typesSource = readFileSync(new URL('../types.ts', import.meta.url), 'utf8');
 const authServiceSource = readFileSync(new URL('../../auth/auth-service.ts', import.meta.url), 'utf8');
+const deviceIdSource = readFileSync(new URL('../../device/device-id.ts', import.meta.url), 'utf8');
+const deviceTokenSource = readFileSync(new URL('../../notifications/device-token.ts', import.meta.url), 'utf8');
 const sessionStoreSource = readFileSync(new URL('../../session/session-store.ts', import.meta.url), 'utf8');
 
 describe('API client axios transport', () => {
@@ -46,5 +48,16 @@ describe('API client axios transport', () => {
     assert.match(sessionStoreSource, /getRefreshToken/);
     assert.match(sessionStoreSource, /setTokens/);
     assert.match(sessionStoreSource, /clearTokens/);
+  });
+
+  it('sends the machine ID separately from the notification token', () => {
+    assert.match(deviceIdSource, /Application\.getAndroidId/);
+    assert.match(deviceIdSource, /Application\.getIosIdForVendorAsync/);
+    assert.match(deviceTokenSource, /Notifications\.getDevicePushTokenAsync/);
+    assert.doesNotMatch(deviceTokenSource, /Notifications\.getExpoPushTokenAsync/);
+    assert.match(authServiceSource, /getDeviceId/);
+    assert.match(authServiceSource, /getNotificationDeviceToken/);
+    assert.equal(authServiceSource.match(/'device-id': deviceId/g)?.length, 2);
+    assert.equal(authServiceSource.match(/'X-Device-Token': deviceToken/g)?.length, 1);
   });
 });

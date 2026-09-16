@@ -10,6 +10,7 @@ import { LogOut, Settings, UserCircle, UserCog, type LucideIcon } from 'lucide-r
 import { ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
 import { useAdminProfile } from 'utils/auth/admin-profile';
+import { logoutAdmin } from 'utils/auth/auth-service';
 import { sessionKeys } from 'utils/session/use-session-token';
 import { sessionStore } from 'utils/session/session-store';
 import { useDrawerStore } from 'utils/drawer-store';
@@ -115,6 +116,11 @@ export function AppDrawer({ children }: PropsWithChildren) {
     closeDrawer();
 
     if (item.name === 'Logout') {
+      try {
+        await logoutAdmin();
+      } catch {
+        // The local session must still be cleared if server logout is unavailable.
+      }
       await sessionStore.clearTokens();
       queryClient.setQueryData(sessionKeys.token, null);
       await queryClient.invalidateQueries({ queryKey: ['locations'] });
