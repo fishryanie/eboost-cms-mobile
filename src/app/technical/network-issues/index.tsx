@@ -12,6 +12,8 @@ import { EmptyState } from 'components/ui';
 import { Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
 import { getCollectionResult } from 'utils/api/collection';
+import { AccessMessage } from 'features/admin-access/access-guard';
+import { useCurrentAdminAccess } from 'features/admin-access/hooks';
 
 import { IssueFilterSwitch, NetworkIssueCard } from './components/network-issue-sections';
 
@@ -28,12 +30,15 @@ async function getNetworkLogs(vehicle: TechnicalVehicle) {
 
 export default function NetworkIssuesScreen() {
   const router = useRouter();
+  const access = useCurrentAdminAccess();
+  const canReadBike = access.canAccess('/admin/dashboard') || access.canAccess('/admin/realtime/outlets');
+  const canReadCar = access.canAccess('/admin/dashboard') || access.canAccess('/admin/realtime/connectors');
   const [filter, setFilter] = useState<NetworkIssueFilter>('all');
   const [issueSearch, setIssueSearch] = useState('');
-  const bikeQuery = useQuery({ queryFn: () => getNetworkLogs('bike'), queryKey: ['technical', 'network-issues', 'bike'] });
-  const carQuery = useQuery({ queryFn: () => getNetworkLogs('car'), queryKey: ['technical', 'network-issues', 'car'] });
-  const bikeIssues = getNetworkIssues(bikeQuery.data?.items || [], 'bike');
-  const carIssues = getNetworkIssues(carQuery.data?.items || [], 'car');
+  const bikeQuery = useQuery({ enabled: canReadBike, queryFn: () => getNetworkLogs('bike'), queryKey: ['technical', 'network-issues', 'bike'] });
+  const carQuery = useQuery({ enabled: canReadCar, queryFn: () => getNetworkLogs('car'), queryKey: ['technical', 'network-issues', 'car'] });
+  const bikeIssues = getNetworkIssues(canReadBike ? bikeQuery.data?.items || [] : [], 'bike');
+  const carIssues = getNetworkIssues(canReadCar ? carQuery.data?.items || [] : [], 'car');
   const issues = useMemo(() => {
     const source: NetworkIssue[] = filter === 'bike' ? bikeIssues : filter === 'car' ? carIssues : [...bikeIssues, ...carIssues];
     const search = issueSearch.trim().toLowerCase();
@@ -60,14 +65,16 @@ export default function NetworkIssuesScreen() {
         data={issues}
         keyExtractor={(item: NetworkIssue, index: number) => `${item.vehicle}-${item.chargePointID || index}`}
         ListEmptyComponent={
-          loading ? (
+          (filter === 'bike' && !canReadBike) || (filter === 'car' && !canReadCar) ? (
+            <AccessMessage compact />
+          ) : loading ? (
             <LoadingBlock label='Loading network issues' />
           ) : error ? (
             <RetryBlock
               message={error.message}
               onRetry={() => {
-                bikeQuery.refetch();
-                carQuery.refetch();
+                if (canReadBike) bikeQuery.refetch();
+                if (canReadCar) carQuery.refetch();
               }}
               title='Network issues unavailable'
             />
@@ -78,8 +85,8 @@ export default function NetworkIssuesScreen() {
         refreshControl={
           <RefreshControl
             onRefresh={() => {
-              bikeQuery.refetch();
-              carQuery.refetch();
+              if (canReadBike) bikeQuery.refetch();
+              if (canReadCar) carQuery.refetch();
             }}
             refreshing={bikeQuery.isRefetching || carQuery.isRefetching}
             tintColor={Palette.accent}

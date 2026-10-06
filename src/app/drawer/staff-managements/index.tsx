@@ -1,6 +1,7 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { History, Lock, Mail, Undo2, Archive, Pencil, UserPlus, Ban, CheckCircle2 } from 'lucide-react-native';
+import { History, Lock, Mail, Undo2, Archive, Pencil, UserPlus, Ban, CheckCircle2, ShieldCheck } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
 
@@ -28,6 +29,8 @@ import { mhs } from 'themes/scaling';
 import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 import { ChangePasswordSheet } from './change-password-sheet';
 import { StaffLogsSheet } from './staff-logs';
+import { useAdministratorManagementAccess } from 'features/administrator-access/hooks';
+import { useCurrentAdminAccess } from 'features/admin-access/hooks';
 
 type SheetMode = 'create' | 'logs' | 'password' | 'roles';
 
@@ -359,6 +362,11 @@ function StaffFormSheet({
 }
 
 export default function StaffManagementsScreen() {
+  const router = useRouter();
+  const access = useCurrentAdminAccess();
+  const canUpdateStaff = access.canAccess('/admin/administrators', ['READ', 'UPDATE']);
+  const managementAccess = useAdministratorManagementAccess();
+  const pendingAccessMember = useRef<StaffMember | null>(null);
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<StaffListFilters>({});
   const [selectedMember, setSelectedMember] = useState<StaffMember | null>(null);
@@ -396,6 +404,10 @@ export default function StaffManagementsScreen() {
   });
 
   const openSheet = (mode: SheetMode, member?: StaffMember | null) => {
+    if (mode !== 'logs' && !access.canAccess('/admin/administrators', ['READ', mode === 'create' ? 'CREATE' : 'UPDATE'])) {
+      Alert.alert('Không có quyền truy cập', 'Bạn không có quyền thao tác với màn hình này.');
+      return;
+    }
     setSelectedMember(member ?? null);
     if (actionsOpen) {
       setActionsOpen(false);
@@ -479,6 +491,20 @@ export default function StaffManagementsScreen() {
           </ThemedView>
         }
         items={[
+          ...(managementAccess.data?.canUpdate
+            ? [
+                {
+                  key: 'access',
+                  label: 'Administrator Access',
+                  meta: 'Manage permissions for each CMS screen',
+                  icon: ShieldCheck,
+                  disabled: !selectedMember,
+                  onPress: () => {
+                    pendingAccessMember.current = selectedMember;
+                  },
+                },
+              ]
+            : []),
           {
             key: 'logs',
             label: 'Activity Logs',
@@ -495,7 +521,7 @@ export default function StaffManagementsScreen() {
             onPress: () => openSheet('password', selectedMember),
           },
           {
-            disabled: !selectedMember || resetPasswordMutation.isPending || Boolean(selectedMember?.deletedAt),
+            disabled: !canUpdateStaff || !selectedMember || resetPasswordMutation.isPending || Boolean(selectedMember?.deletedAt),
             key: 'reset',
             label: 'Send Reset Email',
             meta: 'Email a password reset link',
@@ -504,7 +530,7 @@ export default function StaffManagementsScreen() {
           },
           {
             danger: !selectedMember?.deletedAt,
-            disabled: !selectedMember || archiveMutation.isPending,
+            disabled: !canUpdateStaff || !selectedMember || archiveMutation.isPending,
             key: 'archive',
             label: selectedMember?.deletedAt ? 'Restore' : 'Archive',
             meta: selectedMember?.deletedAt ? 'Bring this admin back' : 'Soft-delete this administrator',
@@ -512,7 +538,12 @@ export default function StaffManagementsScreen() {
             onPress: () => selectedMember && archiveMutation.mutate(selectedMember),
           },
         ]}
-        onClose={() => setActionsOpen(false)}
+        onClose={() => {
+          setActionsOpen(false);
+          const member = pendingAccessMember.current;
+          pendingAccessMember.current = null;
+          if (member) router.push({ pathname: '/drawer/staff-managements/[id]/access', params: { id: String(member.id) } });
+        }}
         open={actionsOpen}
         primaryActions={[
           {
@@ -523,7 +554,7 @@ export default function StaffManagementsScreen() {
           },
           {
             danger: selectedMember?.enabled,
-            disabled: !selectedMember || toggleEnabledMutation.isPending || Boolean(selectedMember?.deletedAt),
+            disabled: !canUpdateStaff || !selectedMember || toggleEnabledMutation.isPending || Boolean(selectedMember?.deletedAt),
             key: 'status',
             label: selectedMember?.enabled ? 'Disable' : 'Enable',
             icon: selectedMember?.enabled ? Ban : CheckCircle2,

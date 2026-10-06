@@ -122,6 +122,8 @@ export const TopTabs: React.FC<TopTabsProps> = ({
   tabBarContainerStyle,
 }) => {
   const { width: screenWidth }: ScaledSize = useWindowDimensions();
+  // Keep tab content (React elements) out of the UI-runtime worklet closure.
+  const tabScrollOffsets = tabs.map((_, index) => index * screenWidth);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [isLayoutReady, setIsLayoutReady] = useState<boolean>(false);
   const tabWidths = useRef<number[]>(tabs.map(() => 0));
@@ -220,14 +222,13 @@ export const TopTabs: React.FC<TopTabsProps> = ({
   });
   const underlineAnimatedStyle = useAnimatedStyle<ViewStyle>(() => {
     'worklet';
-    const inputRange = tabs.map((_, index) => index * screenWidth);
     const positions = sharedTabPositions.value;
     const widths = sharedTabWidths.value;
     if (widths.length === 0 || widths[0] === 0 || positions.length === 0) {
       return { left: 0, width: 0, opacity: 0 };
     }
-    const absoluteLeft = interpolate(scrollX.value, inputRange, positions, Extrapolation.CLAMP);
-    const tabWidth = interpolate(scrollX.value, inputRange, widths, Extrapolation.CLAMP);
+    const absoluteLeft = interpolate(scrollX.value, tabScrollOffsets, positions, Extrapolation.CLAMP);
+    const tabWidth = interpolate(scrollX.value, tabScrollOffsets, widths, Extrapolation.CLAMP);
     const tabLeft = absoluteLeft - tabBarScrollX.value;
     const tabCenterX = tabLeft + tabWidth / 2;
     const shrinkAmount = 20;

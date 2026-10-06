@@ -3,6 +3,7 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
+import { AdminAccessBoundary } from 'features/admin-access/access-guard';
 
 import { SectionTitle, CompactStat, ProgressBar, LoadingBlock, RetryBlock, getNetworkSummary, NetworkSummary } from 'components/technical/list-ui';
 import { styles } from 'components/technical/styles';
@@ -169,20 +170,24 @@ export function VehicleNetworkLane({
 }
 
 export function NetworkStatusSection({
+  canReadBike,
+  canReadCar,
   bikeBoxStatusQuery,
   bikeQuery,
   carBoxStatusQuery,
   carQuery,
   onViewIssues,
 }: {
+  canReadBike: boolean;
+  canReadCar: boolean;
   bikeBoxStatusQuery: { data?: BoxStatusData; error: Error | null; isLoading: boolean; refetch: () => void };
   bikeQuery: { data?: { items: ConnectionLogRecord[] }; error: Error | null; isLoading: boolean; refetch: () => void };
   carBoxStatusQuery: { data?: BoxStatusData; error: Error | null; isLoading: boolean; refetch: () => void };
   carQuery: { data?: { items: ConnectionLogRecord[] }; error: Error | null; isLoading: boolean; refetch: () => void };
   onViewIssues: () => void;
 }) {
-  const bike = getNetworkSummary(bikeQuery.data?.items || []);
-  const car = getNetworkSummary(carQuery.data?.items || []);
+  const bike = getNetworkSummary(canReadBike ? bikeQuery.data?.items || [] : []);
+  const car = getNetworkSummary(canReadCar ? carQuery.data?.items || [] : []);
   const total = {
     boxes: bike.boxes + car.boxes,
     online: bike.online + car.online,
@@ -206,8 +211,8 @@ export function NetworkStatusSection({
         <RetryBlock
           message={error.message}
           onRetry={() => {
-            bikeQuery.refetch();
-            carQuery.refetch();
+            if (canReadBike) bikeQuery.refetch();
+            if (canReadCar) carQuery.refetch();
           }}
           title='Network status unavailable'
         />
@@ -232,8 +237,12 @@ export function NetworkStatusSection({
             <CompactStat label='Offline' value={total.offline} />
             <CompactStat label='Total' value={total.boxes} />
           </ThemedView>
-          <VehicleNetworkLane accent={Palette.accent} isFirst query={bikeBoxStatusQuery} summary={bike} title='Bike' vehicle='bike' />
-          <VehicleNetworkLane accent='#3867D6' query={carBoxStatusQuery} summary={car} title='Car' vehicle='car' />
+          <AdminAccessBoundary screens={['/admin/dashboard', '/admin/realtime/outlets']}>
+            <VehicleNetworkLane accent={Palette.accent} isFirst query={bikeBoxStatusQuery} summary={bike} title='Bike' vehicle='bike' />
+          </AdminAccessBoundary>
+          <AdminAccessBoundary screens={['/admin/dashboard', '/admin/realtime/connectors']}>
+            <VehicleNetworkLane accent='#3867D6' query={carBoxStatusQuery} summary={car} title='Car' vehicle='car' />
+          </AdminAccessBoundary>
         </ThemedView>
       )}
     </ThemedView>

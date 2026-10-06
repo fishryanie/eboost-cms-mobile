@@ -16,6 +16,8 @@ import { SubscriptionStatsCard, SectionTitle } from './components/subscription-s
 import { type DashboardApiData } from 'utils/api/types';
 import { type AtRiskUserItem } from 'app/marketing/at-risk-users/index';
 import { getCollectionItems } from 'utils/api/collection';
+import { AdminAccessBoundary } from 'features/admin-access/access-guard';
+import { useCurrentAdminAccess } from 'features/admin-access/hooks';
 
 const screenHorizontalPadding = 18;
 const serviceTileSize = 82;
@@ -155,16 +157,27 @@ const styles = StyleSheet.create({
 
 export default function MarketingScreen() {
   const router = useRouter();
+  const access = useCurrentAdminAccess(true);
+  const canReadStats = access.canAccess('/admin/marketing/subscriptions/monthly-stats');
+  const canReadAtRisk = access.canAccess('/admin/operations/accounts/at-risk-users');
   const focusStats = false;
   const onBack = undefined;
   const { width } = useWindowDimensions();
   const [shareMetric] = useState<ShareMetric>('revenue');
   const monthRange = useMemo(() => getCurrentMonthRange(), []);
   const statsQuery = useQuery({
+    enabled: canReadStats,
     queryFn: () => apiRequest<SubscriptionStatsResponse>('api/controller/statistic/subscription-kw-summary', { params: monthRange }),
     queryKey: ['marketing', 'subscription-package-stats', monthRange.start, monthRange.end],
   });
-  const atRiskQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<AtRiskUserItem[]>>('api/controller/statistic/at-risk-users', { params: { limit: 5, low_quota_ratio: 0.2, near_end_days: 7, page: 1, renew: 'all', risk: 'all' } }), queryKey: ['operation', 'at-risk-users'] });
+  const atRiskQuery = useQuery({
+    enabled: canReadAtRisk,
+    queryFn: () =>
+      apiRequest<DashboardApiData<AtRiskUserItem[]>>('api/controller/statistic/at-risk-users', {
+        params: { limit: 5, low_quota_ratio: 0.2, near_end_days: 7, page: 1, renew: 'all', risk: 'all' },
+      }),
+    queryKey: ['operation', 'at-risk-users'],
+  });
   const summary = useMemo(() => toSubscriptionStatsSummary(statsQuery.data, shareMetric), [shareMetric, statsQuery.data]);
   const serviceTileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - mhs(12) * 3) / 4));
   const emptyAtRiskUsers: AtRiskUserItem[] = [];
@@ -179,9 +192,17 @@ export default function MarketingScreen() {
         }}
         scrollEventThrottle={16}
         contentContainerStyle={[styles.content, { paddingTop: 60 + (useSafeAreaInsets().top || 0) }]}
-        refreshControl={<RefreshControl onRefresh={() => statsQuery.refetch()} refreshing={statsQuery.isRefetching} tintColor={Palette.accent} />}
-        showsVerticalScrollIndicator={false}
-      >
+        refreshControl={
+          <RefreshControl
+            onRefresh={() => {
+              if (canReadStats) void statsQuery.refetch();
+              if (canReadAtRisk) void atRiskQuery.refetch();
+            }}
+            refreshing={statsQuery.isRefetching || atRiskQuery.isRefetching}
+            tintColor={Palette.accent}
+          />
+        }
+        showsVerticalScrollIndicator={false}>
         {onBack ? (
           <ThemedView gap={'three'} paddingHorizontal={screenHorizontalPadding} paddingTop={'two'}>
             <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
@@ -195,7 +216,7 @@ export default function MarketingScreen() {
             </ThemedView>
           </ThemedView>
         ) : null}
-        
+
         <ThemedView marginTop={12} gap={focusStats ? 'three' : 'five'} paddingHorizontal={screenHorizontalPadding}>
           <ThemedView>
             <ThemedText fontFamily='bold' fontSize={34} lineHeight={40} letterSpacing={-0.5}>
@@ -209,17 +230,16 @@ export default function MarketingScreen() {
           </ThemedView>
           <ThemedView gap={'seven'}>
             {!focusStats ? <MarketingServicesSection tileWidth={serviceTileWidth} /> : null}
-            <SubscriptionStatsCard
-              isLoading={statsQuery.isLoading}
-              monthRange={monthRange}
-              shareMetric={shareMetric}
-              summary={summary}
-            />
-            <AtRiskSubscriptionSection
-              accentColor='#D92D20'
-              items={getCollectionItems(atRiskQuery.data) || emptyAtRiskUsers}
-              onViewMore={() => router.push('/marketing/at-risk-users')}
-            />
+            <AdminAccessBoundary screen='/admin/marketing/subscriptions/monthly-stats'>
+              <SubscriptionStatsCard isLoading={statsQuery.isLoading} monthRange={monthRange} shareMetric={shareMetric} summary={summary} />
+            </AdminAccessBoundary>
+            <AdminAccessBoundary screen='/admin/operations/accounts/at-risk-users'>
+              <AtRiskSubscriptionSection
+                accentColor='#D92D20'
+                items={getCollectionItems(atRiskQuery.data) || emptyAtRiskUsers}
+                onViewMore={() => router.push('/marketing/at-risk-users')}
+              />
+            </AdminAccessBoundary>
           </ThemedView>
         </ThemedView>
       </ScrollView>

@@ -14,6 +14,7 @@ import { getOngoingSessionKey } from 'app/technical/ongoing-sessions/components/
 import { Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
 import { getCollectionResult } from 'utils/api/collection';
+import { AdminAccessBoundary } from 'features/admin-access/access-guard';
 
 const status = 'Charging';
 const sessionListContentStyle = { flexGrow: 1, paddingHorizontal: 12, paddingTop: mhs(24), paddingBottom: 40 };
@@ -33,12 +34,20 @@ export default function OngoingSessionsRoute() {
           {
             id: 'bike',
             title: 'Xe máy',
-            contentComponent: <SessionList vehicle='bike' searchPlaceholder='Search bike session' />,
+            contentComponent: (
+              <AdminAccessBoundary compact={false} screen='/admin/realtime/outlets'>
+                <SessionList vehicle='bike' searchPlaceholder='Search bike session' />
+              </AdminAccessBoundary>
+            ),
           },
           {
             id: 'car',
             title: 'Ô tô',
-            contentComponent: <SessionList vehicle='car' searchPlaceholder='Search car session' />,
+            contentComponent: (
+              <AdminAccessBoundary compact={false} screen='/admin/realtime/connectors'>
+                <SessionList vehicle='car' searchPlaceholder='Search car session' />
+              </AdminAccessBoundary>
+            ),
           },
         ]}
         activeColor={Palette.accent}

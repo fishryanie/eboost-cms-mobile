@@ -11,6 +11,8 @@ import { SetupLocationSheet } from 'app/(tabs)/technical/components/setup-locati
 import { TriggerBoxSheet } from 'app/(tabs)/technical/features/trigger-box';
 import { ThemedText, ThemedView } from 'components/base';
 import { Palette } from 'themes';
+import { AdminAccessBoundary } from 'features/admin-access/access-guard';
+import { useCurrentAdminAccess } from 'features/admin-access/hooks';
 import { apiRequest } from 'utils/api/client';
 import { getCollectionResult } from 'utils/api/collection';
 
@@ -36,6 +38,10 @@ async function getNetworkStatus(vehicle: TechnicalVehicle) {
 
 export default function TechnicalScreen() {
   const router = useRouter();
+  const access = useCurrentAdminAccess(true);
+  const canReadBike = access.canAccess('/admin/dashboard') || access.canAccess('/admin/realtime/outlets');
+  const canReadCar = access.canAccess('/admin/dashboard') || access.canAccess('/admin/realtime/connectors');
+  const canReadDomain = access.canAccess('/admin/domain-analyze');
   const queryClient = useQueryClient();
   const { width } = useWindowDimensions();
   const [boxActionMode, setBoxActionMode] = useState<'reset' | 'trigger' | 'unlock' | null>(null);
@@ -48,6 +54,7 @@ export default function TechnicalScreen() {
     isRefetching: bikeNetworkRefetching,
     refetch: refetchBikeNetwork,
   } = useQuery({
+    enabled: canReadBike,
     queryFn: () => getNetworkStatus('bike'),
     queryKey: ['technical', 'overview-network-status', 'bike'],
   });
@@ -58,6 +65,7 @@ export default function TechnicalScreen() {
     isRefetching: bikeBoxStatusRefetching,
     refetch: refetchBikeBoxStatus,
   } = useQuery({
+    enabled: canReadBike,
     queryFn: async () => (await apiRequest<BoxStatusResponse>('api/controller/statistic/bike-box-status')).data || {},
     queryKey: ['technical', 'overview-bike-box-status'],
   });
@@ -68,6 +76,7 @@ export default function TechnicalScreen() {
     isRefetching: carNetworkRefetching,
     refetch: refetchCarNetwork,
   } = useQuery({
+    enabled: canReadCar,
     queryFn: () => getNetworkStatus('car'),
     queryKey: ['technical', 'overview-network-status', 'car'],
   });
@@ -78,6 +87,7 @@ export default function TechnicalScreen() {
     isRefetching: carBoxStatusRefetching,
     refetch: refetchCarBoxStatus,
   } = useQuery({
+    enabled: canReadCar,
     queryFn: async () => (await apiRequest<BoxStatusResponse>('api/controller/statistic/car-box-status')).data || {},
     queryKey: ['technical', 'overview-car-box-status'],
   });
@@ -88,6 +98,7 @@ export default function TechnicalScreen() {
     isRefetching: domainRefetching,
     refetch: refetchDomain,
   } = useQuery({
+    enabled: canReadDomain,
     queryFn: async () => getCollectionResult(await apiRequest<ApiListResponse<DomainAnalyzeRecord>>('api/controller/domain/analyze')),
     queryKey: ['technical', 'overview-domain-analyze'],
   });
@@ -106,19 +117,22 @@ export default function TechnicalScreen() {
           refreshControl={
             <RefreshControl
               onRefresh={() => {
-                void refetchBikeNetwork();
-                void refetchBikeBoxStatus();
-                void refetchCarBoxStatus();
-                void refetchCarNetwork();
-                void refetchDomain();
+                if (canReadBike) {
+                  void refetchBikeNetwork();
+                  void refetchBikeBoxStatus();
+                }
+                if (canReadCar) {
+                  void refetchCarBoxStatus();
+                  void refetchCarNetwork();
+                }
+                if (canReadDomain) void refetchDomain();
                 void queryClient.invalidateQueries({ queryKey: ['technical', 'peak-usage-hours'] });
               }}
               refreshing={bikeNetworkRefetching || bikeBoxStatusRefetching || carBoxStatusRefetching || carNetworkRefetching || domainRefetching}
               tintColor={Palette.accent}
             />
           }
-          showsVerticalScrollIndicator={false}
-        >
+          showsVerticalScrollIndicator={false}>
           <ThemedView gap={'five'} marginTop={12} paddingHorizontal={screenHorizontalPadding}>
             <ThemedView>
               <ThemedText fontFamily='bold' fontSize={34} lineHeight={40} letterSpacing={-0.5}>
@@ -135,57 +149,65 @@ export default function TechnicalScreen() {
                 onReplaceMeter={() => setReplaceMeterVisible(true)}
                 onSetupLocation={() => setSetupLocationVisible(true)}
               />
-              <PeakUsageHoursSection
-                onViewMore={() =>
-                  router.push({
-                    pathname: '/technical/peak-usage-hours',
-                  } as never)
-                }
-              />
-              <NetworkStatusSection
-                bikeQuery={{
-                  data: bikeNetworkData,
-                  error: bikeNetworkError,
-                  isLoading: bikeNetworkLoading,
-                  refetch: refetchBikeNetwork,
-                }}
-                bikeBoxStatusQuery={{
-                  data: bikeBoxStatusData,
-                  error: bikeBoxStatusError,
-                  isLoading: bikeBoxStatusLoading,
-                  refetch: refetchBikeBoxStatus,
-                }}
-                carBoxStatusQuery={{
-                  data: carBoxStatusData,
-                  error: carBoxStatusError,
-                  isLoading: carBoxStatusLoading,
-                  refetch: refetchCarBoxStatus,
-                }}
-                carQuery={{
-                  data: carNetworkData,
-                  error: carNetworkError,
-                  isLoading: carNetworkLoading,
-                  refetch: refetchCarNetwork,
-                }}
-                onViewIssues={() =>
-                  router.push({
-                    pathname: '/technical/network-issues',
-                  } as never)
-                }
-              />
-              <DomainAnalyzeSection
-                query={{
-                  data: domainData,
-                  error: domainError,
-                  isLoading: domainLoading,
-                  refetch: refetchDomain,
-                }}
-                onViewMore={() =>
-                  router.push({
-                    pathname: '/technical/ongoing-sessions',
-                  } as never)
-                }
-              />
+              <AdminAccessBoundary screen='/admin/dashboard'>
+                <PeakUsageHoursSection
+                  onViewMore={() =>
+                    router.push({
+                      pathname: '/technical/peak-usage-hours',
+                    } as never)
+                  }
+                />
+              </AdminAccessBoundary>
+              <AdminAccessBoundary screens={['/admin/dashboard', '/admin/realtime/outlets', '/admin/realtime/connectors']}>
+                <NetworkStatusSection
+                  canReadBike={canReadBike}
+                  canReadCar={canReadCar}
+                  bikeQuery={{
+                    data: bikeNetworkData,
+                    error: bikeNetworkError,
+                    isLoading: bikeNetworkLoading,
+                    refetch: refetchBikeNetwork,
+                  }}
+                  bikeBoxStatusQuery={{
+                    data: bikeBoxStatusData,
+                    error: bikeBoxStatusError,
+                    isLoading: bikeBoxStatusLoading,
+                    refetch: refetchBikeBoxStatus,
+                  }}
+                  carBoxStatusQuery={{
+                    data: carBoxStatusData,
+                    error: carBoxStatusError,
+                    isLoading: carBoxStatusLoading,
+                    refetch: refetchCarBoxStatus,
+                  }}
+                  carQuery={{
+                    data: carNetworkData,
+                    error: carNetworkError,
+                    isLoading: carNetworkLoading,
+                    refetch: refetchCarNetwork,
+                  }}
+                  onViewIssues={() =>
+                    router.push({
+                      pathname: '/technical/network-issues',
+                    } as never)
+                  }
+                />
+              </AdminAccessBoundary>
+              <AdminAccessBoundary screen='/admin/domain-analyze'>
+                <DomainAnalyzeSection
+                  query={{
+                    data: domainData,
+                    error: domainError,
+                    isLoading: domainLoading,
+                    refetch: refetchDomain,
+                  }}
+                  onViewMore={() =>
+                    router.push({
+                      pathname: '/technical/ongoing-sessions',
+                    } as never)
+                  }
+                />
+              </AdminAccessBoundary>
             </ThemedView>
           </ThemedView>
         </ScrollView>

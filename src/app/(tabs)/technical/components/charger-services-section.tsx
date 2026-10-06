@@ -1,4 +1,6 @@
-import { Pressable } from 'react-native';
+import { Alert, Pressable } from 'react-native';
+import { useCurrentAdminAccess } from 'features/admin-access/hooks';
+import { meetsScreenRequirement, technicalServiceRequirements } from 'features/admin-access/model';
 import { useRouter } from 'expo-router';
 import {
   BadgeDollarSign,
@@ -71,6 +73,15 @@ export function ChargerServicesSection({
   tileWidth: number;
 }) {
   const router = useRouter();
+  const access = useCurrentAdminAccess();
+  const requestService = (service: QuickServiceItem, onOpen?: () => void) => {
+    const requirement = technicalServiceRequirements[service.slug];
+    if (!requirement || !meetsScreenRequirement(access.data, requirement) || access.isError) {
+      Alert.alert('Không có quyền truy cập', 'Bạn không có quyền thao tác với màn hình này.');
+      return;
+    }
+    onOpen?.();
+  };
   const services = quickServiceGroups[0]?.services || [];
   const rows = chunkItems(services, 4);
 
@@ -84,24 +95,27 @@ export function ChargerServicesSection({
               <QuickServiceShortcut
                 key={service.slug}
                 tileWidth={tileWidth}
-                onPress={
-                  service.slug === 'trigger-charger'
-                    ? () => onBoxAction('trigger')
-                    : service.slug === 'reset'
-                      ? () => onBoxAction('reset')
-                      : service.slug === 'unlock-charger'
-                        ? () => onBoxAction('unlock')
-                        : service.slug === 'replace-meter'
-                          ? onReplaceMeter
-                          : service.slug === 'setup-location'
-                            ? onSetupLocation
-                            : service.slug === 'uninstall-charger'
-                              ? () => router.push('/technical/uninstall-charger')
-                              : service.slug === 'replace-charger'
-                                ? () => router.push('/technical/replace-charger')
-                                : service.slug === 'add-charger'
-                                  ? () => router.push('/technical/add-charger')
-                                  : undefined
+                onPress={() =>
+                  requestService(
+                    service,
+                    service.slug === 'trigger-charger'
+                      ? () => onBoxAction('trigger')
+                      : service.slug === 'reset'
+                        ? () => onBoxAction('reset')
+                        : service.slug === 'unlock-charger'
+                          ? () => onBoxAction('unlock')
+                          : service.slug === 'replace-meter'
+                            ? onReplaceMeter
+                            : service.slug === 'setup-location'
+                              ? onSetupLocation
+                              : service.slug === 'uninstall-charger'
+                                ? () => router.push('/technical/uninstall-charger')
+                                : service.slug === 'replace-charger'
+                                  ? () => router.push('/technical/replace-charger')
+                                  : service.slug === 'add-charger'
+                                    ? () => router.push('/technical/add-charger')
+                                    : undefined,
+                  )
                 }
                 service={service}
               />

@@ -1,0 +1,68 @@
+[
+  {
+    "name": "Default Marketing",
+    "accesses": [
+      {
+        "screens": "/admin/dashboard",
+        "methods": ["READ", "UPDATE", "CREATE", "APPROVE"]
+      },
+      {
+        "screens": "/admin/operations/accounts",
+        "methods": ["READ", "UPDATE", "CREATE", "APPROVE"]
+      },
+      {
+        "screens": "/admin/operations/locations",
+        "methods": ["READ", "UPDATE", "CREATE", "APPROVE"]
+      },
+      {
+        "screens": "/admin/operations/reservations",
+        "methods": ["READ", "UPDATE", "CREATE", "APPROVE"]
+      },
+      {
+        "screens": "/admin/operations/payments",
+        "methods": ["READ", "UPDATE", "CREATE", "APPROVE"]
+      },
+      {
+        "screens": "/admin/operations/transactions",
+        "methods": ["READ", "UPDATE", "CREATE", "APPROVE"]
+      },
+      {
+        "screens": "/admin/marketing",
+        "methods": ["READ", "UPDATE", "CREATE", "APPROVE"]
+      }
+    ]
+  },
+  {
+    "name": "Default Technical",
+    "accesses": [
+      {
+        "screens": "/admin/dashboard",
+        "methods": ["READ"]
+      },
+      {
+        "screens": "/admin/realtime/outlets",
+        "methods": ["READ"]
+      },
+      {
+        "screens": "/admin/realtime/connectors",
+        "methods": ["READ"]
+      },
+      {
+        "screens": "/admin/operations/locations",
+        "methods": ["READ", "UPDATE", "CREATE", "APPROVE"]
+      },
+      {
+        "screens": "/admin/operations/transactions",
+        "methods": ["READ", "UPDATE", "CREATE", "APPROVE"]
+      },
+      {
+        "screens": "/admin/partnerships/locations",
+        "methods": ["READ", "UPDATE", "CREATE", "APPROVE"]
+      },
+      {
+        "screens": "/admin/technical",
+        "methods": ["READ", "UPDATE", "CREATE", "APPROVE"]
+      }
+    ]
+  }
+]

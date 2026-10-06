@@ -1,0 +1,318 @@
+[
+  {
+    "name": "Dashboard",
+    "path": "/admin/dashboard"
+  },
+  {
+    "name": "PowerTrack",
+    "path": "/admin/realtime",
+    "children": [
+      {
+        "name": "Connector",
+        "path": "/admin/realtime/connectors"
+      },
+      {
+        "name": "Outlet",
+        "path": "/admin/realtime/outlets"
+      }
+    ]
+  },
+  {
+    "name": "Operations",
+    "path": "/admin/operations",
+    "children": [
+      {
+        "name": "Users",
+        "path": "/admin/operations/accounts",
+        "children": [
+          {
+            "name": "Users",
+            "path": "/admin/operations/accounts/users"
+          },
+          {
+            "name": "User Growth",
+            "path": "/admin/operations/accounts/user-growth"
+          },
+          {
+            "name": "Top User Performance",
+            "path": "/admin/operations/accounts/top-user-performance"
+          },
+          {
+            "name": "At-risk Users",
+            "path": "/admin/operations/accounts/at-risk-users"
+          },
+          {
+            "name": "Groups",
+            "path": "/admin/operations/accounts/groups"
+          },
+          {
+            "name": "Ranking Level",
+            "path": "/admin/operations/accounts/ranking-level"
+          },
+          {
+            "name": "RFID Card",
+            "path": "/admin/operations/accounts/rfid-card"
+          }
+        ]
+      },
+      {
+        "name": "Tariff",
+        "path": "/admin/operations/tariff",
+        "children": [
+          {
+            "name": "Port Fee Schedules",
+            "path": "/admin/operations/tariff/port"
+          },
+          {
+            "name": "Contract Fee Schedules",
+            "path": "/admin/operations/tariff/contract"
+          }
+        ]
+      },
+      {
+        "name": "Locations",
+        "path": "/admin/operations/locations"
+      },
+      {
+        "name": "Locations V2",
+        "path": "/admin/operations/locations-v2"
+      },
+      {
+        "name": "Reservations",
+        "path": "/admin/operations/reservations",
+        "children": [
+          {
+            "name": "Policies",
+            "path": "/admin/operations/reservations/policies"
+          },
+          {
+            "name": "Histories",
+            "path": "/admin/operations/reservations/histories"
+          }
+        ]
+      },
+      {
+        "name": "Brands & Models",
+        "path": "/admin/operations/brands"
+      },
+      {
+        "name": "Opening Hours",
+        "path": "/admin/operations/opening-hours"
+      },
+      {
+        "name": "Payments",
+        "path": "/admin/operations/payments",
+        "children": [
+          {
+            "name": "Momo",
+            "path": "/admin/operations/payments/momo"
+          },
+          {
+            "name": "AlePay",
+            "path": "/admin/operations/payments/alepay"
+          }
+        ]
+      },
+      {
+        "name": "Transactions",
+        "path": "/admin/operations/transactions"
+      }
+    ]
+  },
+  {
+    "name": "Partnerships",
+    "path": "/admin/partnerships",
+    "children": [
+      {
+        "name": "Employees",
+        "path": "/admin/partnerships/employees"
+      },
+      {
+        "name": "Locations",
+        "path": "/admin/partnerships/locations"
+      },
+      {
+        "name": "Tariffs",
+        "path": "/admin/partnerships/tariffs"
+      },
+      {
+        "name": "Mail Logs",
+        "path": "/admin/partnerships/mails"
+      },
+      {
+        "name": "Reports",
+        "path": "/admin/partnerships/reports"
+      }
+    ]
+  },
+  {
+    "name": "Partnership V2",
+    "path": "/admin/partnershipv2",
+    "children": [
+      {
+        "name": "Configs",
+        "path": "/admin/partnershipv2/configs"
+      },
+      {
+        "name": "Contracts",
+        "path": "/admin/partnershipv2/contracts"
+      },
+      {
+        "name": "Tariffs",
+        "path": "/admin/partnershipv2/tariffs"
+      },
+      {
+        "name": "Reports",
+        "path": "/admin/partnershipv2/reports"
+      },
+      {
+        "name": "Mail Logs",
+        "path": "/admin/partnershipv2/mails"
+      }
+    ]
+  },
+  {
+    "name": "Marketing",
+    "path": "/admin/marketing",
+    "children": [
+      {
+        "name": "Promotions",
+        "path": "/admin/marketing/promotions",
+        "children": [
+          {
+            "name": "Charging",
+            "path": "/admin/marketing/promotions/charge"
+          },
+          {
+            "name": "Top-up",
+            "path": "/admin/marketing/promotions/money"
+          },
+          {
+            "name": "Promotion Code Usage History",
+            "path": "/admin/marketing/promotions/charge-used"
+          },
+          {
+            "name": "Promotion Topup Usage History",
+            "path": "/admin/marketing/promotions/money-used"
+          }
+        ]
+      },
+      {
+        "name": "Bonus Topup",
+        "path": "/admin/marketing/bonus-topup",
+        "children": [
+          {
+            "name": "Events",
+            "path": "/admin/marketing/bonus-topup/events"
+          },
+          {
+            "name": "Bonus Usage History",
+            "path": "/admin/marketing/bonus-topup/used"
+          }
+        ]
+      },
+      {
+        "name": "Referral Gift",
+        "path": "/admin/marketing/referral-gift"
+      },
+      {
+        "name": "Notifications",
+        "path": "/admin/marketing/notifications"
+      },
+      {
+        "name": "Notification Drafts",
+        "path": "/admin/marketing/notification-message-templates"
+      },
+      {
+        "name": "Advertisements",
+        "path": "/admin/marketing/advertisements"
+      },
+      {
+        "name": "Popup Ads",
+        "path": "/admin/marketing/pop-up-ads"
+      },
+      {
+        "name": "Subscriptions",
+        "path": "/admin/marketing/subscriptions",
+        "children": [
+          {
+            "name": "Monthly Statistics",
+            "path": "/admin/marketing/subscriptions/monthly-stats"
+          },
+          {
+            "name": "Subscription Packages",
+            "path": "/admin/marketing/subscriptions/packages"
+          },
+          {
+            "name": "Subscription Events",
+            "path": "/admin/marketing/subscriptions/events"
+          },
+          {
+            "name": "Subscription Histories",
+            "path": "/admin/marketing/subscriptions/histories"
+          },
+          {
+            "name": "Subscription Event Type",
+            "path": "/admin/marketing/subscriptions/event-type"
+          }
+        ]
+      },
+      {
+        "name": "Contents",
+        "path": "/admin/marketing/contents",
+        "children": [
+          {
+            "name": "FAQs",
+            "path": "/admin/marketing/contents/faqs"
+          },
+          {
+            "name": "Privacy Policy",
+            "path": "/admin/marketing/contents/policy"
+          },
+          {
+            "name": "Terms & Conditions",
+            "path": "/admin/marketing/contents/terms-conditions"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Technical",
+    "path": "/admin/technical",
+    "children": [
+      {
+        "name": "Charger",
+        "path": "/admin/technical/chargers"
+      },
+      {
+        "name": "Status Logs",
+        "path": "/admin/technical/chargers-status-logs"
+      },
+      {
+        "name": "Meter hourly",
+        "path": "/admin/technical/meter-hourly"
+      },
+      {
+        "name": "Energy Differ",
+        "path": "/admin/technical/differ"
+      },
+      {
+        "name": "Energy Differ Report",
+        "path": "/admin/technical/differ-report"
+      }
+    ]
+  },
+  {
+    "name": "Administrators",
+    "path": "/admin/administrators"
+  },
+  {
+    "name": "Third Parties",
+    "path": "/admin/third-parties"
+  },
+  {
+    "name": "Domain Analyze",
+    "path": "/admin/domain-analyze"
+  }
+]

@@ -18,6 +18,8 @@ import { UserCard } from 'shared/users/components/user-card';
 import { useInfiniteUsers, userKeys } from 'shared/users/hooks';
 import { FontFamily, Palette } from 'themes';
 import { biometricCredentialStore } from 'utils/auth/biometric-credentials';
+import { AdminAccessBoundary } from 'features/admin-access/access-guard';
+import { useCurrentAdminAccess } from 'features/admin-access/hooks';
 
 import { type DashboardApiData } from 'utils/api/types';
 
@@ -222,45 +224,74 @@ function parseApiError(error: unknown) {
 
 export default function OperationScreen() {
   const router = useRouter();
+  const access = useCurrentAdminAccess(true);
+  const canReadTopUsers = access.canAccess('/admin/operations/accounts/top-user-performance');
+  const canReadTopStations = access.canAccess('/admin/dashboard');
+  const canReadGrowth = access.canAccess('/admin/operations/accounts/user-growth');
   const { width } = useWindowDimensions();
   const [isPaymentCheckoutOpen, setIsPaymentCheckoutOpen] = useState(false);
   const [isPaymentResultOpen, setIsPaymentResultOpen] = useState(false);
   const [paymentRecord, setPaymentRecord] = useState<any>(null);
-  const topUsersQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<TopUserPerformanceItem[]>>('api/controller/statistic/top-users', { params: { sortBy: 'total_orders' } }), queryKey: ['operation', 'top-users'] });
-  const topStationsQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<TopStationPerformanceItem[]>>('api/controller/statistic/top-stations', { params: { sortBy: 'total_orders' } }), queryKey: ['operation', 'top-stations'] });
+  const topUsersQuery = useQuery({
+    enabled: canReadTopUsers,
+    queryFn: () => apiRequest<DashboardApiData<TopUserPerformanceItem[]>>('api/controller/statistic/top-users', { params: { sortBy: 'total_orders' } }),
+    queryKey: ['operation', 'top-users'],
+  });
+  const topStationsQuery = useQuery({
+    enabled: canReadTopStations,
+    queryFn: () => apiRequest<DashboardApiData<TopStationPerformanceItem[]>>('api/controller/statistic/top-stations', { params: { sortBy: 'total_orders' } }),
+    queryKey: ['operation', 'top-stations'],
+  });
   const growthRange = useMemo(() => getLastMonthsRange(12), []);
-  const growthQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<UserGrowthSummary>>('api/controller/statistic/user-growth'), queryKey: ['operation', 'user-growth'] });
-  const growthChartQuery = useQuery({ queryFn: () => apiRequest<DashboardApiData<UserGrowthChartItem[]>>('api/controller/statistic/user-growth-chart', { params: { endDate: growthRange.endDate, period: 'month', startDate: growthRange.startDate } }), queryKey: ['operation', 'user-growth-chart', growthRange] });
+  const growthQuery = useQuery({
+    enabled: canReadGrowth,
+    queryFn: () => apiRequest<DashboardApiData<UserGrowthSummary>>('api/controller/statistic/user-growth'),
+    queryKey: ['operation', 'user-growth'],
+  });
+  const growthChartQuery = useQuery({
+    enabled: canReadGrowth,
+    queryFn: () =>
+      apiRequest<DashboardApiData<UserGrowthChartItem[]>>('api/controller/statistic/user-growth-chart', {
+        params: { endDate: growthRange.endDate, period: 'month', startDate: growthRange.startDate },
+      }),
+    queryKey: ['operation', 'user-growth-chart', growthRange],
+  });
   const tileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - mhs(12) * 3) / 4));
-  const isRefreshing =
-    topUsersQuery.isRefetching || topStationsQuery.isRefetching || growthQuery.isRefetching || growthChartQuery.isRefetching;
+  const isRefreshing = topUsersQuery.isRefetching || topStationsQuery.isRefetching || growthQuery.isRefetching || growthChartQuery.isRefetching;
 
-  const openService = useCallback((service: OperationService) => {
-    if (service.key === 'payment-checkout') {
-      setIsPaymentCheckoutOpen(true);
-      return;
-    }
-    if (service.key === 'adjust-balance') {
-      router.push('/operation/adjust-balance');
-      return;
-    }
-    if (service.key === 'transfer-money') {
-      router.push('/operation/transfer-money');
-      return;
-    }
-    if (service.key === 'modify-ranking') {
-      router.push('/operation/modify-ranking');
-      return;
-    }
-    if (service.key === 'change-email') {
-      router.push('/operation/change-email');
-      return;
-    }
-    if (service.key === 'change-password') {
-      router.push('/operation/change-password');
-      return;
-    }
-  }, [router]);
+  const openService = useCallback(
+    (service: OperationService) => {
+      if (service.key === 'payment-checkout') {
+        if (!access.canAccess('/admin/operations/payments/alepay', ['READ', 'CREATE'])) {
+          Alert.alert('Không có quyền truy cập', 'Bạn không có quyền thao tác với màn hình này.');
+          return;
+        }
+        setIsPaymentCheckoutOpen(true);
+        return;
+      }
+      if (service.key === 'adjust-balance') {
+        router.push('/operation/adjust-balance');
+        return;
+      }
+      if (service.key === 'transfer-money') {
+        router.push('/operation/transfer-money');
+        return;
+      }
+      if (service.key === 'modify-ranking') {
+        router.push('/operation/modify-ranking');
+        return;
+      }
+      if (service.key === 'change-email') {
+        router.push('/operation/change-email');
+        return;
+      }
+      if (service.key === 'change-password') {
+        router.push('/operation/change-password');
+        return;
+      }
+    },
+    [access, router],
+  );
 
   return (
     <>
@@ -275,17 +306,18 @@ export default function OperationScreen() {
           refreshControl={
             <RefreshControl
               onRefresh={() => {
-                void topUsersQuery.refetch();
-                void topStationsQuery.refetch();
-                void growthQuery.refetch();
-                void growthChartQuery.refetch();
+                if (canReadTopUsers) void topUsersQuery.refetch();
+                if (canReadTopStations) void topStationsQuery.refetch();
+                if (canReadGrowth) {
+                  void growthQuery.refetch();
+                  void growthChartQuery.refetch();
+                }
               }}
               refreshing={isRefreshing}
               tintColor={Palette.accent}
             />
           }
-          showsVerticalScrollIndicator={false}
-        >
+          showsVerticalScrollIndicator={false}>
           <ThemedView gap={'five'} marginTop={12} paddingHorizontal={screenHorizontalPadding}>
             <ThemedView>
               <ThemedText fontFamily='bold' fontSize={34} lineHeight={40} letterSpacing={-0.5}>
@@ -300,9 +332,7 @@ export default function OperationScreen() {
               <OperationStatsSection
                 growth={getCollectionItems(growthChartQuery.data) || []}
                 growthSummary={growthQuery.data?.data}
-                isLoading={
-                  topUsersQuery.isLoading || topStationsQuery.isLoading || growthQuery.isLoading || growthChartQuery.isLoading
-                }
+                isLoading={topUsersQuery.isLoading || topStationsQuery.isLoading || growthQuery.isLoading || growthChartQuery.isLoading}
                 onViewMoreTopStations={() => router.push('/operation/locations')}
                 onViewMoreTopUsers={() => router.push('/operation/users')}
                 topStations={getCollectionItems(topStationsQuery.data) || []}
@@ -394,33 +424,39 @@ function OperationStatsSection({
 
   return (
     <ThemedView gap={'three'}>
-      <PerformanceHorizontalSection
-        accentColor='#0F9F6E'
-        description='Highlighting the most active users of the current month.'
-        items={topUsers.slice(0, 10).map((item, index) => ({
-          label: item.user_name || item.user_email || `User #${item.user_id}`,
-          meta: `${formatNumber(item.total_orders)} sessions • ${decimalFormatter.format(Number(item.total_energy) || 0)} kWh`,
-          rank: index + 1,
-          value: formatCurrency(item.total_paid),
-        }))}
-        screenWidth={width}
-        title='Top User Performance'
-        onViewMore={onViewMoreTopUsers}
-      />
-      <PerformanceHorizontalSection
-        accentColor='#2563EB'
-        description='Discover top-performing charging stations of the current month.'
-        items={topStations.slice(0, 10).map((item, index) => ({
-          label: item.station_name || `Station #${item.station_id}`,
-          meta: `${formatNumber(item.total_orders)} sessions • ${formatCurrency(item.total_paid)}`,
-          rank: index + 1,
-          value: `${decimalFormatter.format(Number(item.total_energy ?? item.total_energy_kwh) || 0)} kWh`,
-        }))}
-        screenWidth={width}
-        title='Top Performing Stations'
-        onViewMore={onViewMoreTopStations}
-      />
-      <UserGrowthSection growth={growth} summary={growthSummary} />
+      <AdminAccessBoundary screen='/admin/operations/accounts/top-user-performance'>
+        <PerformanceHorizontalSection
+          accentColor='#0F9F6E'
+          description='Highlighting the most active users of the current month.'
+          items={topUsers.slice(0, 10).map((item, index) => ({
+            label: item.user_name || item.user_email || `User #${item.user_id}`,
+            meta: `${formatNumber(item.total_orders)} sessions • ${decimalFormatter.format(Number(item.total_energy) || 0)} kWh`,
+            rank: index + 1,
+            value: formatCurrency(item.total_paid),
+          }))}
+          screenWidth={width}
+          title='Top User Performance'
+          onViewMore={onViewMoreTopUsers}
+        />
+      </AdminAccessBoundary>
+      <AdminAccessBoundary screen='/admin/dashboard'>
+        <PerformanceHorizontalSection
+          accentColor='#2563EB'
+          description='Discover top-performing charging stations of the current month.'
+          items={topStations.slice(0, 10).map((item, index) => ({
+            label: item.station_name || `Station #${item.station_id}`,
+            meta: `${formatNumber(item.total_orders)} sessions • ${formatCurrency(item.total_paid)}`,
+            rank: index + 1,
+            value: `${decimalFormatter.format(Number(item.total_energy ?? item.total_energy_kwh) || 0)} kWh`,
+          }))}
+          screenWidth={width}
+          title='Top Performing Stations'
+          onViewMore={onViewMoreTopStations}
+        />
+      </AdminAccessBoundary>
+      <AdminAccessBoundary screen='/admin/operations/accounts/user-growth'>
+        <UserGrowthSection growth={growth} summary={growthSummary} />
+      </AdminAccessBoundary>
     </ThemedView>
   );
 }
@@ -455,7 +491,7 @@ function PerformanceHorizontalSection({
           style={({ pressed }) => [
             { paddingHorizontal: mhs(4), paddingVertical: mhs(8) },
             { flexDirection: 'row', alignItems: 'center', gap: mhs(2) },
-            pressed && styles.pressed
+            pressed && styles.pressed,
           ]}>
           <ThemedText color={accentColor} fontFamily={FontFamily.medium} fontSize={13} lineHeight={18}>
             View more
@@ -476,15 +512,7 @@ function PerformanceHorizontalSection({
   );
 }
 
-function TopUserPerformanceCard({
-  index,
-  item,
-  width,
-}: {
-  index: number;
-  item: { label: string; meta: string; rank: number; value: string };
-  width: number;
-}) {
+function TopUserPerformanceCard({ index, item, width }: { index: number; item: { label: string; meta: string; rank: number; value: string }; width: number }) {
   const rankTone = getTopUserRankTone(index);
 
   return (
@@ -543,7 +571,6 @@ function getTopUserRankTone(index: number) {
   };
 }
 
-
 function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[]; summary?: UserGrowthSummary }) {
   const [chartWidth, setChartWidth] = useState(0);
   const chartItems = growth.slice(-12).map(item => ({
@@ -561,29 +588,29 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
         </ThemedView>
         <TrendingUp color={operationAccent} size={18} />
       </ThemedView>
-      
+
       <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={mhs(24)} gap={'four'} padding={mhs(20)}>
         <ThemedView flexDirection='row' gap={'three'}>
-          <PremiumGrowthCard 
-            label='Total Users' 
-            value={formatFullNumber(summary?.total_users)} 
-            change={summary?.today_vs_yesterday_growth_percent} 
+          <PremiumGrowthCard
+            label='Total Users'
+            value={formatFullNumber(summary?.total_users)}
+            change={summary?.today_vs_yesterday_growth_percent}
             icon={Users}
           />
-          <PremiumGrowthCard 
-            label='Active Today' 
-            value={formatFullNumber(summary?.users_charged_today)} 
-            change={summary?.charged_today_vs_yesterday_percent} 
+          <PremiumGrowthCard
+            label='Active Today'
+            value={formatFullNumber(summary?.users_charged_today)}
+            change={summary?.charged_today_vs_yesterday_percent}
             icon={Zap}
           />
-          <PremiumGrowthCard 
-            label='Avg Duration' 
-            value={formatDurationMinutes(summary?.avg_charge_duration_all_time)} 
-            change={summary?.avg_charge_duration_change_percent} 
+          <PremiumGrowthCard
+            label='Avg Duration'
+            value={formatDurationMinutes(summary?.avg_charge_duration_all_time)}
+            change={summary?.avg_charge_duration_change_percent}
             icon={Clock}
           />
         </ThemedView>
-        
+
         <ThemedView gap={'three'}>
           <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.bold} fontSize={10} textTransform='uppercase'>
             Trend - Last 12 months
@@ -634,7 +661,7 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
 function PremiumGrowthCard({ change, label, value, icon: Icon }: { change?: number; label: string; value: string; icon: LucideIcon }) {
   const isPositive = Number(change) >= 0;
   const changeColor = isPositive ? '#10B981' : '#F43F5E';
-  
+
   return (
     <ThemedView flex={1} minWidth={0} gap={mhs(4)}>
       <ThemedView flexDirection='row' alignItems='center' gap={mhs(4)}>

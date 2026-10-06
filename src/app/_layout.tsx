@@ -15,6 +15,7 @@ import * as Notifications from 'expo-notifications';
 import { useNotifications } from 'hooks/use-notifications';
 import { useAdminProfile } from 'utils/auth/admin-profile';
 import { useEffect } from 'react';
+import { AdminRouteGuard } from 'features/admin-access/access-guard';
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -60,7 +61,13 @@ function TabLayout() {
             <BottomSheetModalProvider>
               <AppDrawer>
                 <AnimatedSplashOverlay />
-                <Stack screenOptions={{ headerShown: false }}>
+                <Stack
+                  screenLayout={({ children, route }) => (
+                    <AdminRouteGuard params={route.params} routeName={route.name}>
+                      {children}
+                    </AdminRouteGuard>
+                  )}
+                  screenOptions={{ headerShown: false }}>
                   <Stack.Screen name='login/index' />
                   <Stack.Screen name='(tabs)' />
                   <Stack.Screen name='menu/[slug]/index' />
