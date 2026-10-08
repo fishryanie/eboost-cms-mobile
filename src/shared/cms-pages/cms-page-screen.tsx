@@ -48,6 +48,7 @@ import {
 import { TransactionListSkeleton } from './transaction-list-skeleton';
 import { TransactionQuickFilters } from './transaction-quick-filters';
 import { TransactionSessionCard } from './transaction-session-card';
+import { PromoCodeCard } from './promo-code-card';
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
 const numberFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
@@ -249,6 +250,8 @@ export function CmsPageScreen({ config, editorPathname, onBack }: { config: CmsP
   const transactionTransitionIdRef = useRef(0);
   const activeSection = config.sections.find(section => section.key === activeSectionKey) || config.sections[0];
   const usesTransactionCards = activeSection.itemVariant === 'transaction-session';
+  const usesPromoCodeCards = activeSection.itemVariant === 'promo-code';
+  const isCardLayout = usesTransactionCards || usesPromoCodeCards;
   const transactionVehicle = activeSection.key === 'car' ? 'car' : 'bike';
   const transactionApiFilters = useMemo(
     () => (usesTransactionCards ? buildTransactionApiFilters(transactionFilters, transactionVehicle) : undefined),
@@ -324,6 +327,7 @@ export function CmsPageScreen({ config, editorPathname, onBack }: { config: CmsP
     () => (isTransactionFilterLoading ? [] : query.data?.pages.flatMap(page => page.items) || []),
     [isTransactionFilterLoading, query.data],
   );
+
   const totalItems = query.data?.pages[0]?.totalItems || 0;
   const loadMore = useCallback(() => {
     if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
@@ -356,11 +360,11 @@ export function CmsPageScreen({ config, editorPathname, onBack }: { config: CmsP
     <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
       <AnimatedHeaderFlatList
         canGoBack
-        contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: usesTransactionCards ? 12 : 0 }}
+        contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: isCardLayout ? 12 : 0 }}
         data={items}
         keyboardShouldPersistTaps='handled'
         keyExtractor={(item, index) => getRecordKey(item, index, activeSection)}
-        largeTitleStretchEnabled={!usesTransactionCards}
+        largeTitleStretchEnabled={!isCardLayout}
         largeRightComponent={collapsibleHeaderAction}
         largeTitle={config.title}
         ListEmptyComponent={
@@ -406,7 +410,7 @@ export function CmsPageScreen({ config, editorPathname, onBack }: { config: CmsP
               vehicle={transactionVehicle}
             />
           ) : config.sections.length > 1 ? (
-            <ThemedView gap={'three'} paddingBottom={usesTransactionCards ? 16 : 'two'} paddingHorizontal={usesTransactionCards ? 0 : 12}>
+            <ThemedView gap={'three'} paddingBottom={isCardLayout ? 12 : 'two'} paddingHorizontal={isCardLayout ? 0 : 12}>
               <ScrollView contentContainerStyle={{ gap: mhs(8) }} horizontal showsHorizontalScrollIndicator={false}>
                 {config.sections.map(section => (
                   <SectionChip
@@ -441,6 +445,26 @@ export function CmsPageScreen({ config, editorPathname, onBack }: { config: CmsP
           usesTransactionCards ? (
             <ThemedView paddingBottom={16}>
               <TransactionSessionCard item={item} />
+            </ThemedView>
+          ) : usesPromoCodeCards ? (
+            <ThemedView paddingBottom={12}>
+              <PromoCodeCard
+                accentColor={config.accentColor}
+                index={index}
+                onEdit={
+                  !editorPathname || activeSection.editor?.update === false
+                    ? undefined
+                    : activeSection.editor
+                      ? () =>
+                          router.push({
+                            pathname: editorPathname,
+                            params: { id: String(getRecordId(item) ?? ''), mode: 'update', section: activeSection.key },
+                          } as never)
+                      : undefined
+                }
+                record={item}
+                section={activeSection}
+              />
             </ThemedView>
           ) : (
             <CmsRecordRow

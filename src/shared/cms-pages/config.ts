@@ -65,7 +65,7 @@ export type CmsSectionConfig = {
   endpoint: string;
   fields: CmsFieldConfig[];
   imagePaths?: string[];
-  itemVariant?: 'default' | 'transaction-session';
+  itemVariant?: 'default' | 'promo-code' | 'transaction-session';
   key: string;
   label: string;
   params?: Record<string, boolean | number | string>;
@@ -473,12 +473,13 @@ export const cmsPageConfigs = {
           { format: 'number', label: 'Usage', paths: ['currentTotalUsage'] },
           { format: 'date', label: 'Expires', paths: ['expiredAt'] },
         ],
+        itemVariant: 'promo-code',
         key: 'charging',
         label: 'Charging',
         searchParam: 'code',
         statusPaths: ['enabled'],
-        subtitlePaths: ['name', 'description', 'note'],
-        titlePaths: ['code', 'name', 'id'],
+        subtitlePaths: ['nameVn', 'name', 'descriptionVn', 'description', 'note'],
+        titlePaths: ['code', 'nameVn', 'name', 'id'],
       },
       {
         endpoint: 'api/promotion_moneys',
@@ -509,12 +510,13 @@ export const cmsPageConfigs = {
           { format: 'number', label: 'Usage', paths: ['currentTotalUsage'] },
           { format: 'date', label: 'Expires', paths: ['expiredAt'] },
         ],
+        itemVariant: 'promo-code',
         key: 'wallet',
         label: 'Wallet',
         searchParam: 'code',
         statusPaths: ['enabled'],
-        subtitlePaths: ['name', 'description', 'note'],
-        titlePaths: ['code', 'name', 'id'],
+        subtitlePaths: ['nameVn', 'name', 'descriptionVn', 'description', 'note'],
+        titlePaths: ['code', 'nameVn', 'name', 'id'],
       },
       {
         endpoint: 'api/promotion_code_useds',
