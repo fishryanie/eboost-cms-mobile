@@ -9,7 +9,6 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-masked-view/masked-view": "^0.3.2",
     "@sentry/react-native": "~7.11.0",
-    "@shopify/react-native-skia": "2.6.2",
     "@tanstack/react-query": "^5.101.0",
     "axios": "^1.18.1",
     "dayjs": "^1.11.21",
@@ -17,6 +16,7 @@
     "expo-application": "~57.0.3",
     "expo-asset": "~57.0.18",
     "expo-blur": "~57.0.3",
+    "expo-build-properties": "~57.0.22",
     "expo-camera": "~57.0.6",
     "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.20",
@@ -41,8 +41,6 @@
     "expo-system-ui": "~57.0.4",
     "expo-updates": "~57.0.24",
     "expo-web-browser": "~57.0.3",
-    "lodash": "^4.18.1",
-    "lottie-react-native": "^7.3.8",
     "lucide-react-native": "^1.17.0",
     "react": "19.2.3",
     "react-hook-form": "^7.80.0",
@@ -65,7 +63,6 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@types/lodash": "^4.17.24",
     "@types/node": "^25.9.1",
     "@types/react": "~19.2.2",
     "@types/react-native-calendar-picker": "^8.0.0",
@@ -79,10 +76,11 @@
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
+    "start:device": "npx expo run:android --device",
     "build:ios": "sh ./scripts/ios-build.sh",
     "build:android": "sh ./scripts/android-build.sh",
     "build:android:apk": "sh ./scripts/android-build-apk.sh",
@@ -94,8 +92,5 @@
     "update:production": "npx eas-cli@latest update --channel production",
     "update:list": "npx eas-cli@latest update:list"
   },
-  "trustedDependencies": [
-    "@shopify/react-native-skia"
-  ],
   "private": true
 }

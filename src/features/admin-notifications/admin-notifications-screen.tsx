@@ -1,76 +1,62 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
-import { BellRing, Check, CircleCheck, Trash2, TriangleAlert, type LucideIcon } from 'lucide-react-native';
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, ScrollView } from 'react-native';
+import { BellRing, Check, CircleCheck, Trash2, TriangleAlert } from 'lucide-react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl } from 'react-native';
 import Toast from 'react-native-toast-message';
 
 import { HeaderTitle, ThemedText, ThemedView } from 'components/base';
 import { AppButton, EmptyState } from 'components/ui';
+import { AppSegment } from 'components/ui/app-segment';
 import { FontFamily, Palette } from 'themes';
 
 import {
   adminNotificationKeys,
   deleteAdminNotification,
+  getAdminNotificationDateFilters,
   getNotificationCategory,
   getNotificationTypeLabel,
+  mergeAdminNotificationPages,
   readAdminNotification,
-  useAdminNotifications,
+  updateAdminNotificationCache,
+  useInfiniteAdminNotifications,
   type AdminNotification,
+  type AdminNotificationCache,
   type AdminNotificationCategory,
   type AdminNotificationId,
 } from './admin-notification-service';
 
 const notificationFilters = [
-  { days: 1, label: 'Today' },
-  { days: 3, label: '3 days' },
-  { days: 7, label: '7 days' },
-  { days: 30, label: '30 days' },
+  { label: 'Today', value: 1 },
+  { label: '3 days', value: 3 },
+  { label: '7 days', value: 7 },
+  { label: '30 days', value: 30 },
 ] as const;
 const emptyNotifications: AdminNotification[] = [];
 
-export type NotificationDays = (typeof notificationFilters)[number]['days'];
-export type NotificationTypeFilter = 'ALL' | 'BOX_ISSUE' | 'BOX_RECOVERY' | 'OTHER';
+export type NotificationDays = (typeof notificationFilters)[number]['value'];
 
 export function AdminNotificationsScreen() {
   const [notificationDays, setNotificationDays] = useState<NotificationDays>(1);
-  const [selectedType, setSelectedType] = useState<NotificationTypeFilter>('ALL');
   const queryClient = useQueryClient();
-  const notificationsQuery = useAdminNotifications(notificationDays);
-  const notifications = notificationsQuery.data || emptyNotifications;
+  const notificationsQuery = useInfiniteAdminNotifications(getAdminNotificationDateFilters(notificationDays));
+  const notifications = useMemo(
+    () => (notificationsQuery.data ? mergeAdminNotificationPages(notificationsQuery.data.pages) : emptyNotifications),
+    [notificationsQuery.data],
+  );
   const unreadCount = notifications.reduce((count, notification) => count + (notification.isRead ? 0 : 1), 0);
-
-  const typeCounts = useMemo(() => {
-    const counts = { ALL: notifications.length, BOX_ISSUE: 0, BOX_RECOVERY: 0, OTHER: 0 };
-    for (const notification of notifications) {
-      const category = getNotificationCategory(notification.type);
-      if (category === 'BOX_ISSUE') counts.BOX_ISSUE += 1;
-      else if (category === 'BOX_RECOVERY') counts.BOX_RECOVERY += 1;
-      else counts.OTHER += 1;
-    }
-    return counts;
-  }, [notifications]);
-
-  const filteredNotifications = useMemo(() => {
-    if (selectedType === 'ALL') return notifications;
-    if (selectedType === 'BOX_ISSUE') return notifications.filter(n => getNotificationCategory(n.type) === 'BOX_ISSUE');
-    if (selectedType === 'BOX_RECOVERY') return notifications.filter(n => getNotificationCategory(n.type) === 'BOX_RECOVERY');
-    return notifications.filter(n => {
-      const category = getNotificationCategory(n.type);
-      return category !== 'BOX_ISSUE' && category !== 'BOX_RECOVERY';
-    });
-  }, [notifications, selectedType]);
 
   const readMutation = useMutation({
     mutationFn: readAdminNotification,
     onMutate: async notificationId => {
       const strId = String(notificationId);
       await queryClient.cancelQueries({ queryKey: adminNotificationKeys.all });
-      const previousQueries = queryClient.getQueriesData<AdminNotification[]>({ queryKey: adminNotificationKeys.all });
+      const previousQueries = queryClient.getQueriesData<AdminNotificationCache>({ queryKey: adminNotificationKeys.all });
 
-      queryClient.setQueriesData<AdminNotification[]>({ queryKey: adminNotificationKeys.all }, current =>
-        current?.map(notification => (String(notification.id) === strId ? { ...notification, isRead: true } : notification)),
+      queryClient.setQueriesData<AdminNotificationCache>({ queryKey: adminNotificationKeys.all }, current =>
+        updateAdminNotificationCache(current, items =>
+          items.map(notification => (String(notification.id) === strId ? { ...notification, isRead: true } : notification)),
+        ),
       );
 
       return { previousQueries };
@@ -88,18 +74,23 @@ export function AdminNotificationsScreen() {
   const deleteMutation = useMutation({
     mutationFn: deleteAdminNotification,
     onMutate: async notificationId => {
-      const queryKey = adminNotificationKeys.list(notificationDays);
-      await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<AdminNotification[]>(queryKey);
-      queryClient.setQueryData<AdminNotification[]>(queryKey, current => current?.filter(notification => String(notification.id) !== String(notificationId)));
-      return { previous };
+      await queryClient.cancelQueries({ queryKey: adminNotificationKeys.all });
+      const previousQueries = queryClient.getQueriesData<AdminNotificationCache>({ queryKey: adminNotificationKeys.all });
+      queryClient.setQueriesData<AdminNotificationCache>({ queryKey: adminNotificationKeys.all }, current =>
+        updateAdminNotificationCache(current, items => items.filter(notification => String(notification.id) !== String(notificationId))),
+      );
+      return { previousQueries };
     },
     onSuccess: () => Toast.show({ text1: 'Notification deleted', type: 'success' }),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: adminNotificationKeys.all });
     },
     onError: (error: Error, _notificationId, context) => {
-      if (context?.previous) queryClient.setQueryData(adminNotificationKeys.list(notificationDays), context.previous);
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(([queryKey, previousData]) => {
+          queryClient.setQueryData(queryKey, previousData);
+        });
+      }
       Toast.show({ text1: 'Could not delete notification', text2: error.message, type: 'error' });
     },
   });
@@ -109,6 +100,12 @@ export function AdminNotificationsScreen() {
       { style: 'cancel', text: 'Cancel' },
       { onPress: () => deleteMutation.mutate(notification.id), style: 'destructive', text: 'Delete' },
     ]);
+  };
+
+  const loadMore = () => {
+    if (notificationsQuery.hasNextPage && !notificationsQuery.isFetching && !notificationsQuery.isFetchNextPageError) {
+      notificationsQuery.fetchNextPage({ cancelRefetch: false });
+    }
   };
 
   return (
@@ -127,29 +124,34 @@ export function AdminNotificationsScreen() {
         title='Notifications'
       />
       <FlatList
+        key={notificationDays}
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }}
         contentInsetAdjustmentBehavior='automatic'
-        data={filteredNotifications}
+        data={notifications}
         ItemSeparatorComponent={() => <ThemedView backgroundColor='transparent' height={10} />}
         keyExtractor={notification => String(notification.id)}
         ListEmptyComponent={
           <NotificationListState
             days={notificationDays}
             error={notificationsQuery.error}
-            filterType={selectedType}
             isLoading={notificationsQuery.isLoading}
             onRetry={() => notificationsQuery.refetch()}
           />
         }
-        ListHeaderComponent={
-          <NotificationFilterHeader
-            days={notificationDays}
-            onChangeDays={setNotificationDays}
-            onChangeType={setSelectedType}
-            selectedType={selectedType}
-            typeCounts={typeCounts}
-          />
+        ListFooterComponent={
+          notifications.length > 0 ? (
+            <NotificationListFooter
+              error={notificationsQuery.error}
+              isLoading={notificationsQuery.isFetchingNextPage}
+              onRetry={() =>
+                notificationsQuery.isFetchNextPageError ? notificationsQuery.fetchNextPage({ cancelRefetch: false }) : notificationsQuery.refetch()
+              }
+            />
+          ) : null
         }
+        ListHeaderComponent={<NotificationFilterHeader days={notificationDays} onChangeDays={setNotificationDays} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.4}
         refreshControl={
           <RefreshControl onRefresh={() => notificationsQuery.refetch()} refreshing={notificationsQuery.isRefetching} tintColor={Palette.accent} />
         }
@@ -167,201 +169,38 @@ export function AdminNotificationsScreen() {
   );
 }
 
-function NotificationFilterHeader({
-  days,
-  onChangeDays,
-  onChangeType,
-  selectedType,
-  typeCounts,
-}: {
-  days: NotificationDays;
-  onChangeDays: (days: NotificationDays) => void;
-  onChangeType: (type: NotificationTypeFilter) => void;
-  selectedType: NotificationTypeFilter;
-  typeCounts: { ALL: number; BOX_ISSUE: number; BOX_RECOVERY: number; OTHER: number };
-}) {
-  const selectedIndex = notificationFilters.findIndex(filter => filter.days === days);
-
-  const filterOptions: { count: number; Icon?: LucideIcon; id: NotificationTypeFilter; label: string }[] = [
-    { count: typeCounts.ALL, id: 'ALL', label: 'All' },
-    { count: typeCounts.BOX_ISSUE, Icon: TriangleAlert, id: 'BOX_ISSUE', label: 'Box Issue' },
-    { count: typeCounts.BOX_RECOVERY, Icon: CircleCheck, id: 'BOX_RECOVERY', label: 'Box Recovery' },
-  ];
-
-  if (typeCounts.OTHER > 0) {
-    filterOptions.push({ count: typeCounts.OTHER, Icon: BellRing, id: 'OTHER', label: 'Other' });
-  }
-
+function NotificationFilterHeader({ days, onChangeDays }: { days: NotificationDays; onChangeDays: (days: NotificationDays) => void }) {
   return (
-    <ThemedView backgroundColor={Palette.surfaceMuted} gap={10} paddingBottom={10} paddingTop={12}>
-      <ThemedView paddingHorizontal={12}>
-        <SegmentedControl
-          onChange={event => {
-            const nextDays = notificationFilters[event.nativeEvent.selectedSegmentIndex]?.days;
-            if (nextDays) onChangeDays(nextDays);
-          }}
-          selectedIndex={selectedIndex}
-          style={{ height: 36 }}
-          tintColor={Palette.accent}
-          values={notificationFilters.map(filter => filter.label)}
-        />
-      </ThemedView>
-
-      <ScrollView contentContainerStyle={{ gap: 8, paddingHorizontal: 12 }} horizontal showsHorizontalScrollIndicator={false}>
-        {filterOptions.map(option => (
-          <TypeFilterChip
-            key={option.id}
-            count={option.count}
-            Icon={option.Icon}
-            label={option.label}
-            onPress={() => onChangeType(selectedType === option.id && option.id !== 'ALL' ? 'ALL' : option.id)}
-            selected={selectedType === option.id}
-            type={option.id}
-          />
-        ))}
-      </ScrollView>
+    <ThemedView backgroundColor={Palette.surfaceMuted} paddingBottom={10} paddingHorizontal={12} paddingTop={12}>
+      <AppSegment onChange={onChangeDays} options={notificationFilters} value={days} />
     </ThemedView>
   );
 }
 
-function TypeFilterChip({
-  count,
-  Icon,
-  label,
-  onPress,
-  selected,
-  type,
-}: {
-  count: number;
-  Icon?: LucideIcon;
-  label: string;
-  onPress: () => void;
-  selected: boolean;
-  type: NotificationTypeFilter;
-}) {
-  const visual = getTypeChipVisual(type, selected);
-
-  return (
-    <Pressable
-      accessibilityLabel={`Filter ${label}, ${count} notifications`}
-      accessibilityRole='button'
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}>
-      <ThemedView
-        alignItems='center'
-        backgroundColor={visual.backgroundColor}
-        borderColor={visual.borderColor}
-        borderRadius={'pill'}
-        borderWidth={1.5}
-        flexDirection='row'
-        gap={6}
-        height={36}
-        paddingHorizontal={12}>
-        {Icon ? <Icon color={visual.iconColor} size={14} strokeWidth={2.4} /> : null}
-        <ThemedText color={visual.textColor} fontFamily={FontFamily.bold} fontSize={13} lineHeight={17}>
-          {label}
+function NotificationListFooter({ error, isLoading, onRetry }: { error: Error | null; isLoading: boolean; onRetry: () => void }) {
+  if (isLoading) {
+    return (
+      <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={8} justifyContent='center' paddingVertical={20}>
+        <ActivityIndicator color={Palette.accent} size='small' />
+        <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={12} lineHeight={17}>
+          Loading more notifications…
         </ThemedText>
-        <ThemedView
-          alignItems='center'
-          backgroundColor={visual.countBg}
-          borderRadius={'pill'}
-          justifyContent='center'
-          minWidth={20}
-          paddingHorizontal={6}
-          paddingVertical={2}>
-          <ThemedText color={visual.countText} fontFamily={FontFamily.bold} fontSize={11} lineHeight={14}>
-            {count}
-          </ThemedText>
-        </ThemedView>
       </ThemedView>
-    </Pressable>
-  );
-}
-
-function getTypeChipVisual(type: NotificationTypeFilter, selected: boolean) {
-  if (type === 'BOX_ISSUE') {
-    if (selected) {
-      return {
-        backgroundColor: '#D92D20',
-        borderColor: '#D92D20',
-        countBg: 'rgba(255,255,255,0.25)',
-        countText: '#FFFFFF',
-        iconColor: '#FFFFFF',
-        textColor: '#FFFFFF',
-      };
-    }
-    return {
-      backgroundColor: '#FEF3F2',
-      borderColor: '#FECDCA',
-      countBg: '#FEE4E2',
-      countText: '#912018',
-      iconColor: '#D92D20',
-      textColor: '#B42318',
-    };
+    );
   }
 
-  if (type === 'BOX_RECOVERY') {
-    if (selected) {
-      return {
-        backgroundColor: '#079455',
-        borderColor: '#079455',
-        countBg: 'rgba(255,255,255,0.25)',
-        countText: '#FFFFFF',
-        iconColor: '#FFFFFF',
-        textColor: '#FFFFFF',
-      };
-    }
-    return {
-      backgroundColor: '#ECFDF3',
-      borderColor: '#A6F4C5',
-      countBg: '#D1FADF',
-      countText: '#05603A',
-      iconColor: '#12B76A',
-      textColor: '#027A48',
-    };
+  if (error) {
+    return (
+      <ThemedView alignItems='center' backgroundColor='transparent' gap={10} paddingHorizontal={12} paddingVertical={16}>
+        <ThemedText color={Palette.textSecondary} fontSize={12} lineHeight={17} textAlign='center'>
+          {error.message}
+        </ThemedText>
+        <AppButton label='Retry' onPress={onRetry} />
+      </ThemedView>
+    );
   }
 
-  if (type === 'OTHER') {
-    if (selected) {
-      return {
-        backgroundColor: '#175CD3',
-        borderColor: '#175CD3',
-        countBg: 'rgba(255,255,255,0.25)',
-        countText: '#FFFFFF',
-        iconColor: '#FFFFFF',
-        textColor: '#FFFFFF',
-      };
-    }
-    return {
-      backgroundColor: '#EFF8FF',
-      borderColor: '#B2DDFF',
-      countBg: '#D1E9FF',
-      countText: '#175CD3',
-      iconColor: '#2E90FA',
-      textColor: '#175CD3',
-    };
-  }
-
-  // ALL
-  if (selected) {
-    return {
-      backgroundColor: '#1D2939',
-      borderColor: '#1D2939',
-      countBg: 'rgba(255,255,255,0.2)',
-      countText: '#FFFFFF',
-      iconColor: '#FFFFFF',
-      textColor: '#FFFFFF',
-    };
-  }
-  return {
-    backgroundColor: Palette.surfaceBase,
-    borderColor: Palette.borderSubtle,
-    countBg: Palette.surfaceMuted,
-    countText: Palette.textSecondary,
-    iconColor: Palette.textPrimary,
-    textColor: Palette.textPrimary,
-  };
+  return null;
 }
 
 function NotificationRow({
@@ -568,19 +407,7 @@ function NotificationTypeBadge({ category, label }: { category: AdminNotificatio
   );
 }
 
-function NotificationListState({
-  days,
-  error,
-  filterType,
-  isLoading,
-  onRetry,
-}: {
-  days: NotificationDays;
-  error: Error | null;
-  filterType: NotificationTypeFilter;
-  isLoading: boolean;
-  onRetry: () => void;
-}) {
+function NotificationListState({ days, error, isLoading, onRetry }: { days: NotificationDays; error: Error | null; isLoading: boolean; onRetry: () => void }) {
   if (isLoading) {
     return (
       <ThemedView gap={12} paddingHorizontal={12} paddingTop={18}>
@@ -607,23 +434,11 @@ function NotificationListState({
     );
   }
 
-  let title = 'No notifications';
-  let message = days === 1 ? 'Admin notifications from today will appear here.' : `Admin notifications from the last ${days} days will appear here.`;
-
-  if (filterType === 'BOX_ISSUE') {
-    title = 'No box issues';
-    message = days === 1 ? 'No box issue notifications from today.' : `No box issue notifications from the last ${days} days.`;
-  } else if (filterType === 'BOX_RECOVERY') {
-    title = 'No box recoveries';
-    message = days === 1 ? 'No box recovery notifications from today.' : `No box recovery notifications from the last ${days} days.`;
-  } else if (filterType === 'OTHER') {
-    title = 'No other notifications';
-    message = days === 1 ? 'No other notifications from today.' : `No other notifications from the last ${days} days.`;
-  }
+  const message = days === 1 ? 'Admin notifications from today will appear here.' : `Admin notifications from the last ${days} days will appear here.`;
 
   return (
     <ThemedView padding={12}>
-      <EmptyState message={message} title={title} />
+      <EmptyState message={message} title='No notifications' />
     </ThemedView>
   );
 }

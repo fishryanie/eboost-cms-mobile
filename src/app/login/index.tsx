@@ -1,9 +1,9 @@
-import { Canvas, LinearGradient, RadialGradient, Rect, vec } from '@shopify/react-native-skia';
 import { useMutation } from '@tanstack/react-query';
 import { ThemedText, ThemedView } from 'components/base';
 import { Image } from 'expo-image';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 import {
   Keyboard,
   Platform,
@@ -271,21 +271,30 @@ export default function LoginScreen() {
 
 function BackgroundGradient({ children, colors }: { children: ReactNode; colors: string[] }) {
   const { width, height } = useWindowDimensions();
+  const gradientId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const positions = [0.1, 0.2, 0.5, 0.6, 0.7, 0.959, 1];
 
   return (
-    <>
-      <Canvas style={styles.gradientCanvas}>
-        <Rect x={0} y={0} width={width} height={height}>
-          <RadialGradient c={vec(width / 2, -height * 0.19)} r={height * 0.55} colors={colors} positions={[0.1, 0.2, 0.5, 0.6, 0.7, 0.959, 1]} />
-        </Rect>
-        <Rect x={0} y={height * 0.72} width={width} height={height * 0.28}>
-          <LinearGradient start={vec(width / 2, height * 0.72)} end={vec(width / 2, height)} colors={['rgba(255,255,255,0)', 'rgba(1,167,78,0.08)']} />
-        </Rect>
-      </Canvas>
-      <ThemedView bottom={0} left={0} position='absolute' right={0} top={0}>
-        {children}
+    <ThemedView flex={1} backgroundColor='#FFFFFF'>
+      <ThemedView absoluteFillObject pointerEvents='none'>
+        <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+          <Defs>
+            <RadialGradient id={`${gradientId}-radial`} gradientUnits='userSpaceOnUse' cx={width / 2} cy={-height * 0.19} rx={height * 0.55} ry={height * 0.55}>
+              {colors.map((color, index) => (
+                <Stop key={positions[index]} offset={positions[index]} stopColor={color} />
+              ))}
+            </RadialGradient>
+            <LinearGradient id={`${gradientId}-linear`} gradientUnits='userSpaceOnUse' x1={0} y1={height * 0.72} x2={0} y2={height}>
+              <Stop offset={0} stopColor='#FFFFFF' stopOpacity={0} />
+              <Stop offset={1} stopColor='#01A74E' stopOpacity={0.08} />
+            </LinearGradient>
+          </Defs>
+          <Rect width={width} height={height} fill={`url(#${gradientId}-radial)`} />
+          <Rect y={height * 0.72} width={width} height={height * 0.28} fill={`url(#${gradientId}-linear)`} />
+        </Svg>
       </ThemedView>
-    </>
+      {children}
+    </ThemedView>
   );
 }
 
@@ -309,9 +318,6 @@ const styles = StyleSheet.create({
     objectFit: 'fill',
   },
 
-  gradientCanvas: {
-    flex: 1,
-  },
   scrollContainer: {
     paddingBottom: mvs(84),
     paddingHorizontal: 24,

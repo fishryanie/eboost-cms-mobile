@@ -71,6 +71,7 @@ const routeScreens: Record<string, string> = {
   'location/[id]': locations,
   'station/[stationId]': locations,
   'technical/chargers': chargers,
+  'technical/box-errors': '/admin/technical/box-error-statistics',
   'technical/status-logs': '/admin/technical/chargers-status-logs',
   'technical/meter-hourly': '/admin/technical/meter-hourly',
   'technical/energy-differ': '/admin/technical/differ',

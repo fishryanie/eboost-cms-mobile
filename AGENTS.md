@@ -6,6 +6,15 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before 
 
 For every UI change, pay close attention to screen scale, visual balance, color harmony, spacing, and component size. Product aesthetics are a top priority.
 
+# CHARGER DISPLAY
+
+- For car chargers, use `vendorId` / `vendor_id` as the primary title.
+- For bike chargers, use `uniqueId` / `unique_id` as the primary title.
+- Charger names are secondary information; display them in smaller, subdued text when useful.
+- Internal numeric charger IDs generally do not belong in the UI. Show them only when required for a specific user task.
+- If the primary identifier is missing, fall back to the other identifier, then the charger name or a generic charger label.
+- Apply these conventions to all charger cards, lists, details, and selectors.
+
 # THEME COMPONENTS
 
 All downloaded or generated code MUST use `ThemedView` instead of `View`, and `ThemedText` instead of `Text`. These components are available in `src` (e.g. `import { ThemedView, ThemedText } from 'components/base'`). All separate styles should be converted into props of the `ThemedView` and `ThemedText` components directly (e.g. `<ThemedView flex={1} backgroundColor="red" />` instead of passing them to the `style` prop or using StyleSheet).

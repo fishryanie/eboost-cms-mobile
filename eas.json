@@ -50,6 +50,10 @@
   },
   // Nơi cấu hình cho lệnh tự động nộp ứng dụng lên kho tải (Submit to App Store / Google Play)
   "submit": {
-    "production": {} // Sử dụng các thông số submit mặc định cho profile "production"
+    "production": {
+      "ios": {
+        "ascAppId": "6778011057" // Apple ID của app Eboost CMS hiện tại trên App Store Connect
+      }
+    }
   }
 }

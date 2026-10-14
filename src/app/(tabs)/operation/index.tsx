@@ -8,8 +8,9 @@ import { ArrowRightLeft, ChevronLeft, ChevronsRight, CreditCard, Lock, Mail, Shi
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated from 'react-native-reanimated';
 import { BarChart, type CartesianChartTheme } from 'react-native-chart-kit/v2';
-import { useScrollStore } from 'utils/scroll-store';
+import { useTabScrollHandler } from 'hooks/use-tab-scroll-handler';
 import { mhs } from 'themes/scaling';
 import { AppButton, EmptyState } from 'components/ui';
 import { PaymentCheckoutSheet } from 'shared/operation/components/payment-checkout/payment-checkout-sheet';
@@ -224,6 +225,7 @@ function parseApiError(error: unknown) {
 
 export default function OperationScreen() {
   const router = useRouter();
+  const onScroll = useTabScrollHandler('operation');
   const access = useCurrentAdminAccess(true);
   const canReadTopUsers = access.canAccess('/admin/operations/accounts/top-user-performance');
   const canReadTopStations = access.canAccess('/admin/dashboard');
@@ -296,11 +298,8 @@ export default function OperationScreen() {
   return (
     <>
       <ThemedView safePaddingBottom flex={1} backgroundColor={Palette.surfaceBase}>
-        <ScrollView
-          onScroll={e => {
-            const offsetY = e.nativeEvent.contentOffset.y;
-            useScrollStore.getState().setTabScrolled('operation', offsetY > 20);
-          }}
+        <Animated.ScrollView
+          onScroll={onScroll}
           scrollEventThrottle={16}
           contentContainerStyle={[styles.content, { paddingTop: 60 + (useSafeAreaInsets().top || 0) }]}
           refreshControl={
@@ -340,7 +339,7 @@ export default function OperationScreen() {
               />
             </ThemedView>
           </ThemedView>
-        </ScrollView>
+        </Animated.ScrollView>
       </ThemedView>
 
       <PaymentCheckoutSheet

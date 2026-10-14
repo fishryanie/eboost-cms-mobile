@@ -23,6 +23,15 @@ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as unknown a
   props: FlatListProps<T> & { ref?: any; animatedProps?: any },
 ) => React.ReactElement;
 
+const mask = easeGradient({
+  colorStops: {
+    0: { color: 'rgba(255,255,255,1)' },
+    0.5: { color: 'rgba(255,255,255,0.99)' },
+    1: { color: 'rgba(255,255,255,0)' },
+  },
+  extraColorStopsPerTransition: 20,
+});
+
 export interface AnimatedHeaderFlatListProps<T> extends Omit<FlatListProps<T>, 'renderItem'> {
   largeTitle: string;
   smallTitle?: string;
@@ -119,15 +128,6 @@ function AnimatedHeaderFlatListComponent<T>({
   const headerBlurAnimatedProps = useAnimatedProps(() => ({
     intensity: interpolate(scrollY.value, [0, 100], [0, MAX_BLUR_INTENSITY], Extrapolation.CLAMP),
   }));
-
-  const mask = easeGradient({
-    colorStops: {
-      0: { color: 'rgba(255,255,255,1)' },
-      0.5: { color: 'rgba(255,255,255,0.99)' },
-      1: { color: 'rgba(255,255,255,0)' },
-    },
-    extraColorStopsPerTransition: 20,
-  });
 
   return (
     <ThemedView flex={1} backgroundColor={Colors.white}>

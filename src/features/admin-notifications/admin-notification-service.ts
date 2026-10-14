@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, type InfiniteData } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 
 import { apiRequest } from 'utils/api/client';
 
@@ -16,6 +17,22 @@ export type AdminNotification = {
 };
 
 export type AdminNotificationCategory = 'BOX_ISSUE' | 'BOX_RECOVERY' | 'OTHER';
+
+export type AdminNotificationFilters = {
+  createdFrom?: string;
+  createdTo?: string;
+  title?: string;
+  type?: string;
+};
+
+export type AdminNotificationsPage = {
+  items: AdminNotification[];
+  nextPage: number | undefined;
+};
+
+export type AdminNotificationCache = AdminNotification[] | InfiniteData<AdminNotificationsPage, number>;
+
+const notificationPageSize = 5;
 
 export type CreateAdminNotificationInput = {
   adminIds: number[];
@@ -54,6 +71,7 @@ const collectionKeys = ['inbox', 'notifications', 'data', 'items', 'results', 'h
 export const adminNotificationKeys = {
   all: ['admin-notifications'] as const,
   list: (days: number) => ['admin-notifications', 'list', days] as const,
+  infinite: (filters: AdminNotificationFilters, itemsPerPage = notificationPageSize) => ['admin-notifications', 'infinite', filters, itemsPerPage] as const,
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -124,6 +142,81 @@ export function parseAdminNotifications(payload: unknown) {
     .map(normalizeNotification)
     .filter((item): item is AdminNotification => Boolean(item))
     .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime());
+}
+
+export function getAdminNotificationDateFilters(days: number, now = dayjs()): AdminNotificationFilters {
+  return {
+    createdFrom: now.subtract(days - 1, 'day').format('YYYY-MM-DD'),
+    createdTo: now.format('YYYY-MM-DD'),
+  };
+}
+
+export function parseAdminNotificationsPage(payload: unknown, page: number, itemsPerPage: number): AdminNotificationsPage {
+  const record = asRecord(payload);
+  const pagination = asRecord(record?.pagination);
+  const view = asRecord(record?.['hydra:view']);
+  const records = getNotificationRecords(payload);
+  const totalPages = pagination?.total_pages;
+  const totalItems = record?.['hydra:totalItems'] ?? record?.totalItems ?? pagination?.total_items;
+  let nextPage: number | undefined;
+
+  if (records.length > 0) {
+    if (view) {
+      const match = asText(view['hydra:next'])?.match(/[?&]page=(\d+)/);
+      const next = match ? Number(match[1]) : undefined;
+      nextPage = next && next > page ? next : undefined;
+    } else if (typeof totalPages === 'number') {
+      nextPage = page < totalPages ? page + 1 : undefined;
+    } else if (typeof totalItems === 'number') {
+      nextPage = page * itemsPerPage < totalItems ? page + 1 : undefined;
+    } else {
+      nextPage = records.length >= itemsPerPage ? page + 1 : undefined;
+    }
+  }
+
+  return { items: parseAdminNotifications(payload), nextPage };
+}
+
+export function getNextAdminNotificationsPage(lastPage: AdminNotificationsPage, pages: AdminNotificationsPage[]) {
+  if (pages.length > 1 && lastPage.items.length > 0) {
+    const previousIds = new Set(pages.slice(0, -1).flatMap(page => page.items.map(item => String(item.id))));
+    if (lastPage.items.every(item => previousIds.has(String(item.id)))) return undefined;
+  }
+  return lastPage.nextPage;
+}
+
+export function mergeAdminNotificationPages(pages: AdminNotificationsPage[]) {
+  const notifications = new Map<string, AdminNotification>();
+  for (const page of pages) {
+    for (const notification of page.items) {
+      const id = String(notification.id);
+      if (!notifications.has(id)) notifications.set(id, notification);
+    }
+  }
+  return [...notifications.values()].sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime());
+}
+
+export function updateAdminNotificationCache(current: AdminNotificationCache | undefined, update: (items: AdminNotification[]) => AdminNotification[]) {
+  if (!current) return current;
+  if (Array.isArray(current)) return update(current);
+  return { ...current, pages: current.pages.map(page => ({ ...page, items: update(page.items) })) };
+}
+
+export async function fetchAdminNotificationsPage(filters: AdminNotificationFilters, page = 1, itemsPerPage = notificationPageSize) {
+  const response = await apiRequest<unknown>('api/controller/admin-notification/get-data', {
+    params: { ...filters, itemsPerPage, page },
+  });
+  return parseAdminNotificationsPage(response, page, itemsPerPage);
+}
+
+export function useInfiniteAdminNotifications(filters: AdminNotificationFilters) {
+  return useInfiniteQuery({
+    queryKey: adminNotificationKeys.infinite(filters),
+    queryFn: ({ pageParam }) => fetchAdminNotificationsPage(filters, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: getNextAdminNotificationsPage,
+    refetchInterval: 60_000,
+  });
 }
 
 export async function fetchAdminNotifications(days = 1) {

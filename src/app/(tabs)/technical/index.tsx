@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, RefreshControl, useWindowDimensions } from 'react-native';
+import { RefreshControl, useWindowDimensions } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { mhs } from 'themes/scaling';
-import { useScrollStore } from 'utils/scroll-store';
+import { useTabScrollHandler } from 'hooks/use-tab-scroll-handler';
 
 import { ReplaceMeterSheet } from 'app/(tabs)/technical/components/replace-meter-sheet';
 import { SetupLocationSheet } from 'app/(tabs)/technical/components/setup-location-sheet';
@@ -24,7 +25,7 @@ import { DomainAnalyzeSection } from './components/domain-analyze-section';
 import { NetworkStatusSection } from './components/network-status-section';
 import { PeakUsageHoursSection } from './components/peak-usage-hours-section';
 
-export const technicalDetailPanels: TechnicalPanel[] = ['chargers', 'meter-hourly', 'status-logs', 'energy-differ'];
+export const technicalDetailPanels: TechnicalPanel[] = ['chargers', 'meter-hourly', 'status-logs', 'energy-differ', 'box-errors'];
 
 const serviceTileSize = 64;
 
@@ -38,6 +39,7 @@ async function getNetworkStatus(vehicle: TechnicalVehicle) {
 
 export default function TechnicalScreen() {
   const router = useRouter();
+  const onScroll = useTabScrollHandler('technical');
   const access = useCurrentAdminAccess(true);
   const canReadBike = access.canAccess('/admin/dashboard') || access.canAccess('/admin/realtime/outlets');
   const canReadCar = access.canAccess('/admin/dashboard') || access.canAccess('/admin/realtime/connectors');
@@ -107,11 +109,8 @@ export default function TechnicalScreen() {
   return (
     <>
       <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
-        <ScrollView
-          onScroll={e => {
-            const offsetY = e.nativeEvent.contentOffset.y;
-            useScrollStore.getState().setTabScrolled('technical', offsetY > 20);
-          }}
+        <Animated.ScrollView
+          onScroll={onScroll}
           scrollEventThrottle={16}
           contentContainerStyle={[styles.content, { paddingTop: 60 + (useSafeAreaInsets().top || 0) }]}
           refreshControl={
@@ -210,7 +209,7 @@ export default function TechnicalScreen() {
               </AdminAccessBoundary>
             </ThemedView>
           </ThemedView>
-        </ScrollView>
+        </Animated.ScrollView>
       </ThemedView>
       {boxActionMode ? <TriggerBoxSheet mode={boxActionMode} onClose={() => setBoxActionMode(null)} visible={Boolean(boxActionMode)} /> : null}
       {replaceMeterVisible ? <ReplaceMeterSheet onClose={() => setReplaceMeterVisible(false)} visible={replaceMeterVisible} /> : null}

@@ -290,6 +290,10 @@
         "path": "/admin/technical/chargers-status-logs"
       },
       {
+        "name": "Box Error Statistics",
+        "path": "/admin/technical/box-error-statistics"
+      },
+      {
         "name": "Meter hourly",
         "path": "/admin/technical/meter-hourly"
       },

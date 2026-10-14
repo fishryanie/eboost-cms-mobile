@@ -22,10 +22,12 @@ export type SwitchConnector = {
 export type SwitchProps = Omit<ViewProps, 'children'> & {
   activeColor?: string;
   animation?: WithSpringConfig;
+  /** @deprecated Kept for legacy callers; the SVG renderer uses geometry instead of blur. */
   blur?: number;
   connector?: SwitchConnector;
   deformation?: SwitchDeformation;
   disabled?: boolean;
+  /** @deprecated Kept for legacy callers; deformation and connector control the SVG shape. */
   gooey?: number;
   iconColor?: string;
   inactiveColor?: string;

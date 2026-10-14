@@ -183,7 +183,7 @@ export function AppDrawer({ children }: PropsWithChildren) {
         </ThemedText>
       </AnimatedThemedView>
 
-      <AnimatedThemedView needsOffscreenAlphaCompositing renderToHardwareTextureAndroid style={appStyle}>
+      <AnimatedThemedView style={appStyle}>
         {children}
         <AnimatedPressable accessibilityLabel='Close drawer' accessibilityRole='button' onPress={closeDrawer} style={[StyleSheet.absoluteFill, overlayStyle]} />
       </AnimatedThemedView>

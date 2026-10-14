@@ -57,6 +57,7 @@ export const tabs: TabConfig[] = [
       { description: 'Hourly meter readings.', icon: 'technical', key: 'meter-hourly', title: 'Meter Hourly' },
       { description: 'Charger status history.', icon: 'technical', key: 'status-logs', title: 'Status Logs' },
       { description: 'Energy reconciliation differences.', icon: 'technical', key: 'energy-differ', title: 'Energy Differ' },
+      { description: 'Charging session failures and box error rates.', icon: 'technical', key: 'box-errors', title: 'Box Errors' },
     ],
   },
   {

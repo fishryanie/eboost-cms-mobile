@@ -1,4 +1,3 @@
-import { isNumber } from 'lodash';
 import { Dimensions } from 'react-native';
 
 export type PercentString = `${number}%`;
@@ -238,7 +237,7 @@ export const handleRound = (size: number) => {
  */
 export const handleFlex = (flex: number | boolean) => {
   return {
-    flex: isNumber(flex) ? flex : flex ? 1 : 0,
+    flex: typeof flex === 'number' ? flex : flex ? 1 : 0,
   };
 };
 
@@ -249,7 +248,7 @@ export const handleFlex = (flex: number | boolean) => {
  * 2    => { flexShrink: 2 }
  */
 export const handleFlexShrink = (flexShrink: number | true) => {
-  return { flexShrink: isNumber(flexShrink) ? flexShrink : 1 };
+  return { flexShrink: typeof flexShrink === 'number' ? flexShrink : 1 };
 };
 
 /**
@@ -259,7 +258,7 @@ export const handleFlexShrink = (flexShrink: number | true) => {
  * 2    => { flexGrow: 2 }
  */
 export const handleFlexGrow = (flexGrow: number | true) => {
-  return { flexGrow: isNumber(flexGrow) ? flexGrow : 1 };
+  return { flexGrow: typeof flexGrow === 'number' ? flexGrow : 1 };
 };
 /**
  * Gom spacing về 4 hướng.

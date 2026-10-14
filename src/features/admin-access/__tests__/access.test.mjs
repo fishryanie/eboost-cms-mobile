@@ -42,6 +42,12 @@ const access = permissions => ({ adminId: '7', isDeveloper: false, permissions }
 const allows = (permissions, name, params) => model.meetsScreenRequirement(access(permissions), model.getRouteAccessRequirement(name, params));
 
 describe('CMS web screen access parity', () => {
+  it('requires the dedicated box statistics READ permission instead of general charger access', () => {
+    assert.equal(allows({ '/admin/technical/box-error-statistics': ['READ'] }, 'technical/box-errors/index'), true);
+    assert.equal(allows({ '/admin/technical/box-error-statistics': ['UPDATE'] }, 'technical/box-errors/index'), false);
+    assert.equal(allows({ '/admin/technical/chargers': ['READ'] }, 'technical/box-errors/index'), false);
+    assert.equal(allows({}, 'technical/box-errors/index'), false);
+  });
   it('requires exact READ access; parent access, show-menus and other action methods cannot unlock screens', () => {
     const permissions = {
       '/admin/operations': ['READ'],

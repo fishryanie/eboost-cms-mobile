@@ -3,9 +3,10 @@ import { ThemedText, ThemedView } from 'components/base';
 import { ChevronLeft, ChevronsRight } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ScrollView, Pressable, RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useScrollStore } from 'utils/scroll-store';
+import Animated from 'react-native-reanimated';
+import { useTabScrollHandler } from 'hooks/use-tab-scroll-handler';
 import { mhs } from 'themes/scaling';
 import { Palette, FontFamily } from 'themes';
 import { apiRequest } from 'utils/api/client';
@@ -157,6 +158,7 @@ const styles = StyleSheet.create({
 
 export default function MarketingScreen() {
   const router = useRouter();
+  const onScroll = useTabScrollHandler('marketing');
   const access = useCurrentAdminAccess(true);
   const canReadStats = access.canAccess('/admin/marketing/subscriptions/monthly-stats');
   const canReadAtRisk = access.canAccess('/admin/operations/accounts/at-risk-users');
@@ -185,11 +187,8 @@ export default function MarketingScreen() {
   const isMainScreen = !onBack;
   return (
     <ThemedView safePaddingBottom flex={1} backgroundColor={Palette.surfaceBase}>
-      <ScrollView
-        onScroll={e => {
-          const offsetY = e.nativeEvent.contentOffset.y;
-          useScrollStore.getState().setTabScrolled('marketing', offsetY > 20);
-        }}
+      <Animated.ScrollView
+        onScroll={onScroll}
         scrollEventThrottle={16}
         contentContainerStyle={[styles.content, { paddingTop: 60 + (useSafeAreaInsets().top || 0) }]}
         refreshControl={
@@ -242,7 +241,7 @@ export default function MarketingScreen() {
             </AdminAccessBoundary>
           </ThemedView>
         </ThemedView>
-      </ScrollView>
+      </Animated.ScrollView>
     </ThemedView>
   );
 }

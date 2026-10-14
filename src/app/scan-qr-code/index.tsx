@@ -3,23 +3,24 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused, useRouter } from 'expo-router';
-import { Camera, CameraOff, ChevronLeft, Copy, ExternalLink, Flashlight, FlashlightOff, QrCode, RotateCcw } from 'lucide-react-native';
-import LottieView from 'lottie-react-native';
+import { StatusBar } from 'expo-status-bar';
+import { Camera, CameraOff, Check, ChevronLeft, Copy, ExternalLink, Flashlight, FlashlightOff, Image, QrCode, RotateCcw } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 import { ThemedText, ThemedView } from 'components/base';
+import { QrScannerOverlay } from 'components/media/qr-scanner-overlay';
 import { decodeQrCode, fetchQrOutletDetails } from 'features/qr-code/qr-scan-service';
 import { FontFamily, Palette } from 'themes';
-import { mhs, mvs, width } from 'themes/scaling';
+import { mhs } from 'themes/scaling';
 
-import qrScannerAnimation from 'assets/lotties/scan-qr-code.json';
-
-const SCANNER_ANIMATION_SIZE = Math.min(width - mhs(32), mhs(340));
 const SHOULD_CHECK_CAMERA_AVAILABILITY = Platform.OS === 'web';
+const SCANNER_BACKGROUND = '#080E0C';
+const SCANNER_SECONDARY_TEXT = '#B6C2BC';
 
 const getScannedLink = (value: string) => {
   const trimmedValue = value.trim();
@@ -32,15 +33,18 @@ export default function ScanQrCodeScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
+  const { height, width } = useWindowDimensions();
   const lastScannedCode = useRef<string | null>(null);
   const scanLockedRef = useRef(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [isCameraAvailable, setIsCameraAvailable] = useState(!SHOULD_CHECK_CAMERA_AVAILABILITY);
   const [scannedValue, setScannedValue] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const cameraIsActive = isFocused && Boolean(permission?.granted) && isCameraAvailable;
   const effectiveTorchEnabled = cameraIsActive && torchEnabled;
+  const scannerSize = Math.min(width - mhs(80), mhs(280), (height - insets.top - insets.bottom) * 0.38);
 
   useEffect(() => {
     if (!SHOULD_CHECK_CAMERA_AVAILABILITY) return;
@@ -71,6 +75,7 @@ export default function ScanQrCodeScreen() {
       if (!result.data || scanLockedRef.current || lastScannedCode.current === result.data) return;
 
       scanLockedRef.current = true;
+      setIsProcessing(true);
       lastScannedCode.current = result.data;
       const qrData = result.data;
 
@@ -97,6 +102,7 @@ export default function ScanQrCodeScreen() {
           scanLockedRef.current = false;
           lastScannedCode.current = null;
           setScannedValue(null);
+          setIsProcessing(false);
           void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
           Toast.show({
             type: 'error',
@@ -109,6 +115,7 @@ export default function ScanQrCodeScreen() {
   );
 
   const handlePickQrImage = useCallback(async () => {
+    if (scanLockedRef.current) return;
     try {
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: false,
@@ -144,6 +151,7 @@ export default function ScanQrCodeScreen() {
     scanLockedRef.current = false;
     lastScannedCode.current = null;
     setScannedValue(null);
+    setIsProcessing(false);
     void Haptics.selectionAsync().catch(() => undefined);
   }, []);
 
@@ -188,100 +196,127 @@ export default function ScanQrCodeScreen() {
     setTorchEnabled(current => !current);
   }, []);
 
-  if (!isCameraAvailable) {
-    return (
-      <ThemedView flex={1} contentCenter backgroundColor='#05070B' paddingHorizontal={24}>
-        <CameraOff color='#FFFFFF' size={34} />
-        <ThemedText color='#FFFFFF' fontFamily={FontFamily.semibold} fontSize={18} lineHeight={24} marginTop={16} textAlign='center'>
-          No camera device
-        </ThemedText>
-      </ThemedView>
-    );
-  }
-
-  if (!permission?.granted) {
-    const isBlocked = permission && !permission.canAskAgain;
-    return (
-      <ThemedView flex={1} contentCenter backgroundColor='#05070B' paddingHorizontal={24}>
-        <Camera color='#FFFFFF' size={34} />
-        <ThemedText color='#FFFFFF' fontFamily={FontFamily.semibold} fontSize={18} lineHeight={24} marginTop={16} textAlign='center'>
-          Camera permission is required
-        </ThemedText>
-        <Pressable accessibilityRole='button' onPress={isBlocked ? Linking.openSettings : requestPermission} style={styles.permissionButton}>
-          <ThemedText color={Palette.surfaceBase} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20}>
-            {isBlocked ? 'Open Settings' : 'Allow Camera'}
-          </ThemedText>
-        </Pressable>
-      </ThemedView>
-    );
-  }
+  const isBlocked = Boolean(permission && !permission.canAskAgain);
 
   return (
-    <ThemedView flex={1} backgroundColor='#05070B'>
-      <CameraView
-        active={cameraIsActive}
-        barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-        enableTorch={effectiveTorchEnabled}
-        onBarcodeScanned={scannedValue ? undefined : handleBarcodeScanned}
-        onMountError={event => {
-          Toast.show({
-            type: 'error',
-            text1: 'Camera error',
-            text2: event.message,
-          });
-        }}
-        responsiveOrientationWhenOrientationLocked
-        style={StyleSheet.absoluteFill}
-      />
+    <ThemedView flex={1} backgroundColor={SCANNER_BACKGROUND}>
+      <StatusBar style='light' />
+      {cameraIsActive ? (
+        <CameraView
+          active={cameraIsActive}
+          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+          enableTorch={effectiveTorchEnabled}
+          onBarcodeScanned={isProcessing || scannedValue ? undefined : handleBarcodeScanned}
+          onMountError={event => {
+            Toast.show({
+              type: 'error',
+              text1: 'Camera error',
+              text2: event.message,
+            });
+          }}
+          responsiveOrientationWhenOrientationLocked
+          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
+        />
+      ) : null}
 
-      <ThemedView absoluteFillObject contentCenter pointerEvents='none'>
-        <LottieView autoPlay loop source={qrScannerAnimation} style={styles.scannerAnimation} />
+      <ThemedView absoluteFillObject pointerEvents='none'>
+        <LinearGradient
+          colors={['rgba(8,14,12,0.94)', 'rgba(8,14,12,0.36)', 'rgba(8,14,12,0.16)', 'rgba(8,14,12,0.96)']}
+          locations={[0, 0.32, 0.56, 1]}
+          style={{ flex: 1 }}
+        />
       </ThemedView>
 
-      <ThemedView absoluteFillObject pointerEvents='box-none'>
-        <TopControls top={insets.top} onBack={router.back} />
-        <BottomControls bottom={insets.bottom} torchEnabled={torchEnabled} onPickQrImage={handlePickQrImage} onToggleTorch={handleToggleTorch} />
+      <TopControls onBack={router.back} />
+
+      <ThemedView flex={1} alignItems='center' justifyContent='center' paddingHorizontal={24} gap={28}>
+        <ThemedView alignItems='center' gap={10}>
+          <ThemedText accessibilityRole='header' color='#FFFFFF' fontFamily={FontFamily.semibold} fontSize={28} lineHeight={36} textAlign='center'>
+            Scan charger QR
+          </ThemedText>
+          <ThemedText color={SCANNER_SECONDARY_TEXT} fontSize={14} lineHeight={21} textAlign='center' maxWidth={290}>
+            Place the QR code inside the frame{'\n'}to open charger details.
+          </ThemedText>
+        </ThemedView>
+
+        <ThemedView alignItems='center' gap={24}>
+          <QrScannerOverlay active={cameraIsActive && !isProcessing && !scannedValue} size={scannerSize}>
+            {!cameraIsActive ? <CameraAccessPrompt available={isCameraAvailable} blocked={isBlocked} onRequestPermission={requestPermission} /> : null}
+          </QrScannerOverlay>
+
+          <ScanStatus active={cameraIsActive} processing={isProcessing} scanned={Boolean(scannedValue)} />
+        </ThemedView>
+      </ThemedView>
+
+      <ThemedView paddingHorizontal={24} paddingTop={16} safePaddingBottom={24} gap={20}>
         {scannedValue ? (
-          <ScannedValuePanel
-            bottom={insets.bottom}
-            value={scannedValue}
-            onCopy={handleCopyScannedValue}
-            onOpen={handleOpenScannedLink}
-            onReset={handleResetScan}
+          <ScannedValuePanel value={scannedValue} onCopy={handleCopyScannedValue} onOpen={handleOpenScannedLink} onReset={handleResetScan} />
+        ) : (
+          <BottomControls
+            disabled={isProcessing}
+            torchAvailable={cameraIsActive}
+            torchEnabled={effectiveTorchEnabled}
+            onPickQrImage={handlePickQrImage}
+            onToggleTorch={handleToggleTorch}
           />
-        ) : null}
+        )}
+        <ThemedText color={SCANNER_SECONDARY_TEXT} fontSize={12} lineHeight={18} textAlign='center'>
+          {scannedValue ? 'Charger details are opening.' : 'Use the flashlight in low light.'}
+        </ThemedText>
       </ThemedView>
     </ThemedView>
   );
 }
 
-function ScannedValuePanel({
-  bottom,
-  onCopy,
-  onOpen,
-  onReset,
-  value,
-}: {
-  bottom: number;
-  onCopy: () => void;
-  onOpen: () => void;
-  onReset: () => void;
-  value: string;
-}) {
+function CameraAccessPrompt({ available, blocked, onRequestPermission }: { available: boolean; blocked: boolean; onRequestPermission: () => void }) {
+  return (
+    <ThemedView alignItems='center' gap={14} paddingHorizontal={20}>
+      <ThemedView round={64} contentCenter backgroundColor='rgba(255,255,255,0.06)'>
+        {available ? <Camera color={SCANNER_SECONDARY_TEXT} size={28} /> : <CameraOff color={SCANNER_SECONDARY_TEXT} size={28} />}
+      </ThemedView>
+      <ThemedText color={SCANNER_SECONDARY_TEXT} fontSize={13} lineHeight={19} textAlign='center'>
+        {available ? 'Camera access is needed\nto scan a QR code.' : 'No camera available.\nChoose a QR image below.'}
+      </ThemedText>
+      {available ? (
+        <ScannerButton accent label={blocked ? 'Open Settings' : 'Allow camera'} onPress={blocked ? Linking.openSettings : onRequestPermission} compact />
+      ) : null}
+    </ThemedView>
+  );
+}
+
+function ScanStatus({ active, processing, scanned }: { active: boolean; processing: boolean; scanned: boolean }) {
+  let label = active ? 'Ready to scan' : 'Scan from a saved photo';
+  let icon = <ThemedView round={6} backgroundColor={active ? Palette.accent : SCANNER_SECONDARY_TEXT} />;
+  if (processing) {
+    label = 'Checking QR code…';
+    icon = <ActivityIndicator size='small' color={Palette.accent} />;
+  }
+  if (scanned) {
+    label = 'QR code recognised';
+    icon = <Check color={Palette.accent} size={16} />;
+  }
+  return (
+    <ThemedView
+      accessibilityLiveRegion='polite'
+      rowCenter
+      gap={8}
+      backgroundColor='rgba(8,14,12,0.72)'
+      borderRadius='pill'
+      paddingHorizontal={14}
+      paddingVertical={9}>
+      {icon}
+      <ThemedText color={scanned ? Palette.accent : '#E1E8E4'} fontFamily={FontFamily.medium} fontSize={12} lineHeight={17}>
+        {label}
+      </ThemedText>
+    </ThemedView>
+  );
+}
+
+function ScannedValuePanel({ onCopy, onOpen, onReset, value }: { onCopy: () => void; onOpen: () => void; onReset: () => void; value: string }) {
   const scannedLink = getScannedLink(value);
 
   return (
-    <ThemedView
-      backgroundColor='rgba(5,7,11,0.78)'
-      borderColor='rgba(255,255,255,0.14)'
-      borderRadius={18}
-      borderWidth={1}
-      bottom={bottom + mvs(88)}
-      gap={12}
-      left={16}
-      padding={14}
-      position='absolute'
-      right={16}>
+    <ThemedView backgroundColor='rgba(255,255,255,0.06)' borderColor='rgba(255,255,255,0.14)' borderRadius={18} borderWidth={1} gap={12} padding={14}>
       <ThemedView alignItems='center' flexDirection='row' gap={8}>
         <QrCode color={Palette.accent} size={18} />
         <ThemedText color='#FFFFFF' flex fontFamily={FontFamily.semibold} fontSize={14} lineHeight={20} numberOfLines={1}>
@@ -302,106 +337,116 @@ function ScannedValuePanel({
 
 function PanelActionButton({ disabled, icon, label, onPress }: { disabled?: boolean; icon: React.ReactNode; label: string; onPress: () => void }) {
   return (
-    <Pressable
-      accessibilityLabel={label}
-      accessibilityRole='button'
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [styles.panelActionButton, disabled && styles.panelActionButtonDisabled, pressed && styles.pressed]}>
-      {icon}
-      <ThemedText color='#FFFFFF' fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
-        {label}
-      </ThemedText>
-    </Pressable>
+    <ThemedView flex={1}>
+      <ScannerButton disabled={disabled} icon={icon} label={label} onPress={onPress} compact />
+    </ThemedView>
   );
 }
 
-function TopControls({ onBack, top }: { onBack: () => void; top: number }) {
+function TopControls({ onBack }: { onBack: () => void }) {
   return (
-    <ThemedView left={15} position='absolute' top={top + 15}>
-      <RoundIconButton accessibilityLabel='Back' onPress={onBack}>
-        <ChevronLeft color='#FFFFFF' size={26} />
-      </RoundIconButton>
+    <ThemedView rowCenter justifyContent='space-between' paddingHorizontal={24} safePaddingTop={12} paddingBottom={12}>
+      <Pressable accessibilityLabel='Back' accessibilityRole='button' onPress={onBack} hitSlop={8}>
+        {({ pressed }) => (
+          <ThemedView
+            square={48}
+            contentCenter
+            borderRadius='pill'
+            backgroundColor='rgba(255,255,255,0.08)'
+            borderWidth={1}
+            borderColor='rgba(255,255,255,0.1)'
+            opacity={pressed ? 0.6 : 1}>
+            <ChevronLeft color='#FFFFFF' size={24} />
+          </ThemedView>
+        )}
+      </Pressable>
+      <ThemedView rowCenter gap={7}>
+        <QrCode color={Palette.accent} size={17} />
+        <ThemedText color='#E1E8E4' fontFamily={FontFamily.semibold} fontSize={12} lineHeight={18} letterSpacing={1.8}>
+          EBOOST
+        </ThemedText>
+      </ThemedView>
     </ThemedView>
   );
 }
 
 function BottomControls({
-  bottom,
+  disabled,
   onPickQrImage,
   onToggleTorch,
+  torchAvailable,
   torchEnabled,
 }: {
-  bottom: number;
+  disabled: boolean;
   onPickQrImage: () => void;
   onToggleTorch: () => void;
+  torchAvailable: boolean;
   torchEnabled: boolean;
 }) {
   return (
-    <ThemedView
-      backgroundColor='transparent'
-      bottom={bottom + mvs(24)}
-      flexDirection='row'
-      justifyContent='space-between'
-      left={mhs(16)}
-      pointerEvents='box-none'
-      position='absolute'
-      right={mhs(16)}>
-      <RoundIconButton accessibilityLabel='Upload QR code image' onPress={onPickQrImage}>
-        <QrCode color='#FFFFFF' size={23} />
-      </RoundIconButton>
-      <RoundIconButton accessibilityLabel='Toggle torch' onPress={onToggleTorch}>
-        {torchEnabled ? <Flashlight color='#FFFFFF' size={23} /> : <FlashlightOff color='#FFFFFF' size={23} />}
-      </RoundIconButton>
+    <ThemedView row gap={12}>
+      <ThemedView flex={1}>
+        <ScannerButton
+          accent={torchEnabled}
+          disabled={disabled || !torchAvailable}
+          icon={torchEnabled ? <Flashlight color={SCANNER_BACKGROUND} size={20} /> : <FlashlightOff color='#FFFFFF' size={20} />}
+          label={torchEnabled ? 'Flashlight on' : 'Flashlight'}
+          onPress={onToggleTorch}
+          selected={torchEnabled}
+        />
+      </ThemedView>
+      <ThemedView flex={1}>
+        <ScannerButton disabled={disabled} icon={<Image color='#FFFFFF' size={20} />} label='Choose image' onPress={onPickQrImage} />
+      </ThemedView>
     </ThemedView>
   );
 }
 
-function RoundIconButton({ accessibilityLabel, children, onPress }: { accessibilityLabel: string; children: React.ReactNode; onPress?: () => void }) {
+function ScannerButton({
+  accent = false,
+  compact = false,
+  disabled = false,
+  icon,
+  label,
+  onPress,
+  selected,
+}: {
+  accent?: boolean;
+  compact?: boolean;
+  disabled?: boolean;
+  icon?: React.ReactNode;
+  label: string;
+  onPress: () => void;
+  selected?: boolean;
+}) {
   return (
-    <Pressable accessibilityLabel={accessibilityLabel} accessibilityRole='button' onPress={onPress} style={styles.roundButton}>
-      {children}
+    <Pressable accessibilityLabel={label} accessibilityRole='button' accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress}>
+      {({ pressed }) => (
+        <ThemedView
+          rowCenter
+          justifyContent='center'
+          gap={9}
+          minHeight={compact ? 48 : 58}
+          paddingHorizontal={compact ? 14 : 12}
+          paddingVertical={12}
+          borderRadius={18}
+          borderCurve='continuous'
+          borderWidth={1}
+          borderColor={accent ? Palette.accent : 'rgba(255,255,255,0.14)'}
+          backgroundColor={accent ? Palette.accent : 'rgba(255,255,255,0.08)'}
+          opacity={disabled ? 0.4 : pressed ? 0.65 : 1}>
+          {icon}
+          <ThemedText
+            flexShrink={1}
+            color={accent ? SCANNER_BACKGROUND : '#FFFFFF'}
+            fontFamily={FontFamily.semibold}
+            fontSize={compact ? 12 : 13}
+            lineHeight={19}
+            textAlign='center'>
+            {label}
+          </ThemedText>
+        </ThemedView>
+      )}
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  permissionButton: {
-    alignItems: 'center',
-    backgroundColor: Palette.accent,
-    borderRadius: mhs(18),
-    justifyContent: 'center',
-    marginTop: mvs(20),
-    minHeight: mvs(44),
-    paddingHorizontal: mhs(18),
-  },
-  panelActionButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderRadius: mhs(14),
-    flex: 1,
-    flexDirection: 'row',
-    gap: mhs(6),
-    justifyContent: 'center',
-    minHeight: mvs(36),
-  },
-  panelActionButtonDisabled: {
-    opacity: 0.42,
-  },
-  pressed: {
-    opacity: 0.72,
-  },
-  roundButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: mhs(24),
-    height: mhs(48),
-    justifyContent: 'center',
-    width: mhs(48),
-  },
-  scannerAnimation: {
-    height: SCANNER_ANIMATION_SIZE,
-    top: '-5%',
-    width: SCANNER_ANIMATION_SIZE,
-  },
-});

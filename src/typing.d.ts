@@ -1,5 +1,5 @@
 type TechnicalVehicle = 'bike' | 'car';
-type TechnicalPanel = 'chargers' | 'meter-hourly' | 'status-logs' | 'energy-differ' | 'network-status' | 'domain-analyze';
+type TechnicalPanel = 'chargers' | 'meter-hourly' | 'status-logs' | 'energy-differ' | 'box-errors' | 'network-status' | 'domain-analyze';
 
 type ApiListResponse<T> =
   | T[]

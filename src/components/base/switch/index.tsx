@@ -1,52 +1,48 @@
-import { Blur, Canvas, Circle, ColorMatrix, Group, Oval, Paint, RoundedRect } from '@shopify/react-native-skia';
 import { Check, X } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useMemo } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { clamp, interpolate, useAnimatedStyle, useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, {
+  cancelAnimation,
+  clamp,
+  interpolate,
+  ReduceMotion,
+  useAnimatedProps,
+  useAnimatedStyle,
+  useDerivedValue,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import Svg, { Circle, Ellipse, G, Rect } from 'react-native-svg';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { ThemedView } from '../ThemedView';
-import {
-  DEFAULT_BLUR_FACTOR,
-  DEFAULT_GOOEY,
-  DEFAULT_ICON_COLOR,
-  DEFAULT_OFF_COLOR,
-  DEFAULT_ON_COLOR,
-  DEFAULT_SIZE,
-  DEFAULT_THRESHOLD,
-  DEFAULT_TRACK_COLOR,
-} from './const';
-import type { AnimatedBridgeProps, AnimatedOvalProps, ShadowOvalProps, SwitchProps } from './types';
+import { DEFAULT_ICON_COLOR, DEFAULT_OFF_COLOR, DEFAULT_ON_COLOR, DEFAULT_SIZE, DEFAULT_THRESHOLD, DEFAULT_TRACK_COLOR } from './const';
+import type { AnimatedOvalProps, ShadowOvalProps, SwitchProps } from './types';
 
 const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
+const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
 
 function AnimatedOval({ centerX, centerY, radiusX, radiusY, isOn, onColor, offColor }: AnimatedOvalProps) {
-  const color = useDerivedValue(() => (isOn.get() ? onColor : offColor));
-  const x = useDerivedValue(() => centerX.get() - radiusX.get());
-  const y = useDerivedValue(() => centerY - radiusY.get());
-  const width = useDerivedValue(() => radiusX.get() * 2);
-  const height = useDerivedValue(() => radiusY.get() * 2);
+  const offProps = useAnimatedProps(() => ({ cx: centerX.get(), rx: radiusX.get(), ry: radiusY.get() }));
+  const onProps = useAnimatedProps(() => ({
+    cx: centerX.get(),
+    rx: radiusX.get(),
+    ry: radiusY.get(),
+    opacity: isOn.get() ? 1 : 0,
+  }));
 
-  return <Oval color={color} height={height} width={width} x={x} y={y} />;
+  return (
+    <G>
+      <AnimatedEllipse cy={centerY} fill={offColor} animatedProps={offProps} />
+      <AnimatedEllipse cy={centerY} fill={onColor} animatedProps={onProps} />
+    </G>
+  );
 }
 
 function ShadowOval({ centerX, centerY, radiusX, radiusY, color }: ShadowOvalProps) {
-  const x = useDerivedValue(() => centerX.get() - radiusX.get());
-  const y = useDerivedValue(() => centerY - radiusY.get());
-  const width = useDerivedValue(() => radiusX.get() * 2);
-  const height = useDerivedValue(() => radiusY.get() * 2);
+  const animatedProps = useAnimatedProps(() => ({ cx: centerX.get(), rx: radiusX.get(), ry: radiusY.get() }));
 
-  return <Oval color={color} height={height} width={width} x={x} y={y} />;
-}
-
-function AnimatedBridge({ leftX, rightX, centerY, mainX, height, color, progress }: AnimatedBridgeProps) {
-  const x = useDerivedValue(() => (progress.get() <= 0.5 ? leftX : mainX.get()));
-  const width = useDerivedValue(() => (progress.get() <= 0.5 ? mainX.get() - leftX : rightX - mainX.get()));
-  const animatedHeight = useDerivedValue(() => height * interpolate(progress.get(), [0, 0.25, 0.5, 0.75, 1], [0.6, 1, 0.8, 1, 0.6]));
-  const y = useDerivedValue(() => centerY - animatedHeight.get() / 2);
-  const radius = useDerivedValue(() => animatedHeight.get() / 2);
-
-  return <RoundedRect color={color} height={animatedHeight} r={radius} width={width} x={x} y={y} />;
+  return <AnimatedEllipse cy={centerY} fill={color} animatedProps={animatedProps} />;
 }
 
 export const Switch = memo(function Switch({
@@ -63,8 +59,8 @@ export const Switch = memo(function Switch({
   animation,
   deformation,
   connector,
-  blur,
-  gooey = DEFAULT_GOOEY,
+  blur: _blur,
+  gooey: _gooey,
   renderActiveIcon,
   renderInactiveIcon,
   onDragBegin,
@@ -86,7 +82,6 @@ export const Switch = memo(function Switch({
   const blobRadius = size * 0.22;
   const sideBlobRadius = blobRadius * sideBlobScale;
   const iconSize = size * 0.28;
-  const blurAmount = blur ?? size * DEFAULT_BLUR_FACTOR;
   const bridgeHeight = switchHeight * connectorHeight;
   const leftX = switchWidth * 0.28;
   const rightX = switchWidth * 0.72;
@@ -95,13 +90,15 @@ export const Switch = memo(function Switch({
       damping: animation?.damping ?? 15,
       mass: animation?.mass ?? 0.8,
       stiffness: animation?.stiffness ?? 120,
+      reduceMotion: animation?.reduceMotion ?? ReduceMotion.System,
     }),
-    [animation?.damping, animation?.mass, animation?.stiffness],
+    [animation?.damping, animation?.mass, animation?.reduceMotion, animation?.stiffness],
   );
 
   const progress = useSharedValue(value ? 1 : 0);
   const isDragging = useSharedValue(false);
   const isOn = useSharedValue(value);
+  const dragStartProgress = useSharedValue(value ? 1 : 0);
 
   useEffect(() => {
     if (!isDragging.get()) {
@@ -137,13 +134,13 @@ export const Switch = memo(function Switch({
   const panGesture = Gesture.Pan()
     .enabled(!disabled)
     .onStart(() => {
+      cancelAnimation(progress);
+      dragStartProgress.set(clamp(progress.get(), 0, 1));
       isDragging.set(true);
       if (onDragBegin) scheduleOnRN(onDragBegin);
     })
     .onUpdate(event => {
-      const startX = value ? rightX : leftX;
-      const nextX = clamp(startX + event.translationX, leftX, rightX);
-      const nextProgress = interpolate(nextX, [leftX, rightX], [0, 1]);
+      const nextProgress = clamp(dragStartProgress.get() + event.translationX / (rightX - leftX), 0, 1);
       progress.set(nextProgress);
       isOn.set(nextProgress >= toggleThreshold);
     })
@@ -161,11 +158,20 @@ export const Switch = memo(function Switch({
 
       if (nextValue !== value) scheduleOnRN(commitValue, nextValue);
       if (onDragFinish) scheduleOnRN(finishDrag, nextValue);
+    })
+    .onFinalize((_event, success) => {
+      if (!success && isDragging.get()) {
+        isDragging.set(false);
+        progress.set(withSpring(value ? 1 : 0, spring));
+        isOn.set(value);
+        if (onDragFinish) scheduleOnRN(finishDrag, value);
+      }
     });
 
   const tapGesture = Gesture.Tap()
     .enabled(!disabled)
-    .onEnd(() => {
+    .onEnd((_event, success) => {
+      if (!success) return;
       const nextValue = !value;
       progress.set(withSpring(nextValue ? 1 : 0, spring));
       isOn.set(nextValue);
@@ -191,7 +197,6 @@ export const Switch = memo(function Switch({
   const toggleFromAccessibility = () => {
     if (!disabled) commitValue(!value);
   };
-  const colorMatrix = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, gooey, -14];
 
   return (
     <GestureDetector gesture={Gesture.Race(panGesture, tapGesture)}>
@@ -206,6 +211,7 @@ export const Switch = memo(function Switch({
         alignItems='center'
         backgroundColor='transparent'
         height={switchHeight}
+        hitSlop={12}
         justifyContent='center'
         onAccessibilityAction={event => {
           if (event.nativeEvent.actionName === 'activate') toggleFromAccessibility();
@@ -214,39 +220,34 @@ export const Switch = memo(function Switch({
         opacity={disabled ? 0.5 : 1}
         style={style}
         width={switchWidth}>
-        <Canvas pointerEvents='none' style={{ height: switchHeight, position: 'absolute', width: switchWidth }}>
-          <Group
-            layer={
-              <Paint>
-                <Blur blur={blurAmount} />
-                <ColorMatrix matrix={colorMatrix} />
-              </Paint>
-            }>
-            <Circle color={trackColor} cx={leftX} cy={switchHeight / 2} r={sideBlobRadius} />
-            <Circle color={trackColor} cx={rightX} cy={switchHeight / 2} r={sideBlobRadius} />
-            {connectorVisible ? (
-              <AnimatedBridge
-                centerY={switchHeight / 2 + connectorOffset}
-                color={trackColor}
-                height={bridgeHeight}
-                leftX={leftX}
-                mainX={mainX}
-                progress={progress}
-                rightX={rightX}
-              />
-            ) : null}
-            <ShadowOval centerX={mainX} centerY={switchHeight / 2} color={trackColor} radiusX={mainRadiusX} radiusY={mainRadiusY} />
-          </Group>
-          <AnimatedOval
-            centerX={mainX}
-            centerY={switchHeight / 2}
-            isOn={isOn}
-            offColor={inactiveColor}
-            onColor={activeColor}
-            radiusX={innerRadiusX}
-            radiusY={innerRadiusY}
-          />
-        </Canvas>
+        <ThemedView position='absolute' pointerEvents='none' backgroundColor='transparent'>
+          <Svg height={switchHeight} width={switchWidth} viewBox={`0 0 ${switchWidth} ${switchHeight}`}>
+            <G>
+              <Circle fill={trackColor} cx={leftX} cy={switchHeight / 2} r={sideBlobRadius} />
+              <Circle fill={trackColor} cx={rightX} cy={switchHeight / 2} r={sideBlobRadius} />
+              {connectorVisible ? (
+                <Rect
+                  x={leftX}
+                  y={switchHeight / 2 + connectorOffset - bridgeHeight / 2}
+                  width={rightX - leftX}
+                  height={bridgeHeight}
+                  rx={bridgeHeight / 2}
+                  fill={trackColor}
+                />
+              ) : null}
+              <ShadowOval centerX={mainX} centerY={switchHeight / 2} color={trackColor} radiusX={mainRadiusX} radiusY={mainRadiusY} />
+            </G>
+            <AnimatedOval
+              centerX={mainX}
+              centerY={switchHeight / 2}
+              isOn={isOn}
+              offColor={inactiveColor}
+              onColor={activeColor}
+              radiusX={innerRadiusX}
+              radiusY={innerRadiusY}
+            />
+          </Svg>
+        </ThemedView>
 
         {showIcons ? (
           <AnimatedThemedView

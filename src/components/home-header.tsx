@@ -35,6 +35,15 @@ const sectionAccent = {
 
 const headerSearchItems = getHeaderSearchItems();
 
+const mask = easeGradient({
+  colorStops: {
+    0: { color: 'rgba(255,255,255,1)' },
+    0.75: { color: 'rgba(255,255,255,1)' },
+    1: { color: 'rgba(255,255,255,0)' },
+  },
+  extraColorStopsPerTransition: 16,
+});
+
 export function HomeHeader() {
   const { top } = useSafeAreaInsets();
   const router = useRouter();
@@ -50,15 +59,6 @@ export function HomeHeader() {
   const backgroundStyle = useAnimatedStyle(() => ({
     opacity: withTiming(isScrolled ? 1 : 0, { duration: 100 }),
   }));
-
-  const mask = easeGradient({
-    colorStops: {
-      0: { color: 'rgba(255,255,255,1)' },
-      0.75: { color: 'rgba(255,255,255,1)' },
-      1: { color: 'rgba(255,255,255,0)' },
-    },
-    extraColorStopsPerTransition: 16,
-  });
 
   const handleSelectSearchItem = (item: HeaderSearchItem) => {
     setSearchOpen(false);
