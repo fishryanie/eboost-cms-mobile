@@ -1,8 +1,9 @@
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Cable, CircleCheck, Clock, Copy, MapPin, MessageSquareWarning, ReceiptText, TriangleAlert, User, Zap } from 'lucide-react-native';
+import { Cable, CircleCheck, Clock, Copy, MapPin, MessageSquareWarning, ReceiptText, RotateCw, TriangleAlert, User, Zap } from 'lucide-react-native';
 import type React from 'react';
+import { useState } from 'react';
 import { type GestureResponderEvent, Pressable, StyleSheet } from 'react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
@@ -77,7 +78,7 @@ type TransactionRecord = CmsRecord & {
   status?: boolean | number | string;
   totalConsumedFee?: number | string;
   totalFee?: number | string;
-  transactionId?: string;
+  transactionId?: number | string | null;
   user?: TransactionUser;
   wattageConsumed?: number | string;
 };
@@ -280,14 +281,15 @@ function CardSurface({ children, tone }: { children: React.ReactNode; tone: Tran
 
 export function TransactionSessionCard({ item: rawItem }: { item: CmsRecord }) {
   const router = useRouter();
+  const [isFlipped, setIsFlipped] = useState(false);
   const item = rawItem as TransactionRecord;
   const isBike = Boolean(item.bikeBox);
   const box = item.carBox || item.bikeBox;
   const port = item.carConnector || item.outlet;
   const portLabel = getPortLabel(port, isBike);
   const currentType = (getCurrentType(port) || 'AC').toUpperCase();
-  const boxIdentifier = box?.uniqueId || box?.vendorId || 'Unknown box';
-  const boxSecondary = box?.uniqueId ? box.vendorId || box.name || '--' : box?.name;
+  const boxIdentifier = (isBike ? box?.uniqueId || box?.vendorId : box?.vendorId || box?.uniqueId) || box?.name || 'Unknown charger';
+  const boxSecondary = box?.name;
   const energyKwh = toNumber(item.wattageConsumed) / 1000;
   const activationFee = toNumber(item.activationFee);
   const chargingFee = toNumber(item.totalFee ?? item.totalConsumedFee ?? item.chargingFee);
@@ -351,7 +353,11 @@ export function TransactionSessionCard({ item: rawItem }: { item: CmsRecord }) {
                   lineHeight={20}
                   numberOfLines={1}>
                   {boxIdentifier}
-                  {boxSecondary && boxSecondary !== boxIdentifier ? ` · ${boxSecondary}` : ''}
+                  {boxSecondary && boxSecondary !== boxIdentifier ? (
+                    <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12}>
+                      {` · ${boxSecondary}`}
+                    </ThemedText>
+                  ) : null}
                 </ThemedText>
               </ThemedView>
             )}
@@ -689,18 +695,28 @@ export function TransactionSessionCard({ item: rawItem }: { item: CmsRecord }) {
           ) : null}
         </ThemedView>
       </ThemedView>
+      {!isBike ? (
+        <ThemedView alignItems='center' flexDirection='row' gap={'one'} justifyContent='center'>
+          <RotateCw color={Palette.accent} size={12} />
+          <ThemedText color={Palette.accent} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
+            View charging profile
+          </ThemedText>
+        </ThemedView>
+      ) : null}
     </CardSurface>
   );
 
   if (isBike) return frontCard;
 
   return (
-    <FlipCard borderRadius={21} containerStyle={{ width: '100%' }} height='auto' scaleOnPress width='100%'>
+    <FlipCard borderRadius={21} containerStyle={{ width: '100%' }} height='auto' onFlip={setIsFlipped} scaleOnPress width='100%'>
       <FlipCard.Front>
-        <FlipCard.Trigger>{frontCard}</FlipCard.Trigger>
+        <FlipCard.Trigger accessibilityLabel='View charging profile' accessibilityRole='button'>
+          {frontCard}
+        </FlipCard.Trigger>
       </FlipCard.Front>
       <FlipCard.Back>
-        <FlipCard.Trigger>
+        <FlipCard.Trigger accessibilityLabel='Back to transaction' accessibilityRole='button' style={{ flex: 1 }}>
           <ThemedView
             backgroundColor={Palette.surfaceBase}
             borderColor={Palette.borderSubtle}
@@ -710,7 +726,17 @@ export function TransactionSessionCard({ item: rawItem }: { item: CmsRecord }) {
             height='100%'
             overflow='hidden'
             width='100%'>
-            <ChargingProfileChart compact fallbackEnergyKwh={energyKwh} mobileCard transactionId={item.transactionId || null} />
+            <ChargingProfileChart
+              carHistoryId={item.id}
+              chargerId={box?.vendorId || box?.uniqueId}
+              compact
+              enabled={isFlipped}
+              fallbackEnergyKwh={energyKwh}
+              live={transactionTone === 'charging'}
+              invoiceId={item.invoiceId}
+              mobileCard
+              transactionId={item.transactionId ?? null}
+            />
           </ThemedView>
         </FlipCard.Trigger>
       </FlipCard.Back>

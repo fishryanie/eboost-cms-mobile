@@ -153,7 +153,7 @@ type OngoingSessionRecord = {
     start_time?: number;
     thrid_party?: any;
     total_consumed_fee?: number;
-    transaction_id?: string | null;
+    transaction_id?: number | string | null;
     user?: {
       email?: string;
       id?: number;

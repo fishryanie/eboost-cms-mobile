@@ -1,18 +1,16 @@
-import * as LocalAuthentication from 'expo-local-authentication';
-
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import { Switch, ThemedText, ThemedView } from 'components/base';
 
 import { FontFamily, Palette } from 'themes';
-import { getBiometricButtonLabel, getBiometricSymbolName } from 'utils/auth/biometric-auth';
+import { getBiometricAvailability, getBiometricButtonLabel, getBiometricSymbolName } from 'utils/auth/biometric-auth';
 import { biometricCredentialStore, type BiometricCredentials } from 'utils/auth/biometric-credentials';
 import { consumePendingBiometricCredentials } from 'utils/auth/biometric-prompt';
 import { ShieldCheck, type LucideIcon } from 'lucide-react-native';
 
 export function BiometricOptInPrompt() {
-  const [biometricIcon, setBiometricIcon] = useState<LucideIcon>(ShieldCheck);
+  const [biometricIcon, setBiometricIcon] = useState<LucideIcon>(() => ShieldCheck);
   const [biometricLabel, setBiometricLabel] = useState('Biometric');
   const [isSaving, setIsSaving] = useState(false);
   const [pendingCredentials, setPendingCredentials] = useState<BiometricCredentials | null>(null);
@@ -26,22 +24,16 @@ export function BiometricOptInPrompt() {
     }
 
     async function loadPromptState() {
-      const [hasHardware, isEnrolled, authenticationTypes, canSaveProtectedCredentials, hasSavedCredentials] = await Promise.all([
-        LocalAuthentication.hasHardwareAsync(),
-        LocalAuthentication.isEnrolledAsync(),
-        LocalAuthentication.supportedAuthenticationTypesAsync(),
-        biometricCredentialStore.canUseBiometricAuthentication(),
-        biometricCredentialStore.hasCredentials(),
-      ]);
+      const [availability, hasSavedCredentials] = await Promise.all([getBiometricAvailability(), biometricCredentialStore.hasCredentials()]);
 
       if (!isMounted) {
         return;
       }
 
-      setBiometricLabel(getBiometricButtonLabel(authenticationTypes, Platform.OS));
-      setBiometricIcon(getBiometricSymbolName(authenticationTypes));
+      setBiometricLabel(getBiometricButtonLabel(availability.authenticationTypes, Platform.OS));
+      setBiometricIcon(() => getBiometricSymbolName(availability.authenticationTypes, Platform.OS));
 
-      if (hasHardware && isEnrolled && canSaveProtectedCredentials && !hasSavedCredentials) {
+      if (availability.canUseBiometric && !hasSavedCredentials) {
         setPendingCredentials(credentials);
       }
     }
@@ -70,7 +62,12 @@ export function BiometricOptInPrompt() {
     setIsSaving(true);
 
     try {
-      await biometricCredentialStore.saveCredentials(pendingCredentials);
+      const availability = await getBiometricAvailability();
+
+      if (availability.canUseBiometric) {
+        await biometricCredentialStore.saveCredentials(pendingCredentials);
+      }
+
       closePrompt();
     } catch {
       closePrompt();

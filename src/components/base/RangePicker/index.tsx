@@ -31,32 +31,47 @@ const presets: { label: string; value: RangePreset }[] = [
 
 export const RangePicker = forwardRef<RangePickerMethods, RangePickerProps>(function RangePicker({ onChange, onClear, value }, ref) {
   const [isShow, setShow] = useState(false);
-  const [range, setRange] = useState<DateRange>({});
-  const [month, setMonth] = useState(() => dayjs().startOf('month').toDate());
-  const [allTime, setAllTime] = useState(false);
-  const { height } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
+  const [openCount, setOpenCount] = useState(0);
   const reducedMotion = useReducedMotion();
-  const canApply = Boolean(range.start || (allTime && onClear));
-  const rangeLabel = allTime
-    ? 'All time'
-    : range.start
-      ? `${dayjs(range.start).format('DD MMM YYYY')} – ${range.end ? dayjs(range.end).format('DD MMM YYYY') : 'End date'}`
-      : 'Choose a date range';
 
   useImperativeHandle(
     ref,
     () => ({
       open: () => {
-        const selected = getRangeFromValue(value);
-        setRange(selected);
-        setMonth(dayjs(selected.start).startOf('month').toDate());
-        setAllTime(Boolean(onClear && !selected.start));
+        setOpenCount(count => count + 1);
         setShow(true);
       },
     }),
-    [onClear, value],
+    [],
   );
+
+  return (
+    <Modal
+      isVisible={isShow}
+      animationInTiming={300}
+      animationOutTiming={300}
+      animationIn={reducedMotion ? 'fadeIn' : 'slideInUp'}
+      animationOut={reducedMotion ? 'fadeOut' : 'slideOutDown'}
+      useNativeDriver
+      useNativeDriverForBackdrop
+      hideModalContentWhileAnimating
+      backdropTransitionOutTiming={500}
+      onBackButtonPress={() => setShow(false)}
+      onBackdropPress={() => setShow(false)}
+      style={{ justifyContent: 'flex-end', margin: 0 }}>
+      <RangePickerContent key={openCount} onChange={onChange} onClear={onClear} onClose={() => setShow(false)} value={value} />
+    </Modal>
+  );
+});
+
+// Reuse the calendar inside an existing modal without presenting a second native modal.
+export function RangePickerContent({ onChange, onClear, onClose, value }: RangePickerProps & { onClose: () => void }) {
+  const [range, setRange] = useState<DateRange>(() => getRangeFromValue(value));
+  const [month, setMonth] = useState(() => dayjs(getRangeFromValue(value).start).startOf('month').toDate());
+  const [allTime, setAllTime] = useState(() => Boolean(onClear && !getRangeFromValue(value).start));
+  const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const canApply = Boolean(range.start || (allTime && onClear));
 
   function selectPreset(preset: RangePreset) {
     const selected = getPresetRange(preset);
@@ -79,110 +94,95 @@ export const RangePicker = forwardRef<RangePickerMethods, RangePickerProps>(func
     } else {
       return;
     }
-    setShow(false);
+    onClose();
   }
 
   return (
-    <Modal
-      isVisible={isShow}
-      // coverScreen
-      animationInTiming={300}
-      animationOutTiming={300}
-      animationIn={reducedMotion ? 'fadeIn' : 'slideInUp'}
-      animationOut={reducedMotion ? 'fadeOut' : 'slideOutDown'}
-      useNativeDriver
-      useNativeDriverForBackdrop
-      hideModalContentWhileAnimating
-      backdropTransitionOutTiming={500}
-      onBackButtonPress={() => setShow(false)}
-      onBackdropPress={() => setShow(false)}
-      style={{ justifyContent: 'flex-end', margin: 0 }}>
+    <ThemedView
+      accessibilityViewIsModal
+      alignSelf='center'
+      backgroundColor={Palette.surfaceBase}
+      borderCurve='continuous'
+      borderTopLeftRadius={'large'}
+      borderTopRightRadius={'large'}
+      maxHeight={rmvs(height - insets.top - 12)}
+      maxWidth={rmhs(560)}
+      overflow='hidden'
+      width='100%'>
       <ThemedView
-        accessibilityViewIsModal
-        alignSelf='center'
-        backgroundColor={Palette.surfaceBase}
-        borderCurve='continuous'
-        borderTopLeftRadius={'large'}
-        borderTopRightRadius={'large'}
-        maxHeight={rmvs(height - insets.top - 12)}
-        maxWidth={rmhs(560)}
-        overflow='hidden'
-        width='100%'>
-        <ThemedView
-          alignItems='center'
-          borderBottomColor={Palette.borderSubtle}
-          borderBottomWidth={1}
-          flexDirection='row'
-          gap={'three'}
-          justifyContent='space-between'
-          paddingHorizontal={'five'}
-          paddingVertical={'three'}>
-          <ThemedText accessibilityRole='header' color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={18}>
-            Date range
-          </ThemedText>
-          <Pressable accessibilityLabel='Close date range' accessibilityRole='button' hitSlop={4} onPress={() => setShow(false)}>
-            {({ pressed }) => (
-              <ThemedView
-                alignItems='center'
-                backgroundColor={Palette.surfaceMuted}
-                borderRadius={'pill'}
-                justifyContent='center'
-                opacity={pressed ? 0.6 : 1}
-                square={40}>
-                <X color={Palette.textSecondary} size={20} />
-              </ThemedView>
-            )}
-          </Pressable>
-        </ThemedView>
-
-        <ScrollView bounces={false} showsVerticalScrollIndicator={false} style={{ flexShrink: 1 }}>
-          <ThemedView gap={'three'} paddingHorizontal={'five'} paddingVertical={'four'}>
-            <ThemedView flexDirection='row' flexWrap='wrap' gap={'two'}>
-              {presets.map(preset => {
-                const candidate = getPresetRange(preset.value);
-                const selected = Boolean(
-                  range.start && range.end && dayjs(range.start).isSame(candidate.start, 'day') && dayjs(range.end).isSame(candidate.end, 'day'),
-                );
-                return <RangeChoice key={preset.value} label={preset.label} onPress={() => selectPreset(preset.value)} selected={selected} />;
-              })}
-              {onClear ? (
-                <RangeChoice
-                  label='All time'
-                  onPress={() => {
-                    setRange({});
-                    setAllTime(true);
-                  }}
-                  selected={allTime}
-                />
-              ) : null}
+        alignItems='center'
+        borderBottomColor={Palette.borderSubtle}
+        borderBottomWidth={1}
+        flexDirection='row'
+        gap={'three'}
+        justifyContent='space-between'
+        paddingHorizontal={'five'}
+        paddingVertical={'three'}>
+        <ThemedText accessibilityRole='header' color={Palette.textPrimary} flex={1} fontFamily={FontFamily.semibold} fontSize={18}>
+          Date range
+        </ThemedText>
+        <Pressable accessibilityLabel='Close date range' accessibilityRole='button' hitSlop={4} onPress={onClose}>
+          {({ pressed }) => (
+            <ThemedView
+              alignItems='center'
+              backgroundColor={Palette.surfaceMuted}
+              borderRadius={'pill'}
+              justifyContent='center'
+              opacity={pressed ? 0.6 : 1}
+              square={40}>
+              <X color={Palette.textSecondary} size={20} />
             </ThemedView>
-            <RangeCalendar
-              month={month}
-              onChangeMonth={setMonth}
-              onSelectDay={date => {
-                setRange(current => selectRangeDay(current, date));
-                setAllTime(false);
-              }}
-              range={range}
-            />
-          </ThemedView>
-        </ScrollView>
-
-        <ThemedView
-          borderTopColor={Palette.borderSubtle}
-          borderTopWidth={1}
-          flexDirection='row'
-          gap={'three'}
-          paddingHorizontal={12}
-          paddingTop={'four'}
-          safePaddingBottom>
-          <RangeAction label='Reset' onPress={handleReset} />
-          <RangeAction disabled={!canApply} filled label='Apply' onPress={handleAccept} />
-        </ThemedView>
+          )}
+        </Pressable>
       </ThemedView>
-    </Modal>
+
+      <ScrollView bounces={false} showsVerticalScrollIndicator={false} style={{ flexShrink: 1 }}>
+        <ThemedView gap={'three'} paddingHorizontal={'five'} paddingVertical={'four'}>
+          <ThemedView flexDirection='row' flexWrap='wrap' gap={'two'}>
+            {presets.map(preset => {
+              const candidate = getPresetRange(preset.value);
+              const selected = Boolean(
+                range.start && range.end && dayjs(range.start).isSame(candidate.start, 'day') && dayjs(range.end).isSame(candidate.end, 'day'),
+              );
+              return <RangeChoice key={preset.value} label={preset.label} onPress={() => selectPreset(preset.value)} selected={selected} />;
+            })}
+            {onClear ? (
+              <RangeChoice
+                label='All time'
+                onPress={() => {
+                  setRange({});
+                  setAllTime(true);
+                }}
+                selected={allTime}
+              />
+            ) : null}
+          </ThemedView>
+          <RangeCalendar
+            month={month}
+            onChangeMonth={setMonth}
+            onSelectDay={date => {
+              setRange(current => selectRangeDay(current, date));
+              setAllTime(false);
+            }}
+            range={range}
+          />
+        </ThemedView>
+      </ScrollView>
+
+      <ThemedView
+        borderTopColor={Palette.borderSubtle}
+        borderTopWidth={1}
+        flexDirection='row'
+        gap={'three'}
+        paddingHorizontal={12}
+        paddingTop={'four'}
+        safePaddingBottom>
+        <RangeAction label='Reset' onPress={handleReset} />
+        <RangeAction disabled={!canApply} filled label='Apply' onPress={handleAccept} />
+      </ThemedView>
+    </ThemedView>
   );
-});
+}
 
 function RangeChoice({ label, onPress, selected }: { label: string; onPress: () => void; selected: boolean }) {
   return (

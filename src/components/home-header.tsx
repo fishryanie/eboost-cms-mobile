@@ -18,6 +18,7 @@ import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
 import { tabs } from 'components/animated-tab-bar/constants';
 import { Bell, QrCode, Search, type LucideIcon } from 'lucide-react-native';
 import { useAdminNotifications } from 'features/admin-notifications/admin-notification-service';
+import { TabIcon } from 'components/tab-icon';
 
 const colors = {
   primary: '#24294A',
@@ -114,7 +115,7 @@ export function HomeHeader() {
           items={headerSearchItems}
           onClose={() => setSearchOpen(false)}
           onSelect={item => handleSelectSearchItem(item as HeaderSearchItem)}
-          placeholder='Search menu, service, dashboard'
+          placeholder='Search tools and pages'
           title='Search CMS'
           visible={searchOpen}
         />
@@ -168,6 +169,7 @@ function getHeaderSearchItems(): HeaderSearchItem[] {
       description: page.description,
       href: tab.key === 'technical' ? (`/technical/${page.key}` as Href) : (`/${tab.key}/${page.key}` as Href),
       id: `${tab.key}-${page.key}`,
+      icon: <TabIcon color={Palette.textSecondary} name={page.icon} size={21} />,
       section: tab.label,
       title: page.title,
     })),

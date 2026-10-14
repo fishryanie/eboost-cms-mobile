@@ -1,5 +1,6 @@
-import { Battery, Cable, Clock, Copy, MapPin, User, Zap } from 'lucide-react-native';
+import { Battery, Cable, Clock, Copy, MapPin, RotateCw, User, Zap } from 'lucide-react-native';
 import type React from 'react';
+import { useState } from 'react';
 import type { GestureResponderEvent } from 'react-native';
 import { Pressable } from 'react-native';
 
@@ -53,6 +54,7 @@ function CardSurface({ children }: { children: React.ReactNode }) {
 }
 
 export function OngoingSessionCard({ item, onCopy, vehicle }: OngoingSessionCardProps) {
+  const [isFlipped, setIsFlipped] = useState(false);
   const session = item.charging_session;
   const payment = getOngoingSessionPayment(item);
   const user = session?.user;
@@ -70,7 +72,7 @@ export function OngoingSessionCard({ item, onCopy, vehicle }: OngoingSessionCard
           <ThemedView alignItems='center' flexDirection='row' gap={'one'}>
             <Cable color={meterAccent} size={16} />
             <ThemedText color={Palette.textPrimary} flexShrink={1} fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20} numberOfLines={1}>
-              {item.boxId || item.vendorId || 'Unknown box'}
+              {(vehicle === 'bike' ? item.boxId || item.vendorId : item.vendorId || item.boxId) || 'Unknown charger'}
             </ThemedText>
           </ThemedView>
           <ThemedView alignItems='center' flexDirection='row' gap={'one'} marginTop={'one'}>
@@ -262,6 +264,14 @@ export function OngoingSessionCard({ item, onCopy, vehicle }: OngoingSessionCard
           ) : null}
         </ThemedView>
       </ThemedView>
+      {vehicle !== 'bike' ? (
+        <ThemedView alignItems='center' flexDirection='row' gap={'one'} justifyContent='center'>
+          <RotateCw color={Palette.accent} size={12} />
+          <ThemedText color={Palette.accent} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
+            View charging profile
+          </ThemedText>
+        </ThemedView>
+      ) : null}
     </CardSurface>
   );
 
@@ -270,13 +280,15 @@ export function OngoingSessionCard({ item, onCopy, vehicle }: OngoingSessionCard
   }
 
   return (
-    <FlipCard borderRadius={21} containerStyle={{ width: '100%' }} height='auto' scaleOnPress width='100%'>
+    <FlipCard borderRadius={21} containerStyle={{ width: '100%' }} height='auto' onFlip={setIsFlipped} scaleOnPress width='100%'>
       <FlipCard.Front>
-        <FlipCard.Trigger>{frontCard}</FlipCard.Trigger>
+        <FlipCard.Trigger accessibilityLabel='View charging profile' accessibilityRole='button'>
+          {frontCard}
+        </FlipCard.Trigger>
       </FlipCard.Front>
 
       <FlipCard.Back>
-        <FlipCard.Trigger>
+        <FlipCard.Trigger accessibilityLabel='Back to session' accessibilityRole='button' style={{ flex: 1 }}>
           <ThemedView
             backgroundColor={Palette.surfaceBase}
             borderColor={Palette.borderSubtle}
@@ -286,7 +298,7 @@ export function OngoingSessionCard({ item, onCopy, vehicle }: OngoingSessionCard
             height='100%'
             overflow='hidden'
             width='100%'>
-            <ChargingProfileChart compact fallbackEnergyKwh={session?.wattage_consumed} mobileCard transactionId={transactionId} />
+            <ChargingProfileChart compact enabled={isFlipped} fallbackEnergyKwh={session?.wattage_consumed} live mobileCard transactionId={transactionId} />
           </ThemedView>
         </FlipCard.Trigger>
       </FlipCard.Back>

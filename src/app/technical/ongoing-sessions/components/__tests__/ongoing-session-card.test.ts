@@ -103,4 +103,57 @@ describe('ongoing session presentation helpers', () => {
     assert.deepEqual(getMobileChartAxisTicks(domains.soc), [100, 80, 60, 40, 20, 0]);
     assert.deepEqual(getMobileChartAxisTicks([0, 160], 8), [160, 140, 120, 100, 80, 60, 40, 20, 0]);
   });
+
+  it('shows valid zero readings when a charging session has just started', () => {
+    const data = buildChargingProfileChartData({
+      meterValues: [
+        {
+          sampledValues: [
+            { measurand: 'Power.Active.Import', value: '0' },
+            { measurand: 'Current.Import', phase: 'L1', value: '0.0' },
+            { measurand: 'SoC', value: '0' },
+          ],
+          timestamp: '2026-10-14T08:00:00.000Z',
+        },
+      ],
+    });
+
+    assert.deepEqual(
+      data?.mobileSeries.map(series => series.label),
+      ['Power', 'L1', 'SoC'],
+    );
+    assert.ok(data?.mobileSeries.every(series => series.data.every(point => point.value === 0)));
+    assert.equal(data?.hasVoltage, false);
+    assert.ok(data?.dataSet1?.length);
+  });
+
+  it('keeps SoC-only profiles available without inventing missing electrical readings', () => {
+    const data = buildChargingProfileChartData({
+      meterValues: [{ sampledValues: [{ measurand: 'SoC', value: '55' }] }],
+    });
+
+    assert.deepEqual(
+      data?.mobileSeries.map(series => series.label),
+      ['SoC'],
+    );
+    assert.equal(data?.hasCurrent, false);
+    assert.equal(data?.hasPower, false);
+    assert.equal(data?.hasVoltage, false);
+  });
+
+  it('does not plot absent or invalid readings as real zero data', () => {
+    assert.equal(buildChargingProfileChartData({ meterValues: [] }), null);
+    const data = buildChargingProfileChartData({
+      meterValues: [
+        {
+          sampledValues: [
+            { measurand: 'Current.Import', value: 'invalid' },
+            { measurand: 'Voltage', value: ' ' },
+          ],
+        },
+      ],
+    });
+
+    assert.deepEqual(data?.mobileSeries, []);
+  });
 });

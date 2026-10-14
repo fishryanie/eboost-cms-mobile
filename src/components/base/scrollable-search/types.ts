@@ -6,6 +6,7 @@ interface IScrollableSearchItem {
   readonly accentColor?: string;
   readonly description: string;
   readonly id: string;
+  readonly icon?: React.ReactNode;
   readonly section?: string;
   readonly title: string;
 }

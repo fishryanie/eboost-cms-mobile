@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { LineChart, type CartesianChartTheme, type LineChartSeries } from 'react-native-chart-kit/v2';
 import { Palette, FontFamily } from 'themes';
 import { ThemedText, ThemedView } from 'components/base';
-import { apiRequest } from 'utils/api/client';
+import { fetchChargingProfile, getChargingProfileQueryKey, hasChargingProfileSource, type ChargingProfileSource } from './charging-profile-data';
 import {
   buildChargingProfileChartData,
   buildMobileChartAxisDomains,
@@ -18,15 +18,15 @@ import {
   type ChartAxisDomains,
   type ChartSeries,
   type MobileChartPreset,
-  type TransactionDetail,
 } from './charging-profile-chart.helpers';
 
-interface ChargingProfileChartProps {
+interface ChargingProfileChartProps extends ChargingProfileSource {
   compact?: boolean;
+  enabled?: boolean;
   fallbackEnergyKwh?: number;
+  live?: boolean;
   mobileCard?: boolean;
   showSummary?: boolean;
-  transactionId?: string | null;
 }
 
 const formatNumber = (value?: number, digits = 2) => {
@@ -126,27 +126,36 @@ const formatChartTime = (value: Date | number | string) => {
 };
 
 export const ChargingProfileChart: React.FC<ChargingProfileChartProps> = ({
+  carHistoryId,
+  chargerId,
   compact = false,
+  enabled = true,
   fallbackEnergyKwh,
+  live = false,
+  invoiceId,
   mobileCard = false,
   showSummary = false,
   transactionId,
 }) => {
   const { width: windowWidth } = useWindowDimensions();
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['transaction-detail', transactionId],
-    queryFn: () => apiRequest<TransactionDetail>(`api/transactions/${transactionId}`, { service: 'hub' }),
-    enabled: !!transactionId,
+  const source = { carHistoryId, chargerId, invoiceId, transactionId };
+  const hasSource = hasChargingProfileSource(source);
+  const { data, isLoading, isFetching, fetchStatus, error, refetch } = useQuery({
+    queryKey: getChargingProfileQueryKey(source),
+    queryFn: () => fetchChargingProfile(source),
+    enabled: enabled && hasSource,
+    refetchInterval: enabled && live ? 15_000 : false,
+    staleTime: 0,
   });
 
-  const chartData = buildChargingProfileChartData(data);
+  const chartData = buildChargingProfileChartData(data ?? undefined);
 
-  if (!transactionId) {
-    if (mobileCard) return <MobileChartState text='No transaction data' />;
+  if (!hasSource) {
+    if (mobileCard) return <MobileChartState text='No charging profile available yet' />;
 
     return (
       <ThemedView alignItems='center' flex={1} justifyContent='center' padding={'four'}>
-        <ThemedText color={Palette.textSecondary}>No transaction ID available</ThemedText>
+        <ThemedText color={Palette.textSecondary}>No charging profile available yet</ThemedText>
       </ThemedView>
     );
   }
@@ -168,14 +177,17 @@ export const ChargingProfileChart: React.FC<ChargingProfileChartProps> = ({
     );
   }
 
-  if (error || !chartData || (!chartData.dataSet1 && !chartData.dataSet2)) {
-    if (mobileCard) return <MobileChartState text='No current data yet' />;
+  const retry = () => void refetch();
 
-    return (
-      <ThemedView alignItems='center' flex={1} justifyContent='center' padding={'four'}>
-        <ThemedText color={Palette.textSecondary}>No profile data available</ThemedText>
-      </ThemedView>
-    );
+  if (!data && (error || fetchStatus === 'paused')) {
+    const message = fetchStatus === 'paused' ? 'Connection unavailable. Try again when online.' : 'Unable to load charging profile. Please try again.';
+    return <MobileChartState isFetching={isFetching} onRetry={retry} text={message} />;
+  }
+
+  if (!chartData || (mobileCard ? !chartData.mobileSeries.length : !chartData.dataSet1 && !chartData.dataSet2)) {
+    if (mobileCard) return <MobileChartState isFetching={isFetching} onRetry={retry} text='No meter data available yet' />;
+
+    return <MobileChartState isFetching={isFetching} onRetry={retry} text='No profile data available yet' />;
   }
 
   const { dataSet1, dataSet2, hasPower, hasCurrent, hasVoltage } = chartData;
@@ -624,12 +636,34 @@ function MobileChartSkeleton() {
   );
 }
 
-function MobileChartState({ text }: { text: string }) {
+function MobileChartState({ isFetching = false, onRetry, text }: { isFetching?: boolean; onRetry?: () => void; text: string }) {
   return (
-    <ThemedView alignItems='center' flex={1} justifyContent='center' padding={'three'}>
+    <ThemedView alignItems='center' flex={1} gap={'two'} justifyContent='center' padding={'three'}>
       <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={12} lineHeight={16} textAlign='center'>
         {text}
       </ThemedText>
+      {onRetry ? (
+        <Pressable
+          accessibilityLabel='Retry loading charging profile'
+          accessibilityRole='button'
+          accessibilityState={{ disabled: isFetching }}
+          disabled={isFetching}
+          onPress={event => {
+            event.stopPropagation();
+            onRetry();
+          }}>
+          <ThemedView
+            backgroundColor={Palette.surfaceMuted}
+            borderRadius={'pill'}
+            opacity={isFetching ? 0.5 : 1}
+            paddingHorizontal={'three'}
+            paddingVertical={'two'}>
+            <ThemedText color={Palette.accent} fontFamily={FontFamily.semibold} fontSize={12} lineHeight={16}>
+              {isFetching ? 'Loading…' : 'Try again'}
+            </ThemedText>
+          </ThemedView>
+        </Pressable>
+      ) : null}
     </ThemedView>
   );
 }

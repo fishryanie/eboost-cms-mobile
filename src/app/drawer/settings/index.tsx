@@ -1,6 +1,5 @@
 import { mhs } from 'themes/scaling';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import * as LocalAuthentication from 'expo-local-authentication';
 import { ShieldCheck, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
@@ -9,7 +8,7 @@ import { Switch, ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
 import { loginAdmin } from 'utils/auth/auth-service';
 import { biometricCredentialStore } from 'utils/auth/biometric-credentials';
-import { getBiometricButtonLabel, getBiometricSymbolName } from 'utils/auth/biometric-auth';
+import { getBiometricAvailability, getBiometricButtonLabel, getBiometricSymbolName } from 'utils/auth/biometric-auth';
 import { sessionStore } from 'utils/session/session-store';
 import { sessionKeys } from 'utils/session/use-session-token';
 
@@ -29,11 +28,8 @@ export default function DrawerSettingsScreen() {
     let isMounted = true;
 
     async function loadBiometricSettings() {
-      const [hasHardware, isEnrolled, authenticationTypes, canSaveProtectedCredentials, hasSavedCredentials, savedUsername] = await Promise.all([
-        LocalAuthentication.hasHardwareAsync(),
-        LocalAuthentication.isEnrolledAsync(),
-        LocalAuthentication.supportedAuthenticationTypesAsync(),
-        biometricCredentialStore.canUseBiometricAuthentication(),
+      const [availability, hasSavedCredentials, savedUsername] = await Promise.all([
+        getBiometricAvailability(),
         biometricCredentialStore.hasCredentials(),
         biometricCredentialStore.getLastUsername(),
       ]);
@@ -42,10 +38,10 @@ export default function DrawerSettingsScreen() {
         return;
       }
 
-      setBiometricIcon(getBiometricSymbolName(authenticationTypes));
-      setBiometricLabel(getBiometricButtonLabel(authenticationTypes, Platform.OS));
+      setBiometricIcon(() => getBiometricSymbolName(availability.authenticationTypes, Platform.OS));
+      setBiometricLabel(getBiometricButtonLabel(availability.authenticationTypes, Platform.OS));
       setBiometricEnabled(hasSavedCredentials);
-      setCanUseBiometric(hasHardware && isEnrolled && canSaveProtectedCredentials);
+      setCanUseBiometric(availability.canUseBiometric);
       setLastUsername(savedUsername ?? '');
       setUsernameInput(savedUsername ?? '');
     }
@@ -67,6 +63,15 @@ export default function DrawerSettingsScreen() {
 
       if (!username || !password) {
         throw new Error('Enter your CMS email and password to enable biometric sign in.');
+      }
+
+      const availability = await getBiometricAvailability();
+
+      if (!availability.canUseBiometric) {
+        setCanUseBiometric(false);
+        setShowPasswordForm(false);
+        setPassword('');
+        throw new Error('Biometric sign in is unavailable. Check your device security settings.');
       }
 
       const response = await loginAdmin({ password, username });
@@ -118,6 +123,9 @@ export default function DrawerSettingsScreen() {
 
   const isSaving = enableBiometricMutation.isPending;
   const displayUsername = lastUsername || usernameInput;
+  const biometricDescription = canUseBiometric
+    ? 'Unlock your saved CMS account for faster sign in.'
+    : 'Biometric sign in is unavailable. Check your device security settings.';
 
   return (
     <ThemedView safePaddingTop safePaddingBottom flex={1} backgroundColor={Palette.surfaceBase}>
@@ -148,15 +156,17 @@ export default function DrawerSettingsScreen() {
                 {biometricLabel} sign in
               </ThemedText>
               <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={18}>
-                {biometricEnabled ? `Enabled for ${displayUsername}.` : 'Unlock your saved CMS account for faster sign in.'}
+                {biometricEnabled ? `Enabled for ${displayUsername}.` : biometricDescription}
               </ThemedText>
             </ThemedView>
-            <Switch
-              accessibilityLabel={`${biometricLabel} sign in`}
-              disabled={isSaving}
-              onValueChange={handleSwitchChange}
-              value={biometricEnabled || showPasswordForm}
-            />
+            {canUseBiometric || biometricEnabled ? (
+              <Switch
+                accessibilityLabel={`${biometricLabel} sign in`}
+                disabled={isSaving}
+                onValueChange={handleSwitchChange}
+                value={biometricEnabled || showPasswordForm}
+              />
+            ) : null}
           </ThemedView>
 
           {showPasswordForm ? (

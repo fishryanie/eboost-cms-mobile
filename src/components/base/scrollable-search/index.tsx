@@ -1,8 +1,8 @@
 // @ts-check
-import React, { createContext, useContext, useRef, useState, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useRef, useState, useMemo, useEffect, useEffectEvent } from 'react';
 import { BlurView } from 'expo-blur';
-import { Keyboard, Platform, Pressable, StyleSheet, TextInput, TouchableOpacity, type ViewStyle } from 'react-native';
-import { Search, X } from 'lucide-react-native';
+import { BackHandler, Keyboard, Platform, Pressable, ScrollView, SectionList, StyleSheet, TextInput, TouchableOpacity, type ViewStyle } from 'react-native';
+import { ChevronRight, Search, SearchX, XCircle } from 'lucide-react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -15,13 +15,21 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
-import { FontFamily, Palette } from 'themes';
+import { FontFamily, Palette, Spacing } from 'themes';
 import { ThemedText } from '../ThemedText';
 import { ThemedView } from '../ThemedView';
-import type { IAnimatedComponent, IFocusedScreen, IOverlay, ISearchPanel, IScrollableSearch, IScrollableSearchContext, IScrollContent } from './types';
+import type {
+  IAnimatedComponent,
+  IFocusedScreen,
+  IOverlay,
+  ISearchPanel,
+  IScrollableSearch,
+  IScrollableSearchContext,
+  IScrollableSearchItem,
+  IScrollContent,
+} from './types';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView as React.ComponentType<any>);
-const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
 const SearchInput = TextInput;
 
 const ScrollableSearchContext = createContext<IScrollableSearchContext | null>(null);
@@ -287,7 +295,13 @@ function FocusedScreen({ children }: IFocusedScreen): React.ReactNode & React.JS
 
 function SearchPanel({ items, onClose, onSelect, placeholder = 'Search CMS', title = 'Search', visible }: ISearchPanel): React.ReactNode {
   const [query, setQuery] = useState('');
+  const [activeSection, setActiveSection] = useState('');
   const inputRef = useRef<TextInput>(null);
+  const listRef = useRef<SectionList<IScrollableSearchItem>>(null);
+
+  useEffect(() => {
+    listRef.current?.getScrollResponder()?.scrollTo({ animated: false, y: 0 });
+  }, [activeSection, query]);
 
   useEffect(() => {
     if (!visible) return;
@@ -295,141 +309,260 @@ function SearchPanel({ items, onClose, onSelect, placeholder = 'Search CMS', tit
     return () => clearTimeout(focusTimeout);
   }, [visible]);
 
+  const closeOnBack = useEffectEvent(() => {
+    Keyboard.dismiss();
+    onClose();
+  });
+
+  useEffect(() => {
+    if (!visible) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      closeOnBack();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [visible]);
+
+  const sectionNames = useMemo(() => [...new Set(items.map(item => item.section).filter((section): section is string => Boolean(section)))], [items]);
+
   const filteredItems = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return items;
+    return items.filter(item => {
+      if (activeSection && item.section !== activeSection) return false;
+      return !normalizedQuery || [item.title, item.description, item.section].filter(Boolean).join(' ').toLowerCase().includes(normalizedQuery);
+    });
+  }, [activeSection, items, query]);
 
-    return items.filter(item => [item.title, item.description, item.section].filter(Boolean).join(' ').toLowerCase().includes(normalizedQuery));
-  }, [items, query]);
-
-  const panelStyle = useAnimatedStyle(
-    () => ({
-      opacity: withTiming(visible ? 1 : 0, { duration: visible ? 160 : 120 }),
-      transform: [{ translateY: withTiming(visible ? 0 : 14, { duration: 180 }) }],
-    }),
-    [visible],
-  );
+  const sections = useMemo(() => {
+    const grouped = new Map<string, IScrollableSearchItem[]>();
+    for (const item of filteredItems) {
+      const section = item.section || 'Tools';
+      const group = grouped.get(section) || [];
+      group.push(item);
+      grouped.set(section, group);
+    }
+    return [...grouped].map(([sectionTitle, data]) => ({ title: sectionTitle, data }));
+  }, [filteredItems]);
 
   if (!visible) return null;
 
   return (
-    <AnimatedThemedView
+    <ThemedView
+      accessibilityViewIsModal
       safePaddingTop
       safePaddingBottom
-      backgroundColor='rgba(255,255,255,0.97)'
+      backgroundColor={Palette.surfaceBase}
       bottom={0}
       left={0}
       position='absolute'
       right={0}
       top={0}
-      zIndex={200}
-      style={panelStyle}>
-      <ThemedView flex={1} paddingHorizontal={16} paddingTop={10}>
-        <ThemedView alignItems='center' flexDirection='row' gap={10}>
-          <ThemedView
-            alignItems='center'
-            backgroundColor={Palette.surfaceMuted}
-            borderColor={Palette.borderSubtle}
-            borderRadius={14}
-            borderWidth={1}
-            flex={1}
-            flexDirection='row'
-            gap={8}
-            height={44}
-            paddingHorizontal={12}>
-            <Search color={Palette.textTertiary} size={18} />
-            <SearchInput
-              ref={inputRef}
-              accessibilityLabel={title}
-              autoCapitalize='none'
-              autoCorrect={false}
-              cursorColor={Palette.accent}
-              onChangeText={setQuery}
-              placeholder={placeholder}
-              placeholderTextColor={Palette.textTertiary}
-              returnKeyType='search'
-              selectionColor={Palette.accent}
-              style={styles.searchInput}
-              value={query}
-            />
-            {query ? (
-              <Pressable accessibilityLabel='Clear search' accessibilityRole='button' hitSlop={8} onPress={() => setQuery('')}>
-                <X color={Palette.textTertiary} size={18} />
-              </Pressable>
-            ) : null}
-          </ThemedView>
-          <Pressable accessibilityLabel='Close search' accessibilityRole='button' hitSlop={8} onPress={onClose}>
-            <ThemedText color={Palette.accent} fontFamily={FontFamily.semibold} fontSize={15} lineHeight={20}>
-              Cancel
-            </ThemedText>
+      zIndex={200}>
+      <ThemedView gap={'four'} paddingHorizontal={'five'} paddingTop={'three'}>
+        <ThemedView alignItems='center' flexDirection='row' gap={'four'} justifyContent='space-between'>
+          <ThemedText color={Palette.textPrimary} flex={1} fontFamily={FontFamily.bold} fontSize={30} lineHeight={38}>
+            {title}
+          </ThemedText>
+          <Pressable
+            accessibilityLabel='Close search'
+            accessibilityRole='button'
+            hitSlop={8}
+            onPress={() => {
+              Keyboard.dismiss();
+              onClose();
+            }}>
+            {({ pressed }) => (
+              <ThemedView justifyContent='center' minHeight={44} opacity={pressed ? 0.55 : 1}>
+                <ThemedText color={Palette.accentPressed} fontFamily={FontFamily.medium} fontSize={15} lineHeight={22}>
+                  Cancel
+                </ThemedText>
+              </ThemedView>
+            )}
           </Pressable>
         </ThemedView>
 
-        <Animated.ScrollView contentContainerStyle={styles.resultContent} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
-          <ThemedView gap={6} paddingTop={18}>
-            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={24} lineHeight={30}>
-              {title}
+        <ThemedView
+          alignItems='center'
+          backgroundColor={Palette.surfaceMuted}
+          borderCurve='continuous'
+          borderRadius={'medium'}
+          flexDirection='row'
+          gap={'three'}
+          minHeight={50}
+          paddingHorizontal={'four'}
+          paddingVertical={'three'}>
+          <Search color={Palette.textSecondary} size={20} strokeWidth={1.8} />
+          <SearchInput
+            ref={inputRef}
+            accessibilityLabel={title}
+            autoCapitalize='none'
+            autoCorrect={false}
+            cursorColor={Palette.accent}
+            onChangeText={setQuery}
+            placeholder={placeholder}
+            onSubmitEditing={() => Keyboard.dismiss()}
+            placeholderTextColor={Palette.textSecondary}
+            returnKeyType='search'
+            selectionColor={Palette.accent}
+            style={{ color: Palette.textPrimary, flex: 1, fontFamily: FontFamily.regular, fontSize: 16, minWidth: 0, padding: 0 }}
+            value={query}
+          />
+          {query ? (
+            <Pressable
+              accessibilityLabel='Clear search'
+              accessibilityRole='button'
+              hitSlop={14}
+              onPress={() => {
+                setQuery('');
+                inputRef.current?.focus();
+              }}>
+              <XCircle color={Palette.textSecondary} size={20} strokeWidth={1.8} />
+            </Pressable>
+          ) : null}
+        </ThemedView>
+      </ThemedView>
+
+      <ThemedView borderBottomColor={Palette.borderSubtle} borderBottomWidth={StyleSheet.hairlineWidth} marginTop={'three'}>
+        <ScrollView
+          horizontal
+          contentContainerStyle={{ gap: Spacing.five, paddingHorizontal: Spacing.five }}
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps='handled'>
+          {['', ...sectionNames].map(section => {
+            const selected = activeSection === section;
+            return (
+              <Pressable
+                accessibilityLabel={section || 'All tools'}
+                accessibilityRole='tab'
+                accessibilityState={{ selected }}
+                key={section || 'all'}
+                onPress={() => setActiveSection(section)}>
+                {({ pressed }) => (
+                  <ThemedView justifyContent='center' minHeight={44} opacity={pressed ? 0.55 : 1} paddingVertical={'three'}>
+                    <ThemedText
+                      color={selected ? Palette.accentPressed : Palette.textSecondary}
+                      fontFamily={selected ? FontFamily.semibold : FontFamily.medium}
+                      fontSize={13}
+                      lineHeight={20}>
+                      {section || 'All'}
+                    </ThemedText>
+                    {selected ? (
+                      <ThemedView backgroundColor={Palette.accent} borderRadius={'pill'} bottom={0} height={2} left={0} position='absolute' right={0} />
+                    ) : null}
+                  </ThemedView>
+                )}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </ThemedView>
+
+      <SectionList
+        ref={listRef}
+        automaticallyAdjustKeyboardInsets
+        contentContainerStyle={{ paddingBottom: Spacing.five, paddingHorizontal: Spacing.five }}
+        contentInsetAdjustmentBehavior='never'
+        ItemSeparatorComponent={() => <ThemedView backgroundColor={Palette.borderSubtle} height={StyleSheet.hairlineWidth} marginLeft={56} />}
+        keyboardDismissMode='on-drag'
+        keyboardShouldPersistTaps='handled'
+        keyExtractor={item => item.id}
+        ListEmptyComponent={
+          <ThemedView alignItems='center' gap={'three'} paddingHorizontal={'five'} paddingTop={'seven'}>
+            <SearchX color={Palette.textTertiary} size={32} strokeWidth={1.5} />
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={18} lineHeight={26} textAlign='center'>
+              No results found
             </ThemedText>
-            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} lineHeight={20}>
-              {filteredItems.length} result{filteredItems.length === 1 ? '' : 's'}
+            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} lineHeight={21} textAlign='center'>
+              Try a different keyword or search all tools.
+            </ThemedText>
+            <Pressable
+              accessibilityLabel='Reset search'
+              accessibilityRole='button'
+              onPress={() => {
+                setQuery('');
+                setActiveSection('');
+                inputRef.current?.focus();
+              }}>
+              {({ pressed }) => (
+                <ThemedView justifyContent='center' minHeight={44} opacity={pressed ? 0.55 : 1}>
+                  <ThemedText color={Palette.accentPressed} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={21}>
+                    Reset search
+                  </ThemedText>
+                </ThemedView>
+              )}
+            </Pressable>
+          </ThemedView>
+        }
+        ListHeaderComponent={
+          query.trim() ? (
+            <ThemedView paddingTop={'five'}>
+              <ThemedText accessibilityLiveRegion='polite' color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={18}>
+                {filteredItems.length} result{filteredItems.length === 1 ? '' : 's'}
+              </ThemedText>
+            </ThemedView>
+          ) : null
+        }
+        renderItem={({ item }) => <SearchResultRow item={item} onSelect={onSelect} />}
+        renderSectionHeader={({ section }) => (
+          <ThemedView alignItems='center' flexDirection='row' gap={'two'} paddingBottom={'one'} paddingTop={'five'}>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={14} lineHeight={21}>
+              {section.title}
+            </ThemedText>
+            <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.regular} fontSize={12} lineHeight={18}>
+              {section.data.length}
             </ThemedText>
           </ThemedView>
+        )}
+        sections={sections}
+        showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
+        style={{ flex: 1 }}
+      />
+    </ThemedView>
+  );
+}
 
-          {filteredItems.length ? (
-            <ThemedView gap={10} paddingTop={16}>
-              {filteredItems.map(item => (
-                <Pressable
-                  accessibilityLabel={`Open ${item.title}`}
-                  accessibilityRole='button'
-                  key={item.id}
-                  onPress={() => onSelect(item)}
-                  style={({ pressed }) => [styles.resultButton, pressed && styles.resultButtonPressed]}>
-                  <ThemedView
-                    backgroundColor={Palette.surfaceRaised}
-                    borderColor={Palette.borderSubtle}
-                    borderRadius={12}
-                    borderWidth={1}
-                    flexDirection='row'
-                    gap={12}
-                    padding={14}>
-                    <ThemedView backgroundColor={item.accentColor || Palette.accent} borderRadius={10} height={42} opacity={0.14} width={42} />
-                    <ThemedView flex={1} gap={4} minWidth={0}>
-                      <ThemedView alignItems='center' flexDirection='row' gap={8}>
-                        {item.section ? (
-                          <ThemedText
-                            color={item.accentColor || Palette.accent}
-                            fontFamily={FontFamily.bold}
-                            fontSize={11}
-                            lineHeight={14}
-                            textTransform='uppercase'>
-                            {item.section}
-                          </ThemedText>
-                        ) : null}
-                      </ThemedView>
-                      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={22} numberOfLines={1}>
-                        {item.title}
-                      </ThemedText>
-                      <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={18} numberOfLines={2}>
-                        {item.description}
-                      </ThemedText>
-                    </ThemedView>
-                  </ThemedView>
-                </Pressable>
-              ))}
-            </ThemedView>
-          ) : (
-            <ThemedView alignItems='center' gap={8} paddingHorizontal={24} paddingTop={82}>
-              <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={17} lineHeight={24}>
-                No results found
-              </ThemedText>
-              <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={14} lineHeight={20} textAlign='center'>
-                Try another menu, service, or dashboard keyword.
-              </ThemedText>
-            </ThemedView>
-          )}
-        </Animated.ScrollView>
-      </ThemedView>
-    </AnimatedThemedView>
+function SearchResultRow({ item, onSelect }: { item: IScrollableSearchItem; onSelect: ISearchPanel['onSelect'] }) {
+  return (
+    <Pressable
+      accessibilityHint={item.description}
+      accessibilityLabel={`Open ${item.title}`}
+      accessibilityRole='button'
+      onPress={() => {
+        Keyboard.dismiss();
+        onSelect(item);
+      }}>
+      {({ pressed }) => (
+        <ThemedView
+          alignItems='center'
+          backgroundColor={pressed ? Palette.surfaceMuted : 'transparent'}
+          borderCurve='continuous'
+          borderRadius={'small'}
+          flexDirection='row'
+          gap={'four'}
+          minHeight={80}
+          paddingVertical={'four'}>
+          <ThemedView
+            alignItems='center'
+            backgroundColor={Palette.surfaceMuted}
+            borderCurve='continuous'
+            borderRadius={'small'}
+            justifyContent='center'
+            square={40}>
+            {item.icon || <Search color={Palette.textSecondary} size={20} strokeWidth={1.8} />}
+          </ThemedView>
+          <ThemedView flex={1} gap={'one'} minWidth={0}>
+            <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={16} lineHeight={23} numberOfLines={2}>
+              {item.title}
+            </ThemedText>
+            <ThemedText color={Palette.textSecondary} fontFamily={FontFamily.regular} fontSize={13} lineHeight={19} numberOfLines={2}>
+              {item.description}
+            </ThemedText>
+          </ThemedView>
+          <ChevronRight color={Palette.textTertiary} size={16} strokeWidth={1.6} />
+        </ThemedView>
+      )}
+    </Pressable>
   );
 }
 
@@ -467,23 +600,5 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 50,
-  },
-  resultButton: {
-    borderRadius: 12,
-  },
-  resultButtonPressed: {
-    opacity: 0.72,
-  },
-  resultContent: {
-    paddingBottom: 28,
-  },
-  searchInput: {
-    color: Palette.textPrimary,
-    flex: 1,
-    fontFamily: FontFamily.medium,
-    fontSize: 15,
-    lineHeight: 20,
-    minHeight: 24,
-    padding: 0,
   },
 });

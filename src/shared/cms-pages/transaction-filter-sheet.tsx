@@ -1,10 +1,10 @@
 import dayjs from 'dayjs';
 import { CalendarDays, Check } from 'lucide-react-native';
-import { useRef } from 'react';
-import { KeyboardAvoidingView, Pressable, ScrollView, TextInput, useWindowDimensions } from 'react-native';
+import { useState } from 'react';
+import { Keyboard, KeyboardAvoidingView, Pressable, ScrollView, TextInput, useWindowDimensions } from 'react-native';
 import Modal from 'react-native-modal';
 
-import { RangePicker, type RangePickerMethods } from 'components/base/RangePicker';
+import { RangePickerContent } from 'components/base/RangePicker';
 import { ThemedText, ThemedView } from 'components/base';
 import { FontFamily, Palette } from 'themes';
 
@@ -131,11 +131,19 @@ type TransactionFilterSheetProps = {
 };
 
 export function TransactionFilterSheet({ fixedUserId, onApply, onChange, onClose, values, vehicle, visible }: TransactionFilterSheetProps) {
-  const rangePickerRef = useRef<RangePickerMethods>(null);
+  const [pickingDateRange, setPickingDateRange] = useState(false);
   const { height } = useWindowDimensions();
 
   function updateValue<Key extends keyof TransactionFilterValues>(key: Key, value: TransactionFilterValues[Key]) {
     onChange({ ...values, [key]: value });
+  }
+
+  function handleDismissRequest() {
+    if (pickingDateRange) {
+      setPickingDateRange(false);
+    } else {
+      onClose();
+    }
   }
 
   function handleApply() {
@@ -151,8 +159,20 @@ export function TransactionFilterSheet({ fixedUserId, onApply, onChange, onClose
   const dateLabel = `${dayjs.unix(values.startDate).format('YYYY-MM-DD')}  →  ${dayjs.unix(values.endDate).format('YYYY-MM-DD')}`;
 
   return (
-    <>
-      <Modal avoidKeyboard isVisible={visible} onBackButtonPress={onClose} onBackdropPress={onClose} style={{ justifyContent: 'flex-end', margin: 0 }}>
+    <Modal
+      avoidKeyboard
+      isVisible={visible}
+      onBackButtonPress={handleDismissRequest}
+      onBackdropPress={handleDismissRequest}
+      onModalHide={() => setPickingDateRange(false)}
+      style={{ justifyContent: 'flex-end', margin: 0 }}>
+      {pickingDateRange ? (
+        <RangePickerContent
+          onChange={range => onChange({ ...values, endDate: range[1], startDate: range[0] })}
+          onClose={handleDismissRequest}
+          value={[values.startDate, values.endDate]}
+        />
+      ) : (
         <KeyboardAvoidingView behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined} style={{ justifyContent: 'flex-end' }}>
           <ThemedView
             backgroundColor={Palette.surfaceBase}
@@ -191,7 +211,13 @@ export function TransactionFilterSheet({ fixedUserId, onApply, onChange, onClose
               <FilterSection description='Choose the period and charging result.' label='Overview'>
                 <ThemedView backgroundColor='transparent' gap={'two'}>
                   <FieldLabel label='Date range' />
-                  <Pressable accessibilityLabel={`Date range ${dateLabel}`} accessibilityRole='button' onPress={() => rangePickerRef.current?.open()}>
+                  <Pressable
+                    accessibilityLabel={`Date range ${dateLabel}`}
+                    accessibilityRole='button'
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setPickingDateRange(true);
+                    }}>
                     <ThemedView
                       alignItems='center'
                       backgroundColor={Palette.surfaceMuted}
@@ -298,14 +324,8 @@ export function TransactionFilterSheet({ fixedUserId, onApply, onChange, onClose
             </ThemedView>
           </ThemedView>
         </KeyboardAvoidingView>
-      </Modal>
-
-      <RangePicker
-        onChange={range => onChange({ ...values, endDate: range[1], startDate: range[0] })}
-        ref={rangePickerRef}
-        value={[values.startDate, values.endDate]}
-      />
-    </>
+      )}
+    </Modal>
   );
 }
 

@@ -1,12 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
-import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { ShieldCheck, type LucideIcon } from 'lucide-react-native';
 
 import { loginAdmin } from 'utils/auth/auth-service';
-import { getBiometricButtonLabel, getBiometricSymbolName } from 'utils/auth/biometric-auth';
+import { getBiometricAvailability, getBiometricButtonLabel, getBiometricSymbolName } from 'utils/auth/biometric-auth';
 import { biometricCredentialStore, type BiometricCredentials } from 'utils/auth/biometric-credentials';
 import { setPendingBiometricCredentials } from 'utils/auth/biometric-prompt';
 import { sessionStore } from 'utils/session/session-store';
@@ -19,7 +18,7 @@ type UseBiometricLoginOptions = {
 export function useBiometricLogin({ setErrorMessage }: UseBiometricLoginOptions) {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const [biometricIcon, setBiometricIcon] = useState<LucideIcon>(ShieldCheck);
+  const [biometricIcon, setBiometricIcon] = useState<LucideIcon>(() => ShieldCheck);
   const [biometricLabel, setBiometricLabel] = useState('Biometric');
   const [canUseBiometric, setCanUseBiometric] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
@@ -35,13 +34,14 @@ export function useBiometricLogin({ setErrorMessage }: UseBiometricLoginOptions)
   );
 
   const queueBiometricOptIn = useCallback(async (credentials: BiometricCredentials) => {
-    const [canSaveProtectedCredentials, hasSavedBiometricCredentials] = await Promise.all([
-      biometricCredentialStore.canUseBiometricAuthentication(),
-      biometricCredentialStore.hasCredentials(),
-    ]);
+    try {
+      const [availability, hasSavedBiometricCredentials] = await Promise.all([getBiometricAvailability(), biometricCredentialStore.hasCredentials()]);
 
-    if (canSaveProtectedCredentials && !hasSavedBiometricCredentials) {
-      setPendingBiometricCredentials(credentials);
+      if (availability.canUseBiometric && !hasSavedBiometricCredentials) {
+        setPendingBiometricCredentials(credentials);
+      }
+    } catch {
+      // Optional biometric setup must not prevent a successful password sign in.
     }
   }, []);
 
@@ -49,21 +49,15 @@ export function useBiometricLogin({ setErrorMessage }: UseBiometricLoginOptions)
     let isMounted = true;
 
     async function loadBiometricState() {
-      const [hasHardware, isEnrolled, authenticationTypes, canSaveProtectedCredentials, hasSavedBiometricCredentials] = await Promise.all([
-        LocalAuthentication.hasHardwareAsync(),
-        LocalAuthentication.isEnrolledAsync(),
-        LocalAuthentication.supportedAuthenticationTypesAsync(),
-        biometricCredentialStore.canUseBiometricAuthentication(),
-        biometricCredentialStore.hasCredentials(),
-      ]);
+      const [availability, hasSavedBiometricCredentials] = await Promise.all([getBiometricAvailability(), biometricCredentialStore.hasCredentials()]);
 
       if (!isMounted) {
         return;
       }
 
-      setBiometricLabel(getBiometricButtonLabel(authenticationTypes, Platform.OS));
-      setBiometricIcon(getBiometricSymbolName(authenticationTypes));
-      setCanUseBiometric(hasHardware && isEnrolled && canSaveProtectedCredentials && hasSavedBiometricCredentials);
+      setBiometricLabel(getBiometricButtonLabel(availability.authenticationTypes, Platform.OS));
+      setBiometricIcon(() => getBiometricSymbolName(availability.authenticationTypes, Platform.OS));
+      setCanUseBiometric(availability.canUseBiometric && hasSavedBiometricCredentials);
     }
 
     loadBiometricState().catch(() => {
@@ -82,6 +76,14 @@ export function useBiometricLogin({ setErrorMessage }: UseBiometricLoginOptions)
     setIsBiometricLoading(true);
 
     try {
+      const availability = await getBiometricAvailability();
+
+      if (!availability.canUseBiometric) {
+        setCanUseBiometric(false);
+        setErrorMessage('Biometric sign in is unavailable on this device. Please use your CMS email and password.');
+        return;
+      }
+
       const savedCredentials = await biometricCredentialStore.getCredentials();
 
       if (!savedCredentials) {

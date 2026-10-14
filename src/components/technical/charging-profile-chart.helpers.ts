@@ -73,8 +73,8 @@ function getSampleValue(meterValue: MeterValue, measurand: string, phase?: strin
   return Number.isFinite(value) ? value : 0;
 }
 
-function createSeries(label: string, unit: ChartSeries['unit'], axis: ChartAxis, color: string, data: ChartPoint[]) {
-  if (!data.some(point => point.value !== 0)) return undefined;
+function createSeries(label: string, unit: ChartSeries['unit'], axis: ChartAxis, color: string, data: ChartPoint[], hasSamples: boolean) {
+  if (!hasSamples) return undefined;
 
   return {
     axis,
@@ -175,11 +175,12 @@ export function getMobileChartAxisTicks(domain: ChartAxisDomain, count = 5) {
 }
 
 export function buildChargingProfileChartData(data?: TransactionDetail) {
-  if (!data?.meterValues?.length) return null;
+  const sourceMeterValues = data?.meterValues;
+  if (!sourceMeterValues?.length) return null;
 
-  const sampleStep = Math.max(1, Math.ceil(data.meterValues.length / 80));
-  const lastMeterValueIndex = data.meterValues.length - 1;
-  const meterValues = data.meterValues.filter((_, index) => index % sampleStep === 0 || index === lastMeterValueIndex);
+  const sampleStep = Math.max(1, Math.ceil(sourceMeterValues.length / 80));
+  const lastMeterValueIndex = sourceMeterValues.length - 1;
+  const meterValues = sourceMeterValues.filter((_, index) => index % sampleStep === 0 || index === lastMeterValueIndex);
   const labelStep = Math.max(1, Math.floor(meterValues.length / 6));
 
   const powerData: ChartPoint[] = [];
@@ -242,20 +243,31 @@ export function buildChargingProfileChartData(data?: TransactionDetail) {
     voltageL3NData.push({ date: label, label: pointLabel, timestamp, value: voltageL3N });
   });
 
+  const hasSamples = (measurand: string, phase?: string) =>
+    sourceMeterValues.some(meterValue =>
+      meterValue.sampledValues?.some(
+        sample =>
+          sample.measurand === measurand &&
+          (phase ? sample.phase === phase : !sample.phase) &&
+          Boolean(sample.value?.trim()) &&
+          Number.isFinite(Number(sample.value)),
+      ),
+    );
+
   const mobileSeries = [
-    createSeries('Power', 'kW', 'electrical', chartColors.power, powerData),
-    createSeries('Current', 'A', 'electrical', chartColors.current, currentData),
-    createSeries('L1', 'A', 'electrical', chartColors.currentL1, currentL1Data),
-    createSeries('L2', 'A', 'electrical', chartColors.currentL2, currentL2Data),
-    createSeries('L3', 'A', 'electrical', chartColors.currentL3, currentL3Data),
-    createSeries('SoC', '%', 'soc', chartColors.soc, socData),
-    createSeries('V L1', 'V', 'voltage', chartColors.voltageL1, voltageL1Data),
-    createSeries('V L2', 'V', 'voltage', chartColors.voltageL2, voltageL2Data),
-    createSeries('V L3', 'V', 'voltage', chartColors.voltageL3, voltageL3Data),
-    createSeries('V L1-N', 'V', 'voltage', chartColors.voltageL1, voltageL1NData),
-    createSeries('V L2-N', 'V', 'voltage', chartColors.voltageL2, voltageL2NData),
-    createSeries('V L3-N', 'V', 'voltage', chartColors.voltageL3, voltageL3NData),
-    createSeries('Voltage', 'V', 'voltage', chartColors.voltage, voltageData),
+    createSeries('Power', 'kW', 'electrical', chartColors.power, powerData, hasSamples('Power.Active.Import')),
+    createSeries('Current', 'A', 'electrical', chartColors.current, currentData, hasSamples('Current.Import')),
+    createSeries('L1', 'A', 'electrical', chartColors.currentL1, currentL1Data, hasSamples('Current.Import', 'L1')),
+    createSeries('L2', 'A', 'electrical', chartColors.currentL2, currentL2Data, hasSamples('Current.Import', 'L2')),
+    createSeries('L3', 'A', 'electrical', chartColors.currentL3, currentL3Data, hasSamples('Current.Import', 'L3')),
+    createSeries('SoC', '%', 'soc', chartColors.soc, socData, hasSamples('SoC')),
+    createSeries('V L1', 'V', 'voltage', chartColors.voltageL1, voltageL1Data, hasSamples('Voltage', 'L1')),
+    createSeries('V L2', 'V', 'voltage', chartColors.voltageL2, voltageL2Data, hasSamples('Voltage', 'L2')),
+    createSeries('V L3', 'V', 'voltage', chartColors.voltageL3, voltageL3Data, hasSamples('Voltage', 'L3')),
+    createSeries('V L1-N', 'V', 'voltage', chartColors.voltageL1, voltageL1NData, hasSamples('Voltage', 'L1-N')),
+    createSeries('V L2-N', 'V', 'voltage', chartColors.voltageL2, voltageL2NData, hasSamples('Voltage', 'L2-N')),
+    createSeries('V L3-N', 'V', 'voltage', chartColors.voltageL3, voltageL3NData, hasSamples('Voltage', 'L3-N')),
+    createSeries('Voltage', 'V', 'voltage', chartColors.voltage, voltageData, hasSamples('Voltage')),
   ].filter(Boolean) as ChartSeries[];
 
   const primarySeries = filterMobileChartSeries(mobileSeries, 'core');
