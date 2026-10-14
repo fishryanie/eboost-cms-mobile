@@ -20,12 +20,6 @@ export type PeakUsageVehicle = 'all' | TechnicalVehicle;
 export type PeakUsageInterval = 1 | 2 | 3;
 export type PeakUsageRange = 7 | 30 | 90;
 
-export const vehicleOptions: { label: string; value: PeakUsageVehicle }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Bike', value: 'bike' },
-  { label: 'Car', value: 'car' },
-];
-
 export const intervalOptions: { label: string; value: PeakUsageInterval }[] = [
   { label: '1h', value: 1 },
   { label: '2h', value: 2 },

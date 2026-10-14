@@ -2,9 +2,12 @@ import {
   ArrowLeftRight,
   Bell,
   Bike,
+  Bug,
   CalendarClock,
   CircleDollarSign,
+  CircleGauge,
   CreditCard,
+  EvCharger,
   FileText,
   Gift,
   Home,
@@ -16,12 +19,15 @@ import {
   UserSquare,
   Users,
   Wrench,
-  type LucideIcon,
+  ClipboardClock,
+  Scale,
+  LucideIcon,
 } from 'lucide-react-native';
 
 const symbolMap: Record<string, LucideIcon> = {
   advertisement: Megaphone,
   balance: CreditCard,
+  bug: Bug,
   content: FileText,
   gift: Gift,
   home: Home,
@@ -38,6 +44,10 @@ const symbolMap: Record<string, LucideIcon> = {
   transfer: ArrowLeftRight,
   users: Users,
   vehicle: Bike,
+  evCharger: EvCharger,
+  circleGauge: CircleGauge,
+  clipboardClock: ClipboardClock,
+  scale: Scale,
 };
 
 export type TabIconName = keyof typeof symbolMap;

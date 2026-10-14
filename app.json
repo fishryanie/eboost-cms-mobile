@@ -10,7 +10,7 @@
     "ios": {
       "icon": "./src/assets/images/icon.png",
       "bundleIdentifier": "com.evida.eboost.cms",
-      "buildNumber": "15",
+      "buildNumber": "16",
       "infoPlist": {
         "CFBundleDisplayName": "Eboost CMS",
         "ITSAppUsesNonExemptEncryption": false

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, TextInput } from 'react-native';
+import { ActivityIndicator, RefreshControl } from 'react-native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Search, XCircle } from 'lucide-react-native';
 
 import { ThemedView } from 'components/base';
 import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
@@ -11,7 +10,7 @@ import { apiRequest } from 'utils/api/client';
 import { getCollectionResult } from 'utils/api/collection';
 
 import { ListState, getItemKey } from 'components/technical/list-ui';
-import { VehicleSegment } from 'components/technical/vehicle-segment';
+import { VehicleSearchToolbar } from 'components/technical/vehicle-search-toolbar';
 import { ChargerCard } from './components/charger-card';
 
 const PAGE_SIZE = 30;
@@ -74,6 +73,7 @@ export default function ChargersScreen() {
         contentInsetAdjustmentBehavior='never'
         data={items}
         keyExtractor={(item, index) => getItemKey(item, index)}
+        keyboardShouldPersistTaps='handled'
         largeTitle='Chargers'
         ListEmptyComponent={<ListState error={query.error} isLoading={query.isLoading} onRetry={() => query.refetch()} title='Chargers' />}
         ListFooterComponent={
@@ -118,40 +118,15 @@ function ChargerSearch({
   vehicle: TechnicalVehicle;
 }) {
   return (
-    <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'two'}>
-      <ThemedView
-        alignItems='center'
-        backgroundColor={Palette.surfaceMuted}
-        borderColor={Palette.borderSubtle}
-        borderCurve='continuous'
-        borderRadius={'pill'}
-        borderWidth={1}
-        flex={1}
-        flexDirection='row'
-        gap={'two'}
-        height={40}
-        paddingHorizontal={'three'}>
-        <Search color={Palette.textTertiary} size={18} strokeWidth={2} />
-        <TextInput
-          accessibilityLabel='Search by charger ID'
-          autoCapitalize='characters'
-          autoCorrect={false}
-          cursorColor={Palette.accent}
-          onChangeText={onChange}
-          placeholder='Search charger ID'
-          placeholderTextColor={Palette.textTertiary}
-          returnKeyType='search'
-          selectionColor={Palette.accent}
-          style={{ color: Palette.textPrimary, flex: 1, fontFamily: FontFamily.medium, fontSize: 14, height: '100%', paddingVertical: 0 }}
-          value={value}
-        />
-        {value ? (
-          <Pressable accessibilityLabel='Clear charger search' accessibilityRole='button' hitSlop={10} onPress={() => onChange('')}>
-            {({ pressed }) => <XCircle color={Palette.textTertiary} opacity={pressed ? 0.55 : 1} size={18} />}
-          </Pressable>
-        ) : null}
-      </ThemedView>
-      <VehicleSegment onChange={onChangeVehicle} value={vehicle} />
-    </ThemedView>
+    <VehicleSearchToolbar
+      accessibilityLabel='Search by charger ID'
+      autoCapitalize='characters'
+      clearAccessibilityLabel='Clear charger search'
+      onChange={onChange}
+      onChangeVehicle={onChangeVehicle}
+      placeholder='Search charger ID'
+      value={value}
+      vehicle={vehicle}
+    />
   );
 }

@@ -102,12 +102,11 @@ describe('box error screen query states', () => {
     react: { useState: value => [value, () => {}], useMemo: factory => factory() },
     'react-native': { RefreshControl: 'refresh' },
     'components/base': { ThemedView: 'view', ThemedText: 'text' },
-    'components/molecules/search-bar': { SearchBar: 'search' },
+    'components/technical/vehicle-search-toolbar': { VehicleSearchToolbar: 'search-toolbar' },
     'components/organisms/anmated-header-flatlist': { AnimatedHeaderFlatList: 'list' },
     'components/technical/common': { screenHorizontalPadding: 16 },
     'components/technical/list-ui': { LoadingBlock: 'loading', RetryBlock: 'retry' },
     'components/ui': { EmptyState: 'empty' },
-    'components/ui/app-segment': { AppSegment: 'segment' },
     'features/admin-access/hooks': { useCurrentAdminAccess: () => ({ canAccess: () => true }) },
     themes: { Palette: {} },
     './box-error-card': { BoxErrorCard: 'card' },
@@ -132,7 +131,7 @@ describe('box error screen query states', () => {
     failed.props.onRetry();
     assert.equal(retryCount, 1);
     query = { data: { ...sampleData, boxes: [], total_items: 0 } };
-    assert.equal(emptyState().props.title, 'No box errors');
+    assert.equal(emptyState().props.title, 'No charger errors');
   });
 
   it('keeps report rows visible after a refresh fails and exposes another retry', () => {

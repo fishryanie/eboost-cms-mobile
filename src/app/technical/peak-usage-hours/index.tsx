@@ -2,13 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import AnimatedHeaderScrollView from 'components/organisms/animated-header-scrollview';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { Pressable } from 'react-native';
 
 import {
   fetchPeakUsageHours,
   intervalOptions,
   rangeOptions,
-  vehicleOptions,
   type PeakUsageInterval,
   type PeakUsageRange,
   type PeakUsageVehicle,
@@ -17,6 +15,8 @@ import { getPeakUsageMaxValue, peakUsageDayColumns, type PeakUsageRow } from 'ap
 import { ThemedText, ThemedView } from 'components/base';
 import { screenHorizontalPadding } from 'components/technical/common';
 import { LoadingBlock, RetryBlock } from 'components/technical/list-ui';
+import { VehicleSegment } from 'components/technical/vehicle-segment';
+import { AppSegment } from 'components/ui/app-segment';
 import { FontFamily, Palette } from 'themes';
 
 function FilterGroup<TValue extends string | number>({
@@ -35,44 +35,7 @@ function FilterGroup<TValue extends string | number>({
       <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={13} letterSpacing={0.5} paddingLeft={4}>
         {label}
       </ThemedText>
-      <ThemedView
-        flexDirection='row'
-        backgroundColor='#F1F5F9'
-        borderRadius={12}
-        padding={4}
-        gap={4}>
-        {options.map(option => {
-          const isActive = option.value === value;
-
-          return (
-            <Pressable key={option.value} onPress={() => onChange(option.value)} style={{ flex: 1 }}>
-              <ThemedView
-                backgroundColor={isActive ? '#FFFFFF' : 'transparent'}
-                borderRadius={8}
-                paddingVertical={8}
-                alignItems='center'
-                style={
-                  isActive
-                    ? {
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.05,
-                        shadowRadius: 2,
-                        elevation: 1,
-                      }
-                    : undefined
-                }>
-                <ThemedText
-                  color={isActive ? Palette.textPrimary : Palette.textSecondary}
-                  fontFamily={isActive ? FontFamily.semibold : FontFamily.medium}
-                  fontSize={13}>
-                  {option.label}
-                </ThemedText>
-              </ThemedView>
-            </Pressable>
-          );
-        })}
-      </ThemedView>
+      <AppSegment onChange={onChange} options={options} value={value} />
     </ThemedView>
   );
 }
@@ -181,7 +144,12 @@ export default function PeakUsageHoursScreen() {
         showsVerticalScrollIndicator={false}>
         <ThemedView gap={'three'}>
           <ThemedView gap={'three'} paddingBottom={4}>
-            <FilterGroup label='Vehicle' onChange={setVehicle} options={vehicleOptions} value={vehicle} />
+            <ThemedView gap={'two'}>
+              <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={13} letterSpacing={0.5} paddingLeft={4}>
+                Vehicle
+              </ThemedText>
+              <VehicleSegment includeAll onChange={setVehicle} value={vehicle} width='100%' />
+            </ThemedView>
             <FilterGroup label='Bucket' onChange={setInterval} options={intervalOptions} value={interval} />
             <FilterGroup label='Range' onChange={setRange} options={rangeOptions} value={range} />
           </ThemedView>

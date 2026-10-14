@@ -290,7 +290,7 @@
         "path": "/admin/technical/chargers-status-logs"
       },
       {
-        "name": "Box Error Statistics",
+        "name": "24h Charger Failures",
         "path": "/admin/technical/box-error-statistics"
       },
       {

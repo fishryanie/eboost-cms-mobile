@@ -5,12 +5,11 @@ import { useMemo, useState } from 'react';
 import { RefreshControl } from 'react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
-import { SearchBar } from 'components/molecules/search-bar';
 import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 import { screenHorizontalPadding } from 'components/technical/common';
 import { LoadingBlock, RetryBlock } from 'components/technical/list-ui';
+import { VehicleSearchToolbar } from 'components/technical/vehicle-search-toolbar';
 import { EmptyState } from 'components/ui';
-import { AppSegment } from 'components/ui/app-segment';
 import { useCurrentAdminAccess } from 'features/admin-access/hooks';
 import { Palette } from 'themes';
 
@@ -19,11 +18,6 @@ import { filterBoxErrors, type BoxErrorFilter, type BoxErrorRecord, type BoxErro
 import { fetchBoxErrorStatistics } from './service';
 
 const emptyBoxes: BoxErrorRecord[] = [];
-const filterOptions = [
-  { label: 'All', value: 'all' },
-  { label: 'Cars', value: 'car' },
-  { label: 'Bikes', value: 'bike' },
-] as const;
 
 export default function BoxErrorsScreen() {
   const router = useRouter();
@@ -42,17 +36,27 @@ export default function BoxErrorsScreen() {
   return (
     <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
       <AnimatedHeaderFlatList
-        largeTitle='Box Errors'
+        largeTitle='24h Charger Failures'
         canGoBack
         onBack={() => router.back()}
-        searchBar={<SearchBar placeholder='Search box or station' onSearch={setSearch} centerWhenUnfocused={false} />}
+        searchBar={
+          <VehicleSearchToolbar
+            accessibilityLabel='Search box or station'
+            clearAccessibilityLabel='Clear box error search'
+            includeAll
+            onChange={setSearch}
+            onChangeVehicle={setFilter}
+            placeholder='Search box or station'
+            value={search}
+            vehicle={filter}
+          />
+        }
         contentContainerStyle={{ paddingHorizontal: screenHorizontalPadding }}
         data={filteredBoxes}
         keyExtractor={(box: BoxErrorRecord) => `${box.vehicle}-${box.box_id}`}
         keyboardShouldPersistTaps='handled'
         ListHeaderComponent={
           <ThemedView gap={8} paddingBottom={6}>
-            <AppSegment onChange={setFilter} options={filterOptions} value={filter} />
             {query.data ? (
               <ThemedView gap={3}>
                 <ThemedView flexDirection='row' flexWrap='wrap' gap={6} justifyContent='space-between'>
@@ -71,7 +75,7 @@ export default function BoxErrorsScreen() {
               </ThemedView>
             ) : null}
             {query.data && query.error ? (
-              <RetryBlock message={query.error.message} onRetry={() => void query.refetch()} title='Unable to refresh box errors' />
+              <RetryBlock message={query.error.message} onRetry={() => void query.refetch()} title='Unable to refresh charger error rates' />
             ) : null}
             {query.data && hasFilters && filteredBoxes.length > 0 ? (
               <ThemedText color={Palette.textSecondary} fontSize={12} lineHeight={18}>
@@ -91,13 +95,13 @@ export default function BoxErrorsScreen() {
 
 function BoxErrorsEmptyState({ hasFilters, query }: { hasFilters: boolean; query: UseQueryResult<BoxErrorStatistics, Error> }) {
   if (!query.data) {
-    if (query.error) return <RetryBlock message={query.error.message} onRetry={() => void query.refetch()} title='Box errors unavailable' />;
+    if (query.error) return <RetryBlock message={query.error.message} onRetry={() => void query.refetch()} title='Charger error rates unavailable' />;
     if (query.fetchStatus === 'paused') return <EmptyState title='You are offline' message='Connect to the internet and pull down to retry.' />;
-    return <LoadingBlock label='Loading box error statistics...' />;
+    return <LoadingBlock label='Loading charger error rates...' />;
   }
   return (
     <EmptyState
-      title={hasFilters ? 'No matching boxes' : 'No box errors'}
+      title={hasFilters ? 'No matching chargers' : 'No charger errors'}
       message={hasFilters ? 'Try another box ID, station name, or vehicle filter.' : 'No boxes were returned for this reporting period and error threshold.'}
     />
   );

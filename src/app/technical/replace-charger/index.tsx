@@ -1,37 +1,14 @@
 import { useMutation } from '@tanstack/react-query';
 import { BottomButton, HeaderTitle, ThemedText, ThemedView } from 'components/base';
+import { VehicleSegment } from 'components/technical/vehicle-segment';
 import FloatingTextInput from 'components/ui/FloatingTextInput';
 import { useRouter } from 'expo-router';
-import { CheckCircle2 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView } from 'react-native';
+import { Alert, ScrollView } from 'react-native';
 import { FontFamily, Palette } from 'themes';
 import { mhs } from 'themes/scaling';
 import { replaceCharger } from './service';
 import type { ChargerVehicle } from './types';
-
-function VehicleOption({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress}>
-      <ThemedView
-        alignItems='center'
-        backgroundColor={active ? Palette.accent : Palette.surfaceMuted}
-        borderColor={active ? Palette.accent : Palette.borderSubtle}
-        borderRadius={16}
-        borderWidth={1}
-        flexDirection='row'
-        gap={'two'}
-        justifyContent='center'
-        minHeight={42}
-        paddingHorizontal={'four'}>
-        {active ? <CheckCircle2 color='#FFFFFF' size={16} /> : null}
-        <ThemedText color={active ? '#FFFFFF' : Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={14}>
-          {label}
-        </ThemedText>
-      </ThemedView>
-    </Pressable>
-  );
-}
 
 export default function ReplaceChargerScreen() {
   const router = useRouter();
@@ -74,14 +51,7 @@ export default function ReplaceChargerScreen() {
             </ThemedText>
           </ThemedView>
 
-          <ThemedView flexDirection='row' gap={'three'}>
-            <ThemedView flex={1}>
-              <VehicleOption active={vehicle === 'bike'} label='Bike' onPress={() => setVehicle('bike')} />
-            </ThemedView>
-            <ThemedView flex={1}>
-              <VehicleOption active={vehicle === 'car'} label='Car' onPress={() => setVehicle('car')} />
-            </ThemedView>
-          </ThemedView>
+          <VehicleSegment onChange={setVehicle} value={vehicle} width='100%' />
 
           <ThemedView gap={'four'}>
             <FloatingTextInput label='* Current Charger ID' value={chargerId} onChangeText={setChargerId} keyboardType='number-pad' />

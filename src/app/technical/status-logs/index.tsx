@@ -1,8 +1,8 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { RotateCcw, Search, XCircle } from 'lucide-react-native';
+import { RotateCcw } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, TextInput } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl } from 'react-native';
 
 import { StatusLogCard } from 'app/technical/status-logs/components/status-log-card';
 import { StatusLogFilters, type StatusLogDateRange } from 'app/technical/status-logs/components/status-log-filters';
@@ -11,7 +11,7 @@ import { ThemedView } from 'components/base';
 import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 import { ListState } from 'components/technical/list-ui';
 import { styles } from 'components/technical/styles';
-import { VehicleSegment } from 'components/technical/vehicle-segment';
+import { VehicleSearchToolbar } from 'components/technical/vehicle-search-toolbar';
 import { FontFamily, Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
 import { getCollectionResult } from 'utils/api/collection';
@@ -96,6 +96,7 @@ function StatusLogsContent({ initialBoxId, initialVehicle, station }: { initialB
         contentContainerStyle={[styles.content, styles.issueListContent, { paddingHorizontal: 12 }]}
         contentInsetAdjustmentBehavior='never'
         data={items}
+        keyboardShouldPersistTaps='handled'
         keyExtractor={(item, index) =>
           `${item.id || item.timestamp || item.receivedAt || 'status-log'}:${item.connectorID ?? item.connector_id ?? '-'}:${index}`
         }
@@ -170,40 +171,15 @@ function StatusLogSearch({
   vehicle: TechnicalVehicle;
 }) {
   return (
-    <ThemedView alignItems='center' backgroundColor='transparent' flexDirection='row' gap={'two'}>
-      <ThemedView
-        alignItems='center'
-        backgroundColor={Palette.surfaceMuted}
-        borderColor={Palette.borderSubtle}
-        borderCurve='continuous'
-        borderRadius={'pill'}
-        borderWidth={1}
-        flex={1}
-        flexDirection='row'
-        gap={'two'}
-        height={40}
-        paddingHorizontal={'three'}>
-        <Search color={Palette.textTertiary} size={18} strokeWidth={2} />
-        <TextInput
-          accessibilityLabel='Search by charger ID'
-          autoCapitalize='characters'
-          autoCorrect={false}
-          cursorColor={Palette.accent}
-          onChangeText={onChange}
-          placeholder='Search charger ID'
-          placeholderTextColor={Palette.textTertiary}
-          returnKeyType='search'
-          selectionColor={Palette.accent}
-          style={{ color: Palette.textPrimary, flex: 1, fontFamily: FontFamily.medium, fontSize: 14, height: '100%', paddingVertical: 0 }}
-          value={value}
-        />
-        {value ? (
-          <Pressable accessibilityLabel='Clear charger search' accessibilityRole='button' hitSlop={10} onPress={() => onChange('')}>
-            {({ pressed }) => <XCircle color={Palette.textTertiary} opacity={pressed ? 0.55 : 1} size={18} />}
-          </Pressable>
-        ) : null}
-      </ThemedView>
-      <VehicleSegment onChange={onChangeVehicle} value={vehicle} />
-    </ThemedView>
+    <VehicleSearchToolbar
+      accessibilityLabel='Search by charger ID'
+      autoCapitalize='characters'
+      clearAccessibilityLabel='Clear charger search'
+      onChange={onChange}
+      onChangeVehicle={onChangeVehicle}
+      placeholder='Search charger ID'
+      value={value}
+      vehicle={vehicle}
+    />
   );
 }

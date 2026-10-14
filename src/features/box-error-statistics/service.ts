@@ -14,7 +14,7 @@ type BoxErrorRequest = <TResponse = unknown, TData = unknown>(path: string, opti
 export async function fetchBoxErrorStatistics(request: BoxErrorRequest = apiRequest): Promise<BoxErrorStatistics> {
   const response = await request<BoxErrorResponse>('api/controller/statistic/box-error-statistics');
   if (!response?.success || !response.data || !Array.isArray(response.data.boxes)) {
-    throw new Error(response?.message || 'Unable to load box error statistics. Please try again.');
+    throw new Error(response?.message || 'Unable to load charger error rates. Please try again.');
   }
   return response.data;
 }

@@ -11,45 +11,6 @@ type NetworkIssue = ConnectionLogRecord & {
   vehicle: TechnicalVehicle;
 };
 
-type NetworkIssueFilter = 'all' | TechnicalVehicle;
-
-export function IssueFilterSwitch({
-  bikeCount,
-  carCount,
-  filter,
-  onChange,
-}: {
-  bikeCount: number;
-  carCount: number;
-  filter: NetworkIssueFilter;
-  onChange: (filter: NetworkIssueFilter) => void;
-}) {
-  const options: { count: number; label: string; value: NetworkIssueFilter }[] = [
-    { count: bikeCount + carCount, label: 'All', value: 'all' },
-    { count: bikeCount, label: 'Bike', value: 'bike' },
-    { count: carCount, label: 'Car', value: 'car' },
-  ];
-
-  return (
-    <ThemedView flexDirection='row' style={styles.issueSegmentedControl}>
-      {options.map(option => {
-        const active = filter === option.value;
-        return (
-          <Pressable
-            accessibilityRole='button'
-            key={option.value}
-            onPress={() => onChange(option.value)}
-            style={({ pressed }) => [styles.issueFilterChip, active && styles.issueFilterChipActive, pressed && styles.pressed]}>
-            <ThemedText color={active ? Palette.accent : Palette.textSecondary} fontFamily={FontFamily.medium} fontSize={11} lineHeight={15}>
-              {option.label} {option.count}
-            </ThemedText>
-          </Pressable>
-        );
-      })}
-    </ThemedView>
-  );
-}
-
 export function NetworkIssueCard({ item, isLast }: { item: NetworkIssue; isLast?: boolean }) {
   const router = useRouter();
 

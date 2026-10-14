@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { CalendarDays, ChevronDown } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Pressable } from 'react-native';
@@ -50,7 +51,12 @@ export function StatusLogFilters({ dateRange, onChangeDateRange, onChangeStatus,
         />
       </ThemedView>
 
-      <RangePicker onChange={handleRangeChange} ref={rangePickerRef} />
+      <RangePicker
+        onChange={handleRangeChange}
+        onClear={() => onChangeDateRange(undefined)}
+        ref={rangePickerRef}
+        value={dateRange ? [dayjs(dateRange.startDate).unix(), dayjs(dateRange.endDate).unix()] : undefined}
+      />
       <StatusFilterSheet
         onClose={() => setStatusSheetVisible(false)}
         onSelect={onChangeStatus}

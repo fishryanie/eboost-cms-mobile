@@ -53,11 +53,11 @@ export const tabs: TabConfig[] = [
     label: 'Technical',
     name: 'technical/index',
     pages: [
-      { description: 'Charger inventory and status.', icon: 'technical', key: 'chargers', title: 'Chargers' },
-      { description: 'Hourly meter readings.', icon: 'technical', key: 'meter-hourly', title: 'Meter Hourly' },
-      { description: 'Charger status history.', icon: 'technical', key: 'status-logs', title: 'Status Logs' },
-      { description: 'Energy reconciliation differences.', icon: 'technical', key: 'energy-differ', title: 'Energy Differ' },
-      { description: 'Charging session failures and box error rates.', icon: 'technical', key: 'box-errors', title: 'Box Errors' },
+      { description: 'Charger inventory and status.', icon: 'evCharger', key: 'chargers', title: 'Chargers' },
+      { description: 'Hourly meter readings.', icon: 'circleGauge', key: 'meter-hourly', title: 'Meter Hourly' },
+      { description: 'Charger status history.', icon: 'clipboardClock', key: 'status-logs', title: 'Status Logs' },
+      { description: 'Energy reconciliation differences.', icon: 'scale', key: 'energy-differ', title: 'Energy Differ' },
+      { description: 'Charging session failures and charger error rates.', icon: 'bug', key: 'box-errors', title: '24h Charger Failures' },
     ],
   },
   {

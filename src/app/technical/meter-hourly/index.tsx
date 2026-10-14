@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 
 import { ThemedText, ThemedView } from 'components/base';
-import { SearchBar } from 'components/molecules/search-bar';
 import { FontFamily, Palette } from 'themes';
 import { apiRequest } from 'utils/api/client';
 import { getCollectionResult } from 'utils/api/collection';
@@ -13,7 +12,7 @@ import { getCollectionResult } from 'utils/api/collection';
 import { screenHorizontalPadding } from 'components/technical/common';
 import { ListState, ListFooter, getItemKey } from 'components/technical/list-ui';
 import { styles } from 'components/technical/styles';
-import { VehicleSwitch } from 'components/technical/vehicle-switch';
+import { VehicleSearchToolbar } from 'components/technical/vehicle-search-toolbar';
 import { MeterCard } from './components/meter-card';
 
 export default function MeterHourlyScreen() {
@@ -53,6 +52,7 @@ export default function MeterHourlyScreen() {
           contentContainerStyle: styles.content,
           data: query.data?.items || [],
           keyExtractor: (item, index) => getItemKey(item, index),
+          keyboardShouldPersistTaps: 'handled',
           ListHeaderComponent: (
             <ThemedView gap={'three'} paddingHorizontal={screenHorizontalPadding} paddingTop={'one'}>
               <ThemedView alignItems='center' flexDirection='row' minHeight={38}>
@@ -67,12 +67,15 @@ export default function MeterHourlyScreen() {
                   Meter Hourly
                 </ThemedText>
               </ThemedView>
-              <VehicleSwitch vehicle={vehicle} onChange={setVehicle} />
-              <SearchBar
+              <VehicleSearchToolbar
+                accessibilityLabel='Search by charger ID'
+                autoCapitalize='characters'
+                clearAccessibilityLabel='Clear meter search'
                 placeholder='Search charger ID'
-                onSearch={value => setListState(current => ({ ...current, searchInput: value }))}
-                centerWhenUnfocused={false}
-                enableWidthAnimation={false}
+                onChange={value => setListState(current => ({ ...current, searchInput: value }))}
+                onChangeVehicle={setVehicle}
+                value={searchInput}
+                vehicle={vehicle}
               />
             </ThemedView>
           ),

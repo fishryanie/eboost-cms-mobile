@@ -3,10 +3,10 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { RefreshControl } from 'react-native';
 
-import { ThemedView } from 'components/base';
-import { SearchBar } from 'components/molecules/search-bar';
+import { ThemedText, ThemedView } from 'components/base';
 import { AnimatedHeaderFlatList } from 'components/organisms/anmated-header-flatlist';
 import { getNetworkIssues, LoadingBlock, RetryBlock } from 'components/technical/list-ui';
+import { VehicleSearchToolbar } from 'components/technical/vehicle-search-toolbar';
 import { styles } from 'components/technical/styles';
 import { EmptyState } from 'components/ui';
 import { Palette } from 'themes';
@@ -15,7 +15,7 @@ import { getCollectionResult } from 'utils/api/collection';
 import { AccessMessage } from 'features/admin-access/access-guard';
 import { useCurrentAdminAccess } from 'features/admin-access/hooks';
 
-import { IssueFilterSwitch, NetworkIssueCard } from './components/network-issue-sections';
+import { NetworkIssueCard } from './components/network-issue-sections';
 
 type NetworkIssue = ConnectionLogRecord & { vehicle: TechnicalVehicle };
 type NetworkIssueFilter = 'all' | TechnicalVehicle;
@@ -55,10 +55,25 @@ export default function NetworkIssuesScreen() {
         subtitle='Chargers currently offline'
         canGoBack
         onBack={() => router.back()}
-        searchBar={<SearchBar placeholder='Search charger or station' onSearch={setIssueSearch} centerWhenUnfocused={false} />}
+        searchBar={
+          <VehicleSearchToolbar
+            accessibilityLabel='Search charger or station'
+            clearAccessibilityLabel='Clear network issue search'
+            includeAll
+            onChange={setIssueSearch}
+            onChangeVehicle={setFilter}
+            placeholder='Search charger or station'
+            value={issueSearch}
+            vehicle={filter}
+          />
+        }
+        keyboardShouldPersistTaps='handled'
         ListHeaderComponent={
           <ThemedView gap={'two'} paddingBottom={'three'}>
-            <IssueFilterSwitch bikeCount={bikeIssues.length} carCount={carIssues.length} filter={filter} onChange={setFilter} />
+            <ThemedText color={Palette.textSecondary} fontFamily='medium' fontSize={12} lineHeight={18}>
+              All {(bikeIssues.length + carIssues.length).toLocaleString()} · Cars {carIssues.length.toLocaleString()} · Bikes{' '}
+              {bikeIssues.length.toLocaleString()}
+            </ThemedText>
           </ThemedView>
         }
         contentContainerStyle={[styles.content, styles.issueListContent]}
