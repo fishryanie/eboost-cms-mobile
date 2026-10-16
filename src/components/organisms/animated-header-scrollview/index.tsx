@@ -94,7 +94,7 @@ const AnimatedHeaderScrollViewComponent: React.FC<AnimatedHeaderProps> = ({
   }));
 
   return (
-    <ThemedView flex={1} backgroundColor={Colors.white}>
+    <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
       <Animated.View
         style={[
           styles.headerBackground,

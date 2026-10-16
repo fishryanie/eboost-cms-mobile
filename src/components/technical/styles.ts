@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { FontFamily, Palette } from 'themes';
-import { mhs } from 'themes/scaling';
+import { mhs, width } from 'themes/scaling';
 import { screenHorizontalPadding } from './common';
 
 export const styles = StyleSheet.create({
@@ -17,7 +17,7 @@ export const styles = StyleSheet.create({
     paddingTop: mhs(8),
   },
   connectorStrip: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: Palette.surfaceRaised,
     borderColor: '#EEF2F6',
     borderRadius: mhs(12),
     borderWidth: 1,
@@ -52,7 +52,7 @@ export const styles = StyleSheet.create({
     width: 64,
   },
   compactStat: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: Palette.surfaceRaised,
     borderColor: '#EEF2F6',
     borderRadius: mhs(12),
     borderWidth: 1,
@@ -297,11 +297,41 @@ export const styles = StyleSheet.create({
   },
   serviceIconSurface: {
     alignItems: 'center',
-    backgroundColor: Palette.antiFlashWhite,
+    borderColor: 'rgba(0,0,0,0.08)',
     borderRadius: mhs(16),
-    height: mhs(60),
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 5,
+    height: mhs(width / 4.5),
     justifyContent: 'center',
-    width: mhs(60),
+    overflow: 'hidden',
+    width: mhs(width / 4.5),
+  },
+  serviceTile: {
+    alignItems: 'center',
+    backgroundColor: '#FAFBF8',
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderCurve: 'continuous',
+    borderRadius: mhs(20),
+    borderWidth: 1,
+    boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)',
+    gap: mhs(6),
+    justifyContent: 'center',
+    minHeight: mhs(86),
+    paddingHorizontal: mhs(4),
+    paddingVertical: mhs(10),
+  },
+  serviceTilePressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.96 }],
+  },
+  serviceTileIconBadge: {
+    alignItems: 'center',
+    backgroundColor: '#EBF7F0',
+    borderCurve: 'continuous',
+    borderRadius: mhs(12),
+    height: mhs(34),
+    justifyContent: 'center',
+    width: mhs(34),
   },
   serviceShortcut: {
     alignItems: 'center',

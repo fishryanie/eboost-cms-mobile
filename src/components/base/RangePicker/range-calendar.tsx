@@ -79,7 +79,7 @@ export function RangeCalendar({ month, onChangeMonth, onSelectDay, range }: Rang
                           justifyContent='center'
                           square={40}>
                           <ThemedText
-                            color={endpoint ? Palette.surfaceBase : isToday ? Palette.accentPressed : Palette.textPrimary}
+                            color={endpoint ? Palette.surfaceRaised : isToday ? Palette.accentPressed : Palette.textPrimary}
                             fontFamily={endpoint || isToday ? FontFamily.semibold : FontFamily.regular}
                             fontSize={15}
                             lineHeight={22}

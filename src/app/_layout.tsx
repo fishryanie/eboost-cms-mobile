@@ -20,6 +20,7 @@ import { useNotifications } from 'hooks/use-notifications';
 import { useAdminProfile } from 'utils/auth/admin-profile';
 import { useEffect } from 'react';
 import { AdminRouteGuard } from 'features/admin-access/access-guard';
+import { Palette } from 'themes';
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -53,7 +54,13 @@ function TabLayout() {
     loadProfile();
   }, [loadProfile]);
 
-  const theme = DefaultTheme as ReactNavigation.Theme;
+  const theme: ReactNavigation.Theme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: Palette.surfaceBase,
+    },
+  };
 
   return (
     <ThemeProvider value={theme}>

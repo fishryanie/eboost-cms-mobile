@@ -27,7 +27,7 @@ import { PeakUsageHoursSection } from './components/peak-usage-hours-section';
 
 export const technicalDetailPanels: TechnicalPanel[] = ['chargers', 'meter-hourly', 'status-logs', 'energy-differ', 'box-errors'];
 
-const serviceTileSize = 64;
+const serviceTileSize = 92;
 
 async function getNetworkStatus(vehicle: TechnicalVehicle) {
   const response = await apiRequest<ApiListResponse<ConnectionLogRecord>>(vehicle === 'car' ? 'api/cars/logs/connection' : 'api/bikes/logs/connection', {
@@ -104,7 +104,7 @@ export default function TechnicalScreen() {
     queryFn: async () => getCollectionResult(await apiRequest<ApiListResponse<DomainAnalyzeRecord>>('api/controller/domain/analyze')),
     queryKey: ['technical', 'overview-domain-analyze'],
   });
-  const serviceTileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - mhs(12) * 3) / 4));
+  const serviceTileWidth = Math.min(serviceTileSize, Math.floor((width - screenHorizontalPadding * 2 - mhs(8) * 3) / 4));
 
   return (
     <>

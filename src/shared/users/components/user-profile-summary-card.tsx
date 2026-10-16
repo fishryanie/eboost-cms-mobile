@@ -19,7 +19,7 @@ export function UserProfileSummaryCard({ user }: { user: UserProfile }) {
 
   return (
     <>
-      <ThemedView backgroundColor={Palette.surfaceBase} gap={'three'} paddingHorizontal={'one'} paddingVertical={'three'}>
+      <ThemedView backgroundColor={Palette.surfaceRaised} gap={'three'} paddingHorizontal={'one'} paddingVertical={'three'}>
         <ThemedView alignItems='flex-start' backgroundColor='transparent' flexDirection='row' gap={'two'}>
           <ThemedView alignItems='center' backgroundColor='transparent' flexShrink={0} width={64}>
             <Pressable

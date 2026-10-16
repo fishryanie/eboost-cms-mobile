@@ -262,7 +262,7 @@ function CardSurface({ children, tone }: { children: React.ReactNode; tone: Tran
         ? { backgroundColor: '#FFFAEB', borderColor: '#FEDF89' }
         : tone === 'charging'
           ? { backgroundColor: '#F8FAFF', borderColor: '#C7D7FE' }
-          : { backgroundColor: Palette.surfaceBase, borderColor: Palette.borderSubtle };
+          : { backgroundColor: Palette.surfaceRaised, borderColor: Palette.borderSubtle };
 
   return (
     <ThemedView
@@ -718,7 +718,7 @@ export function TransactionSessionCard({ item: rawItem }: { item: CmsRecord }) {
       <FlipCard.Back>
         <FlipCard.Trigger accessibilityLabel='Back to transaction' accessibilityRole='button' style={{ flex: 1 }}>
           <ThemedView
-            backgroundColor={Palette.surfaceBase}
+            backgroundColor={Palette.surfaceRaised}
             borderColor={Palette.borderSubtle}
             borderRadius={21}
             borderWidth={1}

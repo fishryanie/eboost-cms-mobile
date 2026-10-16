@@ -28,10 +28,10 @@ const SUCCESS_STATUSES = new Set(['Available', 'ChargeFull']);
 const ACTIVE_STATUSES = new Set(['Charging', 'Ready', 'Reserved', 'StoppedFromApp', 'SuspendedEV', 'SuspendedEVSE']);
 
 const STATUS_TONES: Record<StatusTone, { accent: string; badge: string; card: string; icon: string }> = {
-  active: { accent: '#2563EB', badge: '#E7EFFF', card: Palette.surfaceMuted, icon: '#EAF1FF' },
+  active: { accent: '#2563EB', badge: '#E7EFFF', card: Palette.surfaceRaised, icon: '#EAF1FF' },
   danger: { accent: Palette.danger, badge: '#FEE4E2', card: '#FFF7F6', icon: '#FFE9E7' },
-  neutral: { accent: Palette.textSecondary, badge: '#EAECF0', card: Palette.surfaceMuted, icon: '#EEF1F4' },
-  success: { accent: Palette.accentPressed, badge: '#DFF3E8', card: Palette.surfaceMuted, icon: '#E8F6EE' },
+  neutral: { accent: Palette.textSecondary, badge: '#EAECF0', card: Palette.surfaceRaised, icon: '#EEF1F4' },
+  success: { accent: Palette.accentPressed, badge: '#DFF3E8', card: Palette.surfaceRaised, icon: '#E8F6EE' },
   warning: { accent: '#B54708', badge: '#FEF0C7', card: '#FFFAEB', icon: '#FFF3D6' },
 };
 

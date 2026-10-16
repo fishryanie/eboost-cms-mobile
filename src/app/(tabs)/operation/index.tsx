@@ -588,7 +588,7 @@ function UserGrowthSection({ growth, summary }: { growth: UserGrowthChartItem[];
         <TrendingUp color={operationAccent} size={18} />
       </ThemedView>
 
-      <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={mhs(24)} gap={'four'} padding={mhs(20)}>
+      <ThemedView backgroundColor={Palette.surfaceRaised} borderRadius={mhs(24)} gap={'four'} padding={mhs(20)}>
         <ThemedView flexDirection='row' gap={'three'}>
           <PremiumGrowthCard
             label='Total Users'
@@ -918,7 +918,7 @@ const styles = StyleSheet.create({
     width: 24,
   },
   topUserCard: {
-    backgroundColor: Palette.surfaceMuted,
+    backgroundColor: Palette.surfaceRaised,
     borderColor: Palette.borderSubtle,
     borderCurve: 'continuous',
     borderRadius: mhs(21),

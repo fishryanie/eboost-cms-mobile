@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
   foreground: {
-    backgroundColor: Palette.surfaceBase,
+    backgroundColor: Palette.surfaceRaised,
   },
   editAction: {
     backgroundColor: '#1677E8',

@@ -40,7 +40,7 @@ function MetricPill({ children }: { children: React.ReactNode }) {
 function CardSurface({ children }: { children: React.ReactNode }) {
   return (
     <ThemedView
-      backgroundColor={Palette.surfaceBase}
+      backgroundColor={Palette.surfaceRaised}
       borderColor={Palette.borderSubtle}
       borderRadius={21}
       borderWidth={1}
@@ -290,7 +290,7 @@ export function OngoingSessionCard({ item, onCopy, vehicle }: OngoingSessionCard
       <FlipCard.Back>
         <FlipCard.Trigger accessibilityLabel='Back to session' accessibilityRole='button' style={{ flex: 1 }}>
           <ThemedView
-            backgroundColor={Palette.surfaceBase}
+            backgroundColor={Palette.surfaceRaised}
             borderColor={Palette.borderSubtle}
             borderRadius={21}
             borderWidth={1}

@@ -5,12 +5,13 @@ import { BiometricOptInPrompt } from 'utils/auth/components/biometric-opt-in-pro
 import { useSessionToken } from 'utils/session/use-session-token';
 import { HomeHeader } from 'components/home-header';
 import { ThemedView } from 'components/base';
+import { Palette } from 'themes';
 
 export default function TabsLayout() {
   const tokenQuery = useSessionToken();
 
   if (tokenQuery.isLoading) {
-    return <ThemedView backgroundColor='#FFFFFF' flex={1} safePaddingBottom safePaddingTop />;
+    return <ThemedView backgroundColor={Palette.surfaceBase} flex={1} safePaddingBottom safePaddingTop />;
   }
 
   if (!tokenQuery.data) {
@@ -18,7 +19,7 @@ export default function TabsLayout() {
   }
 
   return (
-    <ThemedView backgroundColor='#FFFFFF' flex={1}>
+    <ThemedView backgroundColor={Palette.surfaceBase} flex={1}>
       <HomeHeader />
       <ThemedView flex={1}>
         <AppTabs />

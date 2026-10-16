@@ -7,7 +7,7 @@ type ChargerTone = 'danger' | 'success' | 'warning';
 
 const CHARGER_TONES: Record<ChargerTone, { accent: string; badge: string; card: string; icon: string }> = {
   danger: { accent: Palette.danger, badge: '#FEE4E2', card: '#FFF7F6', icon: '#FFE9E7' },
-  success: { accent: Palette.accentPressed, badge: '#DFF3E8', card: Palette.surfaceMuted, icon: '#E8F6EE' },
+  success: { accent: Palette.accentPressed, badge: '#DFF3E8', card: Palette.surfaceRaised, icon: '#E8F6EE' },
   warning: { accent: '#B54708', badge: '#FEF0C7', card: '#FFFAEB', icon: '#FFF3D6' },
 };
 

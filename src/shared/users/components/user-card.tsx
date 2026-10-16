@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   },
   row: {
     alignItems: 'center',
-    backgroundColor: Palette.surfaceBase,
+    backgroundColor: Palette.surfaceRaised,
     borderBottomColor: Palette.borderSubtle,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',

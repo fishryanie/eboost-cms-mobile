@@ -1,4 +1,5 @@
 import { ThemedView } from 'components/base';
+import { Palette } from 'themes';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, Platform } from 'react-native';
@@ -37,10 +38,10 @@ export function AnimatedSplashOverlay() {
         }
       })}
       style={styles.backgroundSolidColor}>
-      <Image 
-        contentFit={Platform.OS === 'android' ? 'contain' : 'cover'} 
-        source={Platform.OS === 'android' ? require('../assets/images/icon.png') : require('../assets/images/cms-splash.png')} 
-        style={{ height, width }} 
+      <Image
+        contentFit={Platform.OS === 'android' ? 'contain' : 'cover'}
+        source={Platform.OS === 'android' ? require('../assets/images/icon.png') : require('../assets/images/cms-splash.png')}
+        style={{ height, width }}
       />
     </AnimatedThemedView>
   );
@@ -71,7 +72,7 @@ const styles = StyleSheet.create({
   backgroundSolidColor: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Palette.surfaceBase,
     justifyContent: 'center',
     zIndex: 1000,
   },

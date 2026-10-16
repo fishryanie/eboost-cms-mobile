@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ThemedText, ThemedView } from 'components/base';
 import { useRouter } from 'expo-router';
 import { ChevronsRight } from 'lucide-react-native';
@@ -70,7 +71,7 @@ const styles = StyleSheet.create({
     width: 10,
   },
   packageRow: {
-    backgroundColor: Palette.surfaceMuted,
+    backgroundColor: Palette.surfaceRaised,
     borderRadius: mhs(16),
     padding: mhs(12),
   },
@@ -126,7 +127,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: mhs(4),
   },
   summaryStat: {
-    backgroundColor: Palette.surfaceMuted,
+    backgroundColor: Palette.surfaceRaised,
     borderRadius: mhs(16),
     padding: mhs(12),
   },
@@ -175,7 +176,7 @@ export function SubscriptionStatsCard({
         </Pressable>
       </ThemedView>
 
-      <ThemedView backgroundColor={Palette.surfaceMuted} borderRadius={mhs(24)} gap={'four'} padding={mhs(20)}>
+      <ThemedView backgroundColor={Palette.surfaceRaised} borderRadius={mhs(24)} gap={'four'} padding={mhs(20)}>
         {isLoading && !hasRows ? (
           <LoadingBlock label='Loading subscription stats' />
         ) : !hasRows ? (
@@ -235,6 +236,24 @@ export function SubscriptionStatsCard({
   );
 }
 
+function getDonutSegments(rows: SubscriptionPackageRow[], shareMetric: ShareMetric, total: number, circumference: number) {
+  let accumulated = 0;
+  return rows.slice(0, 8).map((row, index) => {
+    const value = shareMetric === 'revenue' ? row.revenue : row.count;
+    const percent = total > 0 ? value / total : 0;
+    const dash = percent * circumference;
+    const rotation = (accumulated / circumference) * 360 - 90;
+    accumulated += dash;
+
+    return {
+      dash,
+      id: row.id,
+      rotation,
+      stroke: chartColors[index % chartColors.length],
+    };
+  });
+}
+
 export function SubscriptionDonut({
   rows,
   shareMetric,
@@ -253,34 +272,26 @@ export function SubscriptionDonut({
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;
   const total = shareMetric === 'revenue' ? totalRevenue : totalPurchases;
-  let accumulated = 0;
+  const segments = useMemo(() => getDonutSegments(rows, shareMetric, total, circumference), [circumference, rows, shareMetric, total]);
 
   return (
     <ThemedView alignItems='center' justifyContent='center' style={{ height: size, width: size }}>
       <Svg height={size} width={size}>
         <Circle cx={center} cy={center} fill='transparent' r={radius} stroke='#EEF2F7' strokeWidth={strokeWidth} />
-        {rows.slice(0, 8).map((row, index) => {
-          const value = shareMetric === 'revenue' ? row.revenue : row.count;
-          const percent = total > 0 ? value / total : 0;
-          const dash = percent * circumference;
-          const rotation = (accumulated / circumference) * 360 - 90;
-          accumulated += dash;
-
-          return (
-            <Circle
-              cx={center}
-              cy={center}
-              fill='transparent'
-              key={row.id}
-              r={radius}
-              stroke={chartColors[index % chartColors.length]}
-              strokeDasharray={`${dash} ${circumference - dash}`}
-              strokeLinecap='round'
-              strokeWidth={strokeWidth}
-              transform={`rotate(${rotation} ${center} ${center})`}
-            />
-          );
-        })}
+        {segments.map(segment => (
+          <Circle
+            cx={center}
+            cy={center}
+            fill='transparent'
+            key={segment.id}
+            r={radius}
+            stroke={segment.stroke}
+            strokeDasharray={`${segment.dash} ${circumference - segment.dash}`}
+            strokeLinecap='round'
+            strokeWidth={strokeWidth}
+            transform={`rotate(${segment.rotation} ${center} ${center})`}
+          />
+        ))}
       </Svg>
       <ThemedView alignItems='center' justifyContent='center' pointerEvents='none' style={StyleSheet.absoluteFill}>
         <ThemedText color={Palette.textTertiary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={14} textTransform='uppercase'>

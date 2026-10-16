@@ -224,7 +224,7 @@ function RangeAction({ disabled = false, filled = false, label, onPress }: { dis
             opacity={disabled ? 0.4 : pressed ? 0.7 : 1}
             paddingHorizontal={'four'}
             paddingVertical={'three'}>
-            <ThemedText color={filled ? Palette.surfaceBase : Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={15} lineHeight={22}>
+            <ThemedText color={filled ? Palette.surfaceRaised : Palette.textSecondary} fontFamily={FontFamily.semibold} fontSize={15} lineHeight={22}>
               {label}
             </ThemedText>
           </ThemedView>

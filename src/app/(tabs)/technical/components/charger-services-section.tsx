@@ -50,12 +50,12 @@ export function QuickServiceShortcut({ onPress, service, tileWidth }: { onPress?
       accessibilityLabel={service.name}
       accessibilityRole='button'
       onPress={onPress}
-      style={({ pressed }) => [styles.serviceShortcut, { width: tileWidth }, pressed && styles.pressed]}>
-      <ThemedView style={styles.serviceIconSurface}>
-        <Icon color={Palette.textPrimary} size={24} />
+      style={({ pressed }) => [styles.serviceTile, { width: tileWidth }, pressed && styles.serviceTilePressed]}>
+      <ThemedView style={styles.serviceTileIconBadge}>
+        <Icon color={Palette.accent} size={19} strokeWidth={2.2} />
       </ThemedView>
-      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.medium} fontSize={10} lineHeight={13} numberOfLines={2} textAlign='center'>
-        {service.labelLines.filter(Boolean).join(' ')}
+      <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.semibold} fontSize={11} lineHeight={14} numberOfLines={2} textAlign='center'>
+        {service.labelLines.filter(Boolean).join('\n')}
       </ThemedText>
     </Pressable>
   );

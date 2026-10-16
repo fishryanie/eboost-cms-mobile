@@ -129,7 +129,7 @@ export default function LoginScreen() {
   }, [keepCardAboveKeyboard]);
 
   return (
-    <BackgroundGradient colors={['#FFFFFF', '#FFFFFF', '#F7FBF9', '#EFF8F4', '#E8F4EF', '#FFFFFF', '#FFFFFF']}>
+    <BackgroundGradient colors={[Palette.surfaceBase, Palette.surfaceBase, '#F7FBF9', '#EFF8F4', '#E8F4EF', Palette.surfaceBase, Palette.surfaceBase]}>
       <ThemedView safePaddingTop safePaddingBottom flex={1}>
         <TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
           <ScrollView
@@ -275,7 +275,7 @@ function BackgroundGradient({ children, colors }: { children: ReactNode; colors:
   const positions = [0.1, 0.2, 0.5, 0.6, 0.7, 0.959, 1];
 
   return (
-    <ThemedView flex={1} backgroundColor='#FFFFFF'>
+    <ThemedView flex={1} backgroundColor={Palette.surfaceBase}>
       <ThemedView absoluteFillObject pointerEvents='none'>
         <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
           <Defs>
@@ -285,7 +285,7 @@ function BackgroundGradient({ children, colors }: { children: ReactNode; colors:
               ))}
             </RadialGradient>
             <LinearGradient id={`${gradientId}-linear`} gradientUnits='userSpaceOnUse' x1={0} y1={height * 0.72} x2={0} y2={height}>
-              <Stop offset={0} stopColor='#FFFFFF' stopOpacity={0} />
+              <Stop offset={0} stopColor={Palette.surfaceBase} stopOpacity={0} />
               <Stop offset={1} stopColor='#01A74E' stopOpacity={0.08} />
             </LinearGradient>
           </Defs>

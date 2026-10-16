@@ -44,7 +44,7 @@ export const DatePicker = forwardRef<DatePickerMethods, DatePickerProps>(functio
       backdropTransitionInTiming={500}
       backdropTransitionOutTiming={500}
       onBackdropPress={() => setShow(false)}>
-      <ViewTheme radius={24} padding={12} backgroundColor={Palette.surfaceBase}>
+      <ViewTheme radius={24} padding={12} backgroundColor={Palette.surfaceRaised}>
         <ThemedText color={Palette.textPrimary} fontFamily={FontFamily.bold} fontSize={18} marginBottom={4} textAlign='center'>
           Select date
         </ThemedText>
@@ -55,7 +55,7 @@ export const DatePicker = forwardRef<DatePickerMethods, DatePickerProps>(functio
           startFromMonday={true}
           todayBackgroundColor={Palette.borderSubtle}
           selectedDayColor={Palette.accent}
-          selectedDayTextColor={Palette.surfaceBase}
+          selectedDayTextColor={Palette.surfaceRaised}
           selectedStartDate={selectedDate}
           width={width - 64}
           onDateChange={handleDateChange}
